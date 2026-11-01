@@ -49,6 +49,7 @@
 	import { modelCaptainOf } from '$lib/pitchLineup';
 	import { personalLock, ratingPreview, type LockablePayload } from '$lib/personalLock';
 	import PersonalLock from './PersonalLock.svelte';
+	import { formatDeadline } from '$lib/gameweek';
 	/** Siirtoikkunan pituus sanoina: verdiktin oma ikkuna, sitten siirto-
 	 *  ikkuna, viimeisena xP-summan lukija. Ei keksittya 6:ta. */
 	function transferSpan(d: RateTeamResponse): string {
@@ -173,14 +174,13 @@
 		// timeZoneName mukana (portin suositus 27.8): aika on lukijan
 		// paikallinen eika FPL:n sivun UK-aika, ja ilman vyohyketta ero
 		// nayttaisi virheelta.
-		return d.toLocaleString(undefined, {
-			weekday: 'short',
-			day: 'numeric',
-			month: 'short',
-			hour: '2-digit',
-			minute: '2-digit',
-			timeZoneName: 'short'
-		});
+		// WP2 (1.11.2026): `toLocaleString(undefined, ...)` kaytti selaimen
+		// kielta, ja suomalaisella koneella englanninkielinen rivi luki
+		// "(pe 6.11. klo 20.30 UTC+2)". Sama muotoilija kuin deadline-rivilla
+		// (en-GB, lukijan vyohyke + vyohykkeen nimi): "Fri 6 Nov, 20:30 EET".
+		// Portti: lib/dateLocale.gate.test.ts.
+		const { when, tz } = formatDeadline(d);
+		return tz ? `${when} ${tz}` : when;
 	});
 	let draftBoxEl = $state<HTMLElement | null>(null);
 	function openDraftFromNotice() {
@@ -1791,9 +1791,9 @@
 		cursor: pointer;
 	}
 	.slot-chip.active {
-		background: rgba(255, 138, 92, 0.1);
+		background: rgba(46, 214, 194, 0.1);
 		border-color: var(--accent);
-		color: var(--giq-rust);
+		color: var(--giq-teal);
 	}
 	.compare-box {
 		/* 11.9: 640px riitti yhdelle xP-riville. Kahdessa otsikkorivissa on
@@ -1837,7 +1837,7 @@
 		background: var(--surface);
 		border: 1px solid var(--accent);
 		border-radius: var(--radius);
-		color: var(--giq-rust);
+		color: var(--giq-teal);
 		font-weight: 700;
 		font-size: var(--step--1);
 		padding: 8px 16px;
@@ -1974,7 +1974,7 @@
 		background: none;
 		border: none;
 		padding: 0;
-		color: var(--giq-rust);
+		color: var(--giq-teal);
 		font-weight: 700;
 		font-size: var(--step--1);
 		cursor: pointer;
@@ -2007,7 +2007,7 @@
 		border: none;
 		padding: 0;
 		font: inherit;
-		color: var(--giq-rust);
+		color: var(--giq-teal);
 		text-decoration: underline;
 		cursor: pointer;
 	}
@@ -2101,7 +2101,7 @@
 	.method summary {
 		cursor: pointer;
 		font-weight: 600;
-		color: var(--giq-rust);
+		color: var(--giq-teal);
 	}
 	.method p {
 		margin: var(--s-2) 0 0;

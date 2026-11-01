@@ -1191,10 +1191,10 @@
 		margin-right: 1px;
 	}
 	.is-easy {
-		color: var(--ok, #2e7d32);
+		color: var(--ok);
 	}
 	.is-hard {
-		color: var(--bad, #c62828);
+		color: var(--bad);
 	}
 	.posrow {
 		display: flex;
@@ -1257,7 +1257,7 @@
 		font-size: 0.85em;
 	}
 	.error {
-		color: var(--bad, #c62828);
+		color: var(--bad);
 	}
 	footer {
 		margin-top: var(--s-12);

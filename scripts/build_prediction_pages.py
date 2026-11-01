@@ -53,6 +53,7 @@ from scripts.mobile_css import MOBILE_COLS_JS, MOBILE_CSS
 # Ylapalkki ja julkaisijasolmu yhdesta lahteesta (22.9, web-audit T5 + T7).
 from src.site_identity import publisher_node  # noqa: E402
 from src.site_nav import SITE_NAV_CSS, site_nav_html  # noqa: E402
+from src.local_time import time_tag, with_local_time_script  # WP2  # noqa: E402
 from scripts.slugs import fold_ascii, slug
 from scripts import site_output
 
@@ -379,6 +380,25 @@ def _fmt_kickoff(iso: str) -> str:
     return dt.strftime("%a %d %b %Y, %H:%M UTC")
 
 
+def _kickoff_html(iso: str) -> str:
+    """`_fmt_kickoff` nakyvaan HTML:aan (WP2, 1.11.2026).
+
+    Tunnettu kellonaika -> `<time>` jonka staattinen teksti on UTC ja jonka
+    selain vaihtaa lukijan aikaan vyohykkeen nimen kanssa, samaan muotoon kuin
+    SPA (src/local_time.py). Vahvistamaton aika (00:00-paikkamerkki) ja
+    jasentymaton arvo jaavat tekstiksi: niissa ei ole kellonaikaa
+    lokalisoitavaksi.
+    """
+    txt = _fmt_kickoff(iso)
+    try:
+        dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
+    except Exception:
+        return escape(txt)
+    if not txt.endswith(" UTC"):
+        return escape(txt)
+    return time_tag(dt, txt)
+
+
 SOCIAL_IMAGE = f"{BASE}/assets/brand/goaliq-social-1200x630.png"
 
 
@@ -438,7 +458,8 @@ def _page(title: str, desc: str, canonical: str, hero: str, body: str,
         f'<div class="wrap hero">\n{hero}\n</div>\n</header>\n'
         f'<div class="wrap content">\n{body}\n'
         f"{FOOTER}"
-        "</div>\n" + MOBILE_COLS_JS + "</body>\n</html>\n"
+        "</div>\n" + MOBILE_COLS_JS + with_local_time_script(hero + body)
+        + "</body>\n</html>\n"
     )
 
 
@@ -804,7 +825,7 @@ def render_match_page(comp: str, e: dict, now: datetime | None = None) -> str:
         lede_claim = _too_close_sentence(home, away, ph, pa, call)
     hero = (
         f"<h1>{escape(home)} vs {escape(away)} prediction</h1>"
-        f'<p class="lede">{escape(cfg["name"])} · kickoff {_fmt_kickoff(e.get("kickoff") or "")}. '
+        f'<p class="lede">{escape(cfg["name"])} · kickoff {_kickoff_html(e.get("kickoff") or "")}. '
         f"{lede_claim}</p>"
     )
     body = (
@@ -855,7 +876,7 @@ def _hub_row(cfg: dict, e: dict, played: bool) -> str:
         f'<span class="pick">{escape(fav)} {fav_pct}</span>' if fav
         else f'<span class="pick close">{TOO_CLOSE_LABEL}</span>'
     )
-    meta = _fmt_kickoff(e.get("kickoff") or "")
+    meta = _kickoff_html(e.get("kickoff") or "")
     if played:
         res = e.get("result")
         meta += (f" · full time {res.get('home_score')}-{res.get('away_score')}"

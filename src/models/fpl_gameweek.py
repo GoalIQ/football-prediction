@@ -105,6 +105,73 @@ def display_gameweek(meta: dict, fixtures: list[dict] | None = None) -> int | No
     return act if all(f["kickoff_ms"] < now_ms for f in fx) else cur
 
 
+def _parse_utc(s) -> _dt.datetime | None:
+    try:
+        t = _dt.datetime.fromisoformat(str(s).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    return t if t.tzinfo else t.replace(tzinfo=_dt.timezone.utc)
+
+
+def open_gameweek(meta: dict, now: _dt.datetime | None = None) -> int | None:
+    """Ensimmainen kierros jonka deadline on viela EDESSA hetkella `now`.
+
+    WP2 (1.11.2026). `actionable_gameweek` lukee payloadin
+    `deadline_gameweek`:n, joka on oikein payloadin RAKENNUSHETKELLA. Hub-
+    sivut paistetaan kuitenkin uudelleen pitkin paivaa (accuracy-log-ajo)
+    jo committattua payloadia vasten, joten deadlinen ja seuraavan
+    payload-ajon valilla se palauttaisi kierroksen jonka deadline on mennyt.
+    Tama lukija tarkistaa saman payloadin `deadlines`-listan kellosta:
+
+    - lista on -> ensimmainen kierros >= actionable jonka deadline > now;
+      jos sellaista ei ole (kauden loppu), None. EI koskaan mennytta.
+    - listaa ei ole (vanha payload) -> actionable, paitsi jos sen oma
+      `deadline_utc` on jo mennyt (silloin None).
+    """
+    meta = meta or {}
+    now = now or _dt.datetime.now(_dt.timezone.utc)
+    act = actionable_gameweek(meta)
+    rows = []
+    for d in meta.get("deadlines") or []:
+        if not isinstance(d, dict):
+            continue
+        t = _parse_utc(d.get("utc"))
+        try:
+            gw = int(d.get("gw"))
+        except (TypeError, ValueError):
+            continue
+        if t is not None:
+            rows.append((gw, t))
+    if rows:
+        fut = sorted(gw for gw, t in rows if t > now and (act is None or gw >= act))
+        return fut[0] if fut else None
+    du = _parse_utc(meta.get("deadline_utc")) if meta.get("deadline_utc") else None
+    if act is not None and du is not None and du <= now:
+        return None
+    return act
+
+
+def clean_sheet_table_gameweek(meta: dict, fixtures: list[dict] | None = None,
+                               now: _dt.datetime | None = None) -> int | None:
+    """Kierros jonka /fpl:n nollapelitaulukko (#clean-sheets) nayttaa.
+
+    WP2 (1.11.2026): sivu sanoi "Gameweek 9 is being played" ja "Next
+    deadline: Gameweek 10", mutta sen ensimmainen taulukko oli GW9:n
+    nollapeli-% eli kierros johon ei voinut enaa vaikuttaa. Taulukko on
+    paatospinta, joten se lukee `open_gameweek`ia. Jakokortti
+    (gen_share_card.card_gw_outlook) ja kortin nollapelitodiste
+    (fpl_why_drivers.page_gameweek) lukevat TATA funktiota, koska ne
+    lupaavat "the same number as on goaliq.app/fpl#clean-sheets".
+
+    Kauden lopussa (ei yhtaan edessa olevaa deadlinea) -> `display_gameweek`,
+    jotta sivu rakentuu; silloin paatettavaa kierrosta ei ole.
+    """
+    gw = open_gameweek(meta, now)
+    if gw is not None:
+        return gw
+    return display_gameweek(meta, fixtures)
+
+
 def actionable_gameweeks(meta: dict, gws) -> list[int]:
     """Suodata kierroslista niihin joihin voi viela vaikuttaa.
 

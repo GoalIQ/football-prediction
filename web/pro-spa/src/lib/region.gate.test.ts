@@ -105,8 +105,10 @@ describe('region: etusivun ProductIntro', () => {
 	const src = read(join(LIB, 'components', 'ProductIntro.svelte'));
 	const markup = src.slice(src.lastIndexOf('</script>'));
 	const alku = markup.indexOf('{#if webCheckoutBlocked()}');
-	const ikkuna = markup.indexOf('{:else if inWindow}');
-	const muu = markup.indexOf('{:else}', ikkuna);
+	// WP2 (1.11.2026): ilmaisikkunan haara ({:else if inWindow}) poistettu,
+	// joten UK-haaraa seuraa suoraan FI/US-haara.
+	const ikkuna = markup.indexOf('{:else}', alku);
+	const muu = ikkuna;
 	const loppu = markup.indexOf('{/if}', markup.indexOf('One subscription covers', muu));
 
 	it('hakee saman maatiedon kuin muut ostopinnat', () => {
@@ -127,7 +129,7 @@ describe('region: etusivun ProductIntro', () => {
 	});
 
 	it('FI/US-nakyma on ennallaan', () => {
-		expect(muu).toBeGreaterThan(ikkuna);
+		expect(muu).toBeGreaterThan(alku);
 		const perus = markup.slice(muu, loppu);
 		expect(perus).toContain(
 			'<button type="button" class="primary" onclick={onUpgrade}>See plans</button>'

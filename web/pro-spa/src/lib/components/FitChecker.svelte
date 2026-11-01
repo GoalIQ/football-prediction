@@ -389,7 +389,7 @@
 		border: none;
 		padding: 0;
 		min-height: 0;
-		color: var(--giq-rust);
+		color: var(--giq-teal);
 		font-weight: 700;
 		font-size: inherit;
 		cursor: pointer;

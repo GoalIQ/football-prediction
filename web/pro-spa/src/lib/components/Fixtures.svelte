@@ -11,6 +11,14 @@
 	import { fetchFixtures, LeagueUnsupportedError, type FixtureRow } from '$lib/api';
 	import { FIXTURE_LEAGUES } from '$lib/leagues';
 	import { capture } from '$lib/analytics';
+	import { formatDeadline } from '$lib/gameweek';
+
+	// WP2 (1.11.2026): yksi aikasaanto. SPA nayttaa ajat lukijan vyohykkeella
+	// ja NIMEAA vyohykkeen (kuten deadline-rivi "Fri 6 Nov, 20:30 EET"); hub
+	// kirjoittaa UTC:n HTML:aan ja vaihtaa sen selaimessa samaan muotoon
+	// (src/local_time.py). Ilman nimea "18:30" ja hubin "16:30 UTC" nayttivat
+	// kahdelta eri ajalta samalle ottelulle.
+	const tzLabel = formatDeadline(new Date()).tz;
 
 	let {
 		premium = false,
@@ -134,6 +142,7 @@
 		No matches scheduled in the next {DAYS} days. Many leagues are between seasons in July.
 	</p>
 {:else}
+	{#if tzLabel}<p class="muted tz-note">Kick-off times are in your time zone ({tzLabel}).</p>{/if}
 	{#each visible as [date, list] (date)}
 		<h3 class="dayhead">{fmtDay(date)}</h3>
 		<ul class="fx">

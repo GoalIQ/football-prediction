@@ -47,6 +47,7 @@ from src.doubt_copy import lauseena as doubt_lauseena
 # Pending-predikaatti JAETTUNA: sama saanto API:lle ja generoiduille sivuille.
 from src.models.accuracy import is_pending as acc_is_pending  # noqa: E402
 from src.models.accuracy import counts_in_record as acc_counts_in_record  # noqa: E402
+from src.models.accuracy import public_headline  # WP2: yksi julkinen luku  # noqa: E402
 from src.models.fpl_xp import (  # noqa: E402
     attach_horizon_total_actionable, horizon_sum_gw,
 )
@@ -68,6 +69,7 @@ from scripts.site_output import public_data_url  # "Source:"-linkit, yksi lukija
 # lahteesta. Ennen fpl.html kantoi omaa palkkia ja omaa Organization-kuvausta.
 from src import site_identity as SI  # noqa: E402
 from src.site_nav import SITE_NAV_CSS, site_nav_html  # noqa: E402
+from src.local_time import local_time_script, time_tag  # WP2: yksi aikasaanto  # noqa: E402
 from src.partners import FPL_DEMON, PARTNER_CARD_CSS, partner_card_html  # noqa: E402
 
 # #38: PostHog cookieless site-analytiikka (persistence=memory -> ei evasteita,
@@ -429,7 +431,7 @@ def match_goals_for(index: dict[tuple, tuple], team: str, team_fixture: dict) ->
                      (None, None, None, None))
 
 
-def build_context(fpl: dict, acc: dict) -> dict:
+def build_context(fpl: dict, acc: dict, now: _dt.datetime | None = None) -> dict:
     meta = fpl["meta"]
     # 27.7 HORISONTTILAAJENNUS: teams[].fixtures sisältää nyt KOKO KAUDEN, ja
     # kaukorivit (tier="far") EIVÄT kanna cs_pct-kenttää — se on kontraktin
@@ -462,17 +464,23 @@ def build_context(fpl: dict, acc: dict) -> dict:
     teams = [_near_only(t) for t in teams_all]
     fixtures = fpl["fixtures"]
     next_gw = display_gw(meta, fixtures)
+    # WP2 (1.11.2026): nollapelitaulukko on paatospinta, joten se nayttaa
+    # kierrosta jonka deadline on EDESSA (fpl_gameweek.open_gameweek), ei
+    # kesken olevaa. `next_gw` jaa heron tilariville ("Gameweek 9 is being
+    # played"). Jakokortti ja kortin todiste lukevat saman funktion.
+    from src.models.fpl_gameweek import clean_sheet_table_gameweek
+    cs_gw = clean_sheet_table_gameweek(meta, fixtures, now) or next_gw
 
     # 10.9 FPL-SIVU-OTTELUIDEN-XG: projisoidut maalit per ottelu SAMASTA
     # fixtures-lohkosta jota CS-% kayttaa. Kortti (gen_share_card gw_outlook)
     # on nayttanyt niita M60:sta asti, mutta millaan ihmisluettavalla
     # ilmaissivulla niita ei ollut -> lukija ei voinut tarkistaa.
-    xg_by_match = match_goals_index(fixtures, next_gw)
+    xg_by_match = match_goals_index(fixtures, cs_gw)
 
-    # CS-taulun rivit: per joukkue, next_gw:n fixture
+    # CS-taulun rivit: per joukkue, cs_gw:n fixture
     cs_rows = []
     for t in teams:
-        fx = next((f for f in t["fixtures"] if f["gw"] == next_gw), None)
+        fx = next((f for f in t["fixtures"] if f["gw"] == cs_gw), None)
         if not fx:
             continue
         xg_for, xg_against, short_for, short_against = match_goals_for(
@@ -567,6 +575,10 @@ def build_context(fpl: dict, acc: dict) -> dict:
     # None = vanha accuracy.json ilman by_model-kenttaa (fpl-page-refresh voi
     # bakettaa vanhaa skeemaa vasten): silloin lauseet eivat nimea mallia.
     acc_club = _club_block((acc.get("by_model") or {}).get("club"))
+    # WP2 (1.11.2026): jokainen otsikkopinta (hero-chip, ticker, proof,
+    # hintapaneeli, /fpl-lauseet, Dataset-kuvaus) lukee TAMAN. Sama funktio
+    # palauttaa /api/accuracy:n `headline`-kentan SPA:lle ja sovellukselle.
+    acc_head = public_headline(acc)
 
     gen_dt = _dt.datetime.fromisoformat(meta["generated_at"])
     acc_dt = _dt.datetime.fromisoformat(acc["updated_at"])
@@ -615,6 +627,8 @@ def build_context(fpl: dict, acc: dict) -> dict:
         "deadlines": meta.get("deadlines") or [],
         "gw_label": gw_date_label(fixtures, next_gw),
         "gw_started": gw_started(fixtures, next_gw),
+        "cs_gw": cs_gw,
+        "cs_gw_label": gw_date_label(fixtures, cs_gw),
         "cs_rows": cs_rows,
         "fdr_rows": fdr_rows,
         "gws": gws,
@@ -645,6 +659,7 @@ def build_context(fpl: dict, acc: dict) -> dict:
         "acc_logged": logged,
         "acc_pending": pending,
         "acc_club": acc_club,
+        "acc_head": acc_head,
         "by_comp": by_comp,
         "data_date": gen_dt.strftime("%d %B %Y").lstrip("0"),
         "acc_date": acc_dt.strftime("%d %B %Y").lstrip("0"),
@@ -678,18 +693,52 @@ def _club_block(m: dict | None) -> dict | None:
 
 
 def acc_trust_sentence(c: dict) -> str:
-    """ACC-TRUST-rivi etusivulle JA /predictionsiin: YKSI lukija, ei kahta kopiota."""
-    k = c.get("acc_club")
-    if k:
+    """ACC-TRUST-rivi etusivulle JA /predictionsiin: YKSI lukija, ei kahta kopiota.
+
+    WP2: luvut `acc_head`ista (accuracy.public_headline). "Built on a model"
+    vain seuramallin rajaukselle: vanhan artefaktin blended-luku ei ole yhden
+    mallin tulos (26.9, julkaisutarkistaja)."""
+    h = c.get("acc_head")
+    if not h:
+        return "Every prediction in the record is logged before kick-off."
+    if h["scope"] == "club":
         return (
-            f"Built on a model with {fmt_pct(k['pct'])} correct 1X2 results "
-            f"across {k['n']} completed club matches, every one logged before kick-off."
+            f"Built on a model with {h['pct_text']} correct 1X2 results "
+            f"across {h['n']} {h['label']}, every one logged before kick-off."
         )
     return (
         f"Every prediction in the record was logged before kick-off: "
-        f"{fmt_pct(c['acc_pct_1x2'])} correct 1X2 results across {c['acc_n']} "
-        f"completed matches, all competitions."
+        f"{h['pct_text']} correct 1X2 results across {h['n']} {h['label']}."
     )
+
+
+def acc_chip_html(c: dict) -> str:
+    """ACC-CHIP (etusivu + /predictions). WP2: yksi kirjoittaja, yksi lukija."""
+    h = c.get("acc_head")
+    if not h:
+        return ""
+    return (f'<div class="num">{h["pct_text"]}</div>'
+            f'<div class="lbl">result accuracy across {h["n"]} {h["label"]}</div>')
+
+
+def acc_proof_sentence(c: dict) -> str:
+    """ACC-PROOF (etusivu + /predictions)."""
+    h = c.get("acc_head")
+    if not h:
+        return "Every prediction in the record was logged before kick-off."
+    return (f"Every prediction in the record was logged before kick-off. "
+            f"{h['pct_text']} correct results across {h['n']} {h['label']}.")
+
+
+def acc_ticker_html(c: dict) -> str:
+    """ACC-TICKER (etusivun teletext-ticker, 2 kopiota). hub-deploy.yml:n
+    verifiointi lukee taman kuviolla `<b>[0-9]+ completed ...matches...</b>`
+    (tests/test_hub_deploy_verify_pattern.py)."""
+    h = c.get("acc_head")
+    if not h:
+        return ""
+    return (f'<b>{h["n"]} {h["label"]}</b>\n      '
+            f'<b class="t-amber">&#9612; {h["pct_text"]} correct results</b>')
 
 
 def track_record_sentences(c: dict) -> list[str]:
@@ -707,8 +756,8 @@ def track_record_sentences(c: dict) -> list[str]:
                 "League matches are logged before kick-off and never edited after it."
             ),
             (
-                f"Across the {k['n']} completed club matches, it called the result "
-                f"correctly in {fmt_pct(k['pct'])} of them."
+                f"Across the {c['acc_head']['n']} completed club matches, it called "
+                f"the result correctly in {c['acc_head']['pct_text']} of them."
             ),
             (
                 f"In the {k['dec_n']} club matches that did not end in a draw, it "
@@ -752,9 +801,9 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
     tr = track_record_sentences(c)
     return [
         (
-            f"Which teams are most likely to keep a clean sheet in Gameweek {c['next_gw']}?",
+            f"Which teams are most likely to keep a clean sheet in Gameweek {c['cs_gw']}?",
             (
-                f"On GoalIQ's model the top clean sheet chances in Gameweek {c['next_gw']} "
+                f"On GoalIQ's model the top clean sheet chances in Gameweek {c['cs_gw']} "
                 f"of the {c['season']} Premier League season are {top3_txt}. "
                 f"Projections update daily and sharpen as {c['season']} "
                 f"results accumulate."
@@ -1563,7 +1612,7 @@ def cs_table_html(c: dict) -> str:
     return (
         '<div class="scroll"><table>'
         f"<caption>Model clean sheet probability for every Premier League team, "
-        f"Gameweek {c['next_gw']}, {c['season']} season. Sorted by clean sheet chance. "
+        f"Gameweek {c['cs_gw']}, {c['season']} season. Sorted by clean sheet chance. "
         f"Squad turnover is the share of last season's minutes played by players "
         f"who have since left; the model is fitted on results, so it prices a "
         f"squad by what it did rather than by who is in it now."
@@ -1912,6 +1961,23 @@ def jsonld_blocks(c: dict, faq: list[tuple[str, str]]) -> str:
     )
 
 
+def _dataset_figure_sentence(c: dict) -> str:
+    """Dataset-kuvauksen luvut. WP2: otsikkoluku `acc_head`ista kuten muilla
+    pinnoilla. Dataset (contentUrl /api/accuracy) on KOKO loki, joten sen koko
+    summa saa olla mukana, mutta vain rajaus nimettyna ja otsikkoluvun jalkeen:
+    se on eri rajaus, ei toinen versio samasta luvusta."""
+    h = c.get("acc_head")
+    if not h:
+        return ""
+    s = f"Current figure: {h['pct_text']} correct 1X2 results across {h['n']} {h['label']}."
+    extra = (c.get("acc_n") or 0) - h["n"]
+    if h["scope"] == "club" and extra > 0:
+        s += (f" The full log also holds {extra} national-team matches from a separate "
+              f"model: {fmt_pct(c['acc_pct_1x2'])} across all {c['acc_n']} completed "
+              f"matches, all competitions.")
+    return s
+
+
 def accuracy_dataset_ld(c: dict, page_url: str) -> dict:
     """#85: julkisen ennuste-track-recordin Dataset-schema (jaettu fpl.html-
     templaten ja index.html-markerin kesken — yksi määritelmä, ei driftiä)."""
@@ -1922,8 +1988,7 @@ def accuracy_dataset_ld(c: dict, page_url: str) -> dict:
         "description": (
             f"Every GoalIQ model prediction in this record is logged before kick-off and "
             f"reconciled against the final result and never edited after kick-off. "
-            f"Current aggregate: {fmt_pct(c['acc_pct_1x2'])} correct 1X2 results "
-            f"across {c['acc_n']} completed matches in all competitions. Includes per-match "
+            f"{_dataset_figure_sentence(c)} Includes per-match "
             f"win/draw/loss "
             f"probabilities, expected goals (xG) and reconciled outcomes."
         ),
@@ -2262,7 +2327,10 @@ def next_matches_block(log: dict | None, now: _dt.datetime, limit: int = 6) -> s
                 if r["url"] else f'{escape(r["home"])} v {escape(r["away"])}')
         tr.append(
             "<tr>"
-            f'<td class="nm-ko">{r["kickoff"].strftime("%a %d %b, %H:%M")}</td>'
+            # WP2 (1.11.2026): UTC HTML:ssa, selain vaihtaa lukijan aikaan
+            # vyohykkeen nimen kanssa (src/local_time.py, sama saanto kuin SPA).
+            f'<td class="nm-ko">'
+            f'{time_tag(r["kickoff"], r["kickoff"].strftime("%a %d %b, %H:%M UTC"))}</td>'
             f'<td class="nm-tm">{name}<span class="nm-comp">{escape(r["comp"])}</span></td>'
             f'<td class="nm-call">{call_html}</td>'
             f'<td class="nm-lg">{escape(r["logged"])}</td>'
@@ -2270,9 +2338,12 @@ def next_matches_block(log: dict | None, now: _dt.datetime, limit: int = 6) -> s
     return (
         f"<style>{NEXT_MATCHES_CSS}</style>"
         '<div class="nm-wrap"><table class="nm">'
-        "<thead><tr><th>Kick-off UTC</th><th>Match</th><th>Model call</th>"
+        "<thead><tr><th>Kick-off</th><th>Match</th><th>Model call</th>"
         "<th>Logged</th></tr></thead>"
         f"<tbody>{''.join(tr)}</tbody></table></div>"
+        # Lohko kantaa oman lokalisoijansa: etusivu on kasin yllapidetty, eika
+        # sen muuhun runkoon kirjoiteta generaattorista.
+        f"{local_time_script()}"
     )
 
 
@@ -2531,17 +2602,6 @@ def render_page(c: dict, xp: dict | None = None) -> str:
         f"<dt>{escape(q)}</dt><dd>{escape(a)}</dd>" for q, a in faq
     )
 
-    stats = (
-        '<div class="stat-row">'
-        f'<div class="stat"><b>{fmt_pct(c["acc_pct_1x2"])}</b>'
-        f'<span>correct results across {c["acc_n"]} completed predictions, all competitions</span></div>'
-        f'<div class="stat"><b>{fmt_pct(c["acc_pct_dec"])}</b>'
-        f'<span>correct in matches that did not end in a draw '
-        f'({c["acc_dec_c"]} of {c["acc_dec_n"]})</span></div>'
-        f'<div class="stat"><b>{c["acc_logged"]}</b>'
-        f'<span>predictions logged before kick-off, hits and misses</span></div>'
-        "</div>"
-    )
 
     # 🔴 ALATUNNISTEEN /ucl-LINKKI (7.9.2026). `/ucl`-osio oli livena mutta
     # `grep -oi ucl fpl.html` antoi 0 osumaa koko 108 kB sivulta: korkeimman
@@ -2661,15 +2721,15 @@ GoalIQ Premium, free: one prize, decided by the mini-league table when the seaso
 
 {partner_card}
 {team_news}
-<h2 id="clean-sheets">Gameweek {c["next_gw"]} clean sheet probabilities</h2>
+<h2 id="clean-sheets">Gameweek {c["cs_gw"]} clean sheet probabilities</h2>
 <p>Model clean sheet probability for the {len(c["cs_rows"])} Premier League teams
-with a fixture in Gameweek {c["next_gw"]} ({c["gw_label"]}). FDR is GoalIQ's model
+with a fixture in Gameweek {c["cs_gw"]} ({c["cs_gw_label"]}). FDR is GoalIQ's model
 fixture difficulty for that match, 1 easiest to 5 hardest. Next 6 CS% averages the
 same probability over the run in the grid below, so one good fixture and a good
 run are not the same column.</p>
 {cs_table}
 <p class="note">{_strength_basis_note(c)}</p>
-<p class="inline-up">This is Gameweek {c["next_gw"]} alone. The grid below runs the
+<p class="inline-up">This is Gameweek {c["cs_gw"]} alone. The grid below runs the
 same probability over the next six gameweeks, and the free
 <a href="https://pro.goaliq.app/players/clean-sheets?src=fpl-cs&amp;srcp=fpl" data-cta="inline-cs">clean
 sheet tool</a> averages it over the gameweeks you pick, so you can see whether a
@@ -2838,6 +2898,7 @@ predictions and analytics. Not betting advice.</p>
 
 {CTA_TRACK_SNIPPET}
 {MOBILE_COLS_JS}
+{local_time_script()}
 </body>
 </html>
 """
@@ -3977,16 +4038,8 @@ def update_index(c: dict, xp: dict | None = None,
         return False
     now = now or _dt.datetime.now(_dt.timezone.utc)
     s = INDEX_PATH.read_text(encoding="utf-8")
-    chip = (
-        f'<div class="num">{fmt_pct(c["acc_pct_1x2"])}</div>'
-        f'<div class="lbl">result accuracy across {c["acc_n"]} completed matches, '
-        f"all competitions</div>"
-    )
-    proof = (
-        f"Every prediction in the record was logged before kick-off. "
-        f"{fmt_pct(c['acc_pct_1x2'])} correct results across {c['acc_n']} completed matches, "
-        f"all competitions."
-    )
+    chip = acc_chip_html(c)
+    proof = acc_proof_sentence(c)
     trust = acc_trust_sentence(c)
     new = re.sub(
         r"(<!-- GEN:ACC-CHIP-START -->).*?(<!-- GEN:ACC-CHIP-END -->)",
@@ -3999,10 +4052,7 @@ def update_index(c: dict, xp: dict | None = None,
         lambda m: m.group(1) + trust + m.group(2), new, flags=re.S)
     # Teletext-ticker (2 ticker-set-kopiota) samasta lähteestä kuin chipit —
     # kovakoodattuna se jäi jälkeen jokaisella bakella (P1 30.7).
-    ticker = (
-        f'<b>{c["acc_n"]} completed matches, all competitions</b>\n      '
-        f'<b class="t-amber">&#9612; {fmt_pct(c["acc_pct_1x2"])} correct results</b>'
-    )
+    ticker = acc_ticker_html(c)
     new, n_ticker = re.subn(
         r"(<!-- GEN:ACC-TICKER-START -->).*?(<!-- GEN:ACC-TICKER-END -->)",
         lambda m: m.group(1) + ticker + m.group(2), new, flags=re.S)
@@ -4181,16 +4231,8 @@ def update_predictions(c: dict, preds: list[dict]) -> bool:
     if not PREDICTIONS_PATH.exists():
         return False
     s = PREDICTIONS_PATH.read_text(encoding="utf-8")
-    chip = (
-        f'<div class="num">{fmt_pct(c["acc_pct_1x2"])}</div>'
-        f'<div class="lbl">result accuracy across {c["acc_n"]} completed matches, '
-        f"all competitions</div>"
-    )
-    proof = (
-        f"Every prediction in the record was logged before kick-off. "
-        f"{fmt_pct(c['acc_pct_1x2'])} correct results across {c['acc_n']} completed matches, "
-        f"all competitions."
-    )
+    chip = acc_chip_html(c)
+    proof = acc_proof_sentence(c)
     trust = acc_trust_sentence(c)
     new = re.sub(
         r"(<!-- GEN:ACC-CHIP-START -->).*?(<!-- GEN:ACC-CHIP-END -->)",
@@ -4351,7 +4393,10 @@ def _deadline_row(c: dict) -> str:
     dls = c.get("deadlines") or []
     if not dls:
         return ""
-    eka = dls[0]
+    # WP2 (1.11.2026): sama kierros kuin nollapelitaulukossa (cs_gw =
+    # fpl_gameweek.open_gameweek). dls[0] on payloadin rakennushetken ensimmainen,
+    # joka on mennyt jos sivu paistetaan deadlinen jalkeen vanhaa payloadia vasten.
+    eka = next((d for d in dls if d.get("gw") == c.get("cs_gw")), None) or dls[0]
     try:
         hetki = _dt.datetime.fromisoformat(eka["utc"])
     except (KeyError, TypeError, ValueError):
@@ -4363,8 +4408,10 @@ def _deadline_row(c: dict) -> str:
     kello = hetki.strftime("%H:%M")
     # "remaining" on tasmallinen: tiedostossa ovat kauden JALJELLA olevat
     # deadlinet, eivat kaikki 38. Menneita ei kirjoiteta kalenteriin.
+    # WP2 (1.11.2026): UTC jaa staattiseen HTML:aan, selain vaihtaa sen
+    # lukijan aikaan vyohykkeen nimen kanssa (src/local_time.py).
     return (f'<p class="meta">Next deadline: Gameweek {eka["gw"]}, '
-            f'{paiva} at {kello} UTC. '
+            f'{time_tag(hetki, f"{paiva} at {kello} UTC")}. '
             f'<a href="/fpl/deadlines.ics" download>Put the remaining '
             f'deadlines in your calendar</a>.</p>')
 
@@ -4411,7 +4458,7 @@ def main() -> None:
     print(f"  Track record      : {fmt_pct(c['acc_pct_1x2'])} 1X2 (n={c['acc_n']}), "
           f"decisive {fmt_pct(c['acc_pct_dec'])} ({c['acc_dec_c']}/{c['acc_dec_n']}), "
           f"logged {c['acc_logged']}")
-    print(f"  Top-3 CS% GW{c['next_gw']}   : "
+    print(f"  Top-3 CS% GW{c['cs_gw']}   : "
           + "; ".join(f"{r['team']} {fmt_pct(r['cs_pct'])}" for r in c["top3"]))
     print(f"  Lähteet           : {FPL_PATH.name} ({c['data_date']}), "
           f"{ACC_PATH.name} ({c['acc_date']})")

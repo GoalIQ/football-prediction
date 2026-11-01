@@ -569,8 +569,11 @@
 		font-size: var(--step-3);
 		font-variant-numeric: tabular-nums;
 	}
-	/* Kolme eri kirkkautta, ei kolmea eri sävyä: palkki luetaan myös
-	   värisokeana ja mustavalkotulosteessa. */
+	/* WP2 (1.11.2026): sama logiikka kuin hubin ottelusivun palkissa
+	   (build_prediction_pages.py .probbar): koti amber, tasapeli himmea,
+	   vieras teal. Ennen vieras oli tummin harmaa, joten vierassuosikki
+	   (Arsenal 46 %) oli palkin nakymattomin osa. Kumpikin voittaja on nyt
+	   kirkas ja tasapeli himmea. Portti: tests/test_predict_bar_colours.py. */
 	.bar {
 		display: flex;
 		height: 10px;
@@ -579,15 +582,13 @@
 		background: var(--giq-paper, var(--surface));
 	}
 	.seg-home {
-		background: var(--accent-strong, #8a6224);
+		background: var(--accent-strong);
 	}
 	.seg-draw {
-		background: var(--text-muted);
-		opacity: 0.55;
+		background: var(--border);
 	}
 	.seg-away {
-		background: var(--text-muted);
-		opacity: 0.25;
+		background: var(--giq-teal);
 	}
 	/* 22.8: xG ja scorelines rinnakkain; kapealla pinoutuvat */
 	.detail-grid {
