@@ -112,6 +112,27 @@ def test_lukija_ilman_gradattuja_on_none():
 # ---------------------------------------------------------------------------
 # Portti: oikea builder, generoidut sivut, jokainen otsikkopinta
 # ---------------------------------------------------------------------------
+def _erotteleva_pct(club_pct: float) -> float:
+    """Synteettinen all_time, joka ei voi tormata sivun muihin lukuihin.
+
+    2.11.2026: seuramalli 0.5269 + 0.0731 = 0.6000 -> "60%", ja sama
+    merkkijono esiintyy predictions-sivulla 55 kertaa ottelun
+    todennakoisyytena. Portti oli punainen kaikissa PR:issa (#78, #79)
+    ilman yhtaan muutosta copyyn, ja se olisi tormannyt uudelleen aina kun
+    seuramallin luku ajautuu tasalukuun. Siirretaan offsettia, kunnes luku
+    on desimaalinen eika esiinny committattujen sivujen tekstissa."""
+    pohja = "".join((ROOT / f).read_text(encoding="utf-8")
+                    for f in ("index.html", "predictions.html", "fpl.html"))
+    off = 0.0731
+    for _ in range(200):
+        cand = round(club_pct + off, 4)
+        s = fmt_pct(cand * 100)
+        if "." in s and s not in pohja:
+            return cand
+        off += 0.0007
+    raise AssertionError("erottelevaa lukua ei loytynyt 200 yrityksella")
+
+
 @pytest.fixture
 def built(tmp_path, monkeypatch):
     """Aja update_index + update_predictions + render_page kopioille.
@@ -123,7 +144,7 @@ def built(tmp_path, monkeypatch):
     agg = json.loads(json.dumps(agg))
     club = agg["by_model"]["club"]
     agg["all_time"]["n"] = club["n"] + 77
-    agg["all_time"]["pct_1x2"] = round(club["pct_1x2"] + 0.0731, 4)
+    agg["all_time"]["pct_1x2"] = _erotteleva_pct(club["pct_1x2"])
     c = b.build_context(fpl, agg)
     xp = b._load_json(b.XP_PATH)
     idx = tmp_path / "index.html"
@@ -160,7 +181,15 @@ def test_koko_lokin_summa_vain_nimettyna_dataset_kuvauksessa(built):
         html = built[name]
         ld = " ".join(re.findall(r'<script type="application/ld\+json">(.*?)</script>', html, re.S))
         nakyva = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ", html)
-        assert all_pct not in nakyva, f"{name}: koko lokin {all_pct} nakyvassa tekstissa"
+        # 2.11.2026: HTML-kommentti ei ole nakyvaa tekstia. Synteettinen
+        # all_time (seuramalli + 7.31 pp) osui 60 %:iin, ja indexin
+        # kommentissa lukee "60% of visitors are on a phone" -> vaara
+        # punainen kaikissa PR:issa (#78, #79) ilman muutosta copyyn.
+        nakyva = re.sub(r"(?s)<!--.*?-->", " ", nakyva)
+        # count() eika `not in`: epaonnistuva `not in` saa pytestin laskemaan
+        # diffin koko sivusta (1,1 Mt), ja ajo jumittaa minuuteiksi.
+        osumat = nakyva.count(all_pct)
+        assert osumat == 0, f"{name}: koko lokin {all_pct} nakyvassa tekstissa ({osumat} kertaa)"
         if name != "fpl" or "Dataset" in ld:
             # Julkaisutarkistaja 1.11 (PR #75): rajaus ENNEN lukua, jottei koko
             # lokin luku lue maajoukkuemallin lukuna ("N national-team matches
