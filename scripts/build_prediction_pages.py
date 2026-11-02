@@ -1208,18 +1208,23 @@ def render_match_page(comp: str, e: dict, now: datetime | None = None,
     # track recordia (pct_1x2 + pct_exact gradataan), eli ilman niita koko
     # "logged before kickoff" -vaite ei olisi todennettavissa. xG ei ole
     # gradattu mittari eika sita siksi tarvita vaitteen tueksi.
+    # 2.11.2026 (julkaisutarkistaja k2 B5): lokirivi paivittyy aloitukseen asti
+    # (accuracy_pipeline._refreshable), joten sivun luku ennen ottelua EI ole
+    # valttamatta se joka gradataan. Meta ja alateksti sanovat: paivittyy
+    # aloitukseen asti, viimeinen versio gradataan. Portti:
+    # tests/test_record_ei_vaita_lukittua.py.
     if fav:
         desc = (
             f"{home} vs {away} ({cfg['name']}, {e.get('date')}): the GoalIQ model "
-            f"gives {fav} a {fav_pct} chance to win. Logged before kick-off in our "
-            f"public track record and graded after the match."
+            f"gives {fav} a {fav_pct} chance to win. Updated until kick-off, and the "
+            f"last version is graded in our public track record."
         )
     else:
         # Portti 10.9: "too close" ensin, SERP katkaisee ~155 merkkiin.
         desc = (
             f"{home} vs {away}: too close for the GoalIQ model to name a favourite. "
             f"{_fmt_pct(ph)} home, {_fmt_pct(pd_)} draw, {_fmt_pct(pa)} away, "
-            f"logged before kick-off and graded after."
+            f"updated until kick-off and graded after."
         )
     # 1.11.2026 (WP11, mobiili ensin): paikallinen aika + kirjausleima,
     # gradatulla sivulla tuomio heti, sitten kolme isoa lukua ja yksi lause,
@@ -1239,9 +1244,10 @@ def render_match_page(comp: str, e: dict, now: datetime | None = None,
         + _scoreline_lock(e, played)
         + _form_block(comp, e, history)
         + (_result_html(e, state) if played else
-           f'<div class="rec">This prediction was logged before kickoff on '
-           f'{escape((e.get("logged_at") or "")[:10])} and will be graded in our '
-           f'<a href="/predictions">public track record</a>, hits and misses included.</div>')
+           f'<div class="rec">This prediction was logged on '
+           f'{escape((e.get("logged_at") or "")[:10])}. It can change until kickoff, and our '
+           f'<a href="/predictions">public track record</a> grades the last version before kickoff, '
+           f'hits and misses included.</div>')
         + _share_block(url, home, away)
         + f'<div class="cta-row">'
         f'<a class="btn ghost" href="https://pro.goaliq.app/matches/predict">Run your own prediction</a>'
