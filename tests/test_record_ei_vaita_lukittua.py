@@ -31,6 +31,16 @@ KIELLETYT = [
     r"nothing gets edited once logged",
     r"never edited once logged",
     r"not edited after (it is|it's|being) logged",
+    # k2 2.11: rajaamaton "ei muokkauksia" samalla sivulla kuin "can change
+    # until kickoff" (predictions.html FAQ + JSON-LD + #record-ingressi).
+    r"with no edits",
+    r"nothing (is |gets )?edited afterwards",
+    # "nakyva luku = gradattava luku" (llms.txt, k1:n blokkaama SPA-lause).
+    r"same logged prediction is what",
+    r"percentages are the model's prediction, logged before",
+    r"locked predictions?",
+    # Ottelusivujen generaattori (build_prediction_pages.py, 3 231 sivua)
+    # korjataan omassa PR:ssaan; sen kuviot lisataan silloin tahan.
 ]
 
 # Pinnat: generoidut sivut, generaattorit, SPA, llms.txt. dist/ ja
@@ -52,6 +62,7 @@ def _nakyva(teksti: str) -> str:
     teksti = re.sub(r"(?m)^\s*//.*$", " ", teksti)
     # Python-merkkijonojen saumat ("...logged "\n "and locked") yhteen.
     teksti = re.sub(r'"\s*\n\s*f?"', "", teksti)
+    teksti = re.sub(r"'\s*\n\s*f?'", "", teksti)
     return re.sub(r"\s+", " ", teksti).lower()
 
 
@@ -75,6 +86,11 @@ def test_mikaan_pinta_ei_vaita_kirjattua_rivia_lukituksi():
     assert not loydot, (
         "Rivi paivittyy aloitukseen asti (accuracy_pipeline._refreshable), "
         "joten nama vaitteet ovat epatosia:\n  " + "\n  ".join(loydot))
+
+
+def test_negatiivinen_kontrolli_heittomerkkisauma():
+    s = "'The numbers are the '\n        f'same logged prediction is what the record grades'"
+    assert re.search(r"same logged prediction is what", _nakyva(s))
 
 
 def test_negatiivinen_kontrolli_nakyy_saumoista_huolimatta():
