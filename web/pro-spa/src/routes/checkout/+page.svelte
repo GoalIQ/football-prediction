@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { PLANS, type PlanKey } from '$lib/billing';
+	import { PLANS, isAlreadyPremiumMessage, type PlanKey } from '$lib/billing';
 	import { openCheckout, webCheckoutBlocked } from '$lib/pricing.svelte';
 	import Provenance from '$lib/components/Provenance.svelte';
 	import StoreOnlyNotice from '$lib/components/StoreOnlyNotice.svelte';
@@ -45,7 +45,10 @@
 		<StoreOnlyNotice source="checkout_route" />
 	{:else if error}
 		<p class="banner error">{error}</p>
-		<button class="primary" onclick={() => void go('checkout_route_retry')}>Try again</button>
+		<!-- 2.11 (WP6): Premium-tilin passiesto ei muutu uudella yrityksella. -->
+		{#if !isAlreadyPremiumMessage(error)}
+			<button class="primary" onclick={() => void go('checkout_route_retry')}>Try again</button>
+		{/if}
 	{/if}
 	<Provenance />
 	<p class="muted">

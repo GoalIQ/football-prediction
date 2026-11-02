@@ -59,8 +59,10 @@ def test_checkout_kayttaa_toisensa_poissulkevia_parametreja():
     hylkaa kutsun. Testi lukee lahteen, koska virhe nakyisi vasta
     maksuhetkella oikealla asiakkaalla."""
     src = (ROOT / "api" / "main.py").read_text(encoding="utf-8")
-    i = src.index('mode="subscription"', src.index("def create_web_checkout")
-                  if "def create_web_checkout" in src else 0)
+    # 1.11.2026 (WP6): ankkuri on Stripe-kutsu eika `mode="subscription"`:
+    # moodi tulee nyt kytkimen mukaan dictista (tilaus tai kertamaksupassi),
+    # ja alennusparametrit ovat samassa kutsussa kummassakin moodissa.
+    i = src.index("stripe.checkout.Session.create(", src.index("def create_web_checkout_session"))
     lohko = src[i:i + 1400]
     assert '"discounts": promo' in lohko
     assert '"allow_promotion_codes": True' in lohko

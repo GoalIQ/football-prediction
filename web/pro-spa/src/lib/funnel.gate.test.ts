@@ -47,6 +47,7 @@ describe('funnel: askel tapahtumasta', () => {
 		expect(funnelStep('checkout_opened', { source: 'pro_web', plan: 'season' })).toBe('checkout_opened');
 		expect(funnelStep('checkout_failed', {})).toBe('checkout_failed');
 		expect(funnelStep('checkout_store_only', {})).toBe('checkout_store_only');
+		expect(funnelStep('checkout_already_premium', {})).toBe('checkout_already_premium');
 		expect(funnelStep('purchase_completed', { source: 'web' })).toBe('purchase');
 		expect(funnelStep('xp_card_shared', {})).toBeNull();
 	});

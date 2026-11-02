@@ -37,6 +37,12 @@ VAPAAEHTOISET = {
                                      "avaa repo-muuttujalla. Ei API:n muuttuja (vain bsky-bot.yml)",
     "STRIPE_PRICE_ID":"vanha yhden hinnan endpoint; SPA kayttaa "
                        "/api/web/checkoutia eika tata",
+    "STRIPE_PRICE_SEASON_PASS_2026_27": "kertamaksupassin kytkin (ulkoasu WP6, "
+                                        "1.11.2026). Tyhja = kausi myydaan "
+                                        "vuositilauksena kuten ennen, eli "
+                                        "puuttuminen ei riko mitaan. Asetettuna "
+                                        "/api/stripe-config season_pass.ok kertoo "
+                                        "onko hinta kertamaksu",
     "STRIPE_AUTO_PROMO_CODE": "tyhja = ei esitaytettya alennusta. Se on "
                               "Villen paatos 15.8 (EARLY30 poistettiin), "
                               "eli tyhja on OIKEA tila",

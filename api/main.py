@@ -62,6 +62,7 @@ from api.premium import (
     mask_my_team_ledger_payload, mask_fit_payload, mask_defcon_live_payload,
     mask_price_watch_entry_payload, mask_differentials_entry_payload,
     mask_captain_entry_payload,
+    account_has_premium,
 )
 
 # Stripe-konfiguraatio (Render env varseista)
@@ -76,6 +77,22 @@ STRIPE_WEB_WEBHOOK_SECRET = os.getenv("STRIPE_WEB_WEBHOOK_SECRET", "")
 # Streamlit-palvelussa → arvot voi kopioida sellaisenaan API-serviceen.
 STRIPE_PRICE_MONTHLY_ID = os.getenv("STRIPE_PRICE_MONTHLY_ID", "")
 STRIPE_PRICE_SEASON_ID = os.getenv("STRIPE_PRICE_SEASON_ID", "")
+# 1.11.2026 (ulkoasu WP6, Villen paatos): kausipassi kertamaksuna (25 EUR,
+# voimassa 30.5.2027 asti, ei uusiudu). KYTKIN: kun tama kertamaksuhinnan ID
+# on asetettu, `plan=season` luo Checkoutin `mode=payment`. Kun se puuttuu,
+# kaikki on tasan kuten ennen (vuositilaus STRIPE_PRICE_SEASON_ID:lla), joten
+# koodin voi mergeta ennen kuin Ville luo tuotteen Stripeen.
+STRIPE_PRICE_SEASON_PASS_2026_27 = os.getenv("STRIPE_PRICE_SEASON_PASS_2026_27", "")
+# 2.11.2026 (Villen paatos "esto"): passia ei myyda tilille jolla on jo
+# Premium. SPA tunnistaa koodin ja nayttaa tekstin sellaisenaan (billing.ts).
+SEASON_PASS_ALREADY_PREMIUM_CODE = "already_premium"
+# Teksti = julkaisutarkistajan korjattu versio 2.11 sanatarkasti (luonnos
+# blokattiin: "once your current Premium has ended" ei pida comp-tilille).
+SEASON_PASS_ALREADY_PREMIUM_TEXT = (
+    "This account already has Premium, so you can't buy the season pass on it. "
+    "To switch from a subscription, cancel it first. You can buy the pass once "
+    "the subscription has run out.")
+from src import season_pass  # noqa: E402
 from src.regional_pricing import (  # noqa: E402
     COUNTRY_HEADER, REGION_STORE_ONLY_ERROR, kuvaa_aluehinnat, request_country,
     resolve_price, web_checkout_allowed,
@@ -144,8 +161,11 @@ def _update_profile_premium(user_id: str, is_premium: bool) -> bool:
 def _stamp_premium_source(user_id: str, source: str) -> bool:
     """WEB-SUB-SYNC (13.8): premium-lahteen leima profiiliin.
 
-    source: 'stripe_web' | 'revenuecat' ('comp' asetetaan vain kasin/SQL:lla
-    — koodipolkua compille ei ole olemassa tarkoituksella).
+    source: 'stripe_web' | 'revenuecat' | 'season_pass_2026_27' ('comp'
+    asetetaan vain kasin/SQL:lla — koodipolkua compille ei ole olemassa
+    tarkoituksella). Kausipassilla (1.11.2026) jarjestys on kaannetty, ks.
+    `_fulfil_season_pass`: leima ENNEN lippua, koska leima tekee
+    paattymisesta mahdollisen.
 
     ERILLINEN kutsu tarkoituksella, EI osana is_premium-PATCHia: PATCH on
     atominen, ja jos premium_source-saraketta ei ole viela migratoitu,
@@ -168,23 +188,18 @@ def _web_subscription_active(user_id: str) -> bool:
         return False
     url = (f"{SUPABASE_URL}/rest/v1/web_subscriptions"
            f"?user_id=eq.{user_id}&status=eq.active"
-           f"&select=current_period_end")
+           f"&select=current_period_end,plan")
     headers = {
         "apikey": SUPABASE_SERVICE_ROLE_KEY,
         "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
     }
     try:
         rows = requests.get(url, headers=headers, timeout=10).json()
-        for r in rows if isinstance(rows, list) else []:
-            end = r.get("current_period_end")
-            if end is None:
-                return True
-            try:
-                if datetime.fromisoformat(end) > datetime.now(timezone.utc):
-                    return True
-            except ValueError:
-                return True  # epäselvä timestamp -> älä nollaa premiumia
-        return False
+        # 1.11.2026 (WP6): sama rivilukija kuin api/premium.py:ssa. Epaselva
+        # aikaleima -> voimassa (älä nollaa premiumia), kiintean lopun plan
+        # (kausipassi) ratkaisee ensin.
+        return any(season_pass.web_row_active(r)
+                   for r in (rows if isinstance(rows, list) else []))
     except Exception as e:
         # Verkkovirhe: fail-safe premiumin SÄILYTTÄMISEN suuntaan (parempi
         # että churnannut saa hetken ekstraa kuin että maksava menettää).
@@ -3552,17 +3567,22 @@ def _premium_breakdown(user_ids: list[str]) -> Optional[dict]:
                 print(f"[conversion] profiles -> {r.status_code}")
                 return None
             for row in r.json() or []:
-                if row.get("id"):
+                # 1.11.2026 (WP6): "Premium NYT" kulkee samalla lukijalla kuin
+                # oikeuden portti. Kausipassin lippu voi jaada paalle
+                # 30.5.2027 yli, eika sita saa laskea Premiumiksi.
+                if row.get("id") and season_pass.profile_premium(
+                        True, row.get("premium_source")):
                     premium[row["id"]] = row.get("premium_source") or None
             r2 = requests.get(
                 f"{SUPABASE_URL}/rest/v1/web_subscriptions"
-                f"?user_id=in.({ids})&select=user_id,status",
+                f"?user_id=in.({ids})&select=user_id,status,plan",
                 headers=headers, timeout=20)
             if r2.status_code != 200:
                 print(f"[conversion] web_subscriptions -> {r2.status_code}")
                 return None
             for row in r2.json() or []:
-                if row.get("user_id") and row.get("status") in _WEB_ACTIVE_STATUSES:
+                if row.get("user_id") and row.get("status") in _WEB_ACTIVE_STATUSES \
+                        and not season_pass.fixed_end_passed(row.get("plan")):
                     web_active.add(row["user_id"])
     except requests.RequestException as e:
         print(f"[conversion] haku kaatui: {type(e).__name__}")
@@ -3747,7 +3767,8 @@ def admin_conversion(request: Request):
     for uid, lahde in tila["premium"].items():
         if lahde == "comp" or uid in comp_meta:
             comp_set.add(uid)
-        elif lahde == "stripe_web" or (lahde is None and uid in tila["web_active"]):
+        elif lahde in ("stripe_web", season_pass.SEASON_PASS_ID) or (
+                lahde is None and uid in tila["web_active"]):
             web_set.add(uid)
         elif lahde == "revenuecat":
             store_set.add(uid)
@@ -4260,11 +4281,13 @@ def push_targets(request: Request):
         ids = ",".join(f'"{u}"' for u in user_ids[i:i + 100])
         prof = requests.get(
             f"{SUPABASE_URL}/rest/v1/profiles?id=in.({ids})"
-            f"&select=id,is_premium,fpl_prefs,fpl_entry_id",
+            f"&select=id,is_premium,premium_source,fpl_prefs,fpl_entry_id",
             headers=sb_headers, timeout=30,
         ).json()
         for p in prof if isinstance(prof, list) else []:
-            if p.get("is_premium"):
+            # 1.11.2026 (WP6): Premium-kanavat (price, picks) samalla lukijalla
+            # kuin oikeuden portti: vanhentunut kausipassi ei saa niita.
+            if season_pass.profile_premium(p.get("is_premium"), p.get("premium_source")):
                 premium.add(str(p["id"]))
             prefs = p.get("fpl_prefs") or {}
             wl = prefs.get("watchlist") if isinstance(prefs, dict) else None
@@ -4738,12 +4761,22 @@ def web_pricing(
         ulos["preview"] = True
     for plan, oletus in (("season", STRIPE_PRICE_SEASON_ID),
                          ("monthly", STRIPE_PRICE_MONTHLY_ID)):
-        pid, tier = resolve_price(plan, maa, oletus)
+        # 1.11.2026 (WP6): sama kytkin kuin checkoutissa, joten hinta ja
+        # veloitus eivat voi olla eri mielta. Kytkin pois -> tasan entinen.
+        passi = _season_pass_price(plan)
+        pid, tier = (passi, "default") if passi else resolve_price(plan, maa, oletus)
         summa = _stripe_price_amount(pid)
         if summa is None:
             continue                      # SPA kayttaa omaa oletustaan
         ulos["plans"][plan] = {"amount": summa[0] / 100.0,
                                "currency": summa[1].upper(), "tier": tier}
+        if passi:
+            # Additiivinen, vain passitilassa: copy-synkan pinnat voivat
+            # sanoa "one payment, until 30 May 2027" lukematta paivaa
+            # kovakoodista (src.season_pass on lahde).
+            ulos["plans"][plan].update(
+                billing="one_time",
+                access_until=season_pass.SEASON_PASS_END_ISO)
     return ulos
 
 
@@ -4767,41 +4800,64 @@ def create_web_checkout_session(
         raise HTTPException(
             status_code=500,
             detail="Stripe not configured (STRIPE_SECRET_KEY missing)")
-    price_id = (STRIPE_PRICE_SEASON_ID if req.plan == "season"
-                else STRIPE_PRICE_MONTHLY_ID)
+    # 1.11.2026 (WP6): kertamaksupassi kun kytkin on paalla, muuten tasan
+    # entinen polku (vuositilaus).
+    passi = _season_pass_price(req.plan)
+    price_id = passi or (STRIPE_PRICE_SEASON_ID if req.plan == "season"
+                         else STRIPE_PRICE_MONTHLY_ID)
     if not price_id:
         raise HTTPException(
             status_code=500,
             detail=f"Stripe price not configured for plan '{req.plan}' "
                    f"(STRIPE_PRICE_{'SEASON' if req.plan == 'season' else 'MONTHLY'}_ID missing)")
-    # 20.9: aluehinta. Maa luetaan CF-otsakkeesta, EI pyynnon rungosta;
-    # tuntematon maa saa taysin hinnan (src/regional_pricing.py).
-    price_id, price_tier = resolve_price(
-        req.plan, request_country(request.headers), price_id)
+    if passi:
+        # Passilla ei aluehintaa: aluekartan `season`-hinnat ovat
+        # vuositilauksia, ja tilaushinta `mode=payment`-sessiossa kaataisi
+        # Stripe-kutsun. Verkkokassan maissa ei ole aluehintaa 17.10 alkaen.
+        price_tier = "default"
+    else:
+        # 20.9: aluehinta. Maa luetaan CF-otsakkeesta, EI pyynnon rungosta;
+        # tuntematon maa saa taysin hinnan (src/regional_pricing.py).
+        price_id, price_tier = resolve_price(
+            req.plan, request_country(request.headers), price_id)
 
     auth_header = request.headers.get("authorization", "")
     token = auth_header[7:] if auth_header.lower().startswith("bearer ") else ""
     supa_user = _get_supabase_user(token)
     if not supa_user:
         raise HTTPException(status_code=401, detail="Invalid or expired session")
+    # 2.11.2026 (WP6, Villen paatos "esto"): passia ei myyda tilille jolla on
+    # jo Premium. Ennen Stripe-kutsua, joten maksua ei synny. Haun virhe
+    # (None) paastaa oston lapi: silloin kaytos on sama kuin ennen estoa,
+    # eli webhook kirjaa tapauksen lokiin (`_fulfil_season_pass`).
+    # Guest-polulla tilia ei tunneta ennen maksua, joten siella estoa ei ole.
+    if passi and account_has_premium(supa_user["id"]) is True:
+        return JSONResponse(status_code=409, content={
+            "code": SEASON_PASS_ALREADY_PREMIUM_CODE,
+            "detail": SEASON_PASS_ALREADY_PREMIUM_TEXT})
 
     base = _web_checkout_base_url(req.origin)
+    ref = _clean_affiliate_ref(req.ref)
+    metadata = {"user_id": supa_user["id"],
+                "plan": season_pass.SEASON_PASS_ID if passi else req.plan,
+                "source": "pro-web", "price_tier": price_tier,
+                **({"ref": ref} if ref else {})}
+    tila = (_season_pass_checkout_kwargs(metadata) if passi else {
+        "mode": "subscription",
+        # 20.9: tier myos TILAUKSELLE, ei vain sessiolle. Session metadata
+        # ei kopioidu tilaukseen, ja 60 vrk:n paluuehto mitataan
+        # toteutuneesta tuotosta eli tilauksista ja niiden uusiutumisista.
+        # Ilman tata luku pitaisi johtaa yhdistamalla sessiot tilauksiin.
+        "subscription_data": {"metadata": {"price_tier": price_tier,
+                                           "plan": req.plan}},
+    })
     try:
         session = stripe.checkout.Session.create(
-            mode="subscription",
+            **tila,
             line_items=[{"price": price_id, "quantity": 1}],
-            # 20.9: tier myos TILAUKSELLE, ei vain sessiolle. Session metadata
-            # ei kopioidu tilaukseen, ja 60 vrk:n paluuehto mitataan
-            # toteutuneesta tuotosta eli tilauksista ja niiden uusiutumisista.
-            # Ilman tata luku pitaisi johtaa yhdistamalla sessiot tilauksiin.
-            subscription_data={"metadata": {"price_tier": price_tier,
-                                            "plan": req.plan}},
             customer_email=supa_user.get("email"),
             client_reference_id=supa_user["id"],
-            metadata={"user_id": supa_user["id"], "plan": req.plan,
-                      "source": "pro-web", "price_tier": price_tier,
-                      **({"ref": ref} if (ref := _clean_affiliate_ref(req.ref))
-                         else {})},
+            metadata=metadata,
             success_url=f"{base}/?checkout=success&session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{base}/?checkout=cancelled",
             # Esitaytetty alennus jos ympäristö antaa sen, muuten kayttaja
@@ -4885,17 +4941,22 @@ def create_guest_checkout_session(
         raise HTTPException(
             status_code=500,
             detail="Stripe not configured (STRIPE_SECRET_KEY missing)")
-    price_id = (STRIPE_PRICE_SEASON_ID if req.plan == "season"
-                else STRIPE_PRICE_MONTHLY_ID)
+    # 1.11.2026 (WP6): sama kytkin kuin kirjautuneen polulla.
+    passi = _season_pass_price(req.plan)
+    price_id = passi or (STRIPE_PRICE_SEASON_ID if req.plan == "season"
+                         else STRIPE_PRICE_MONTHLY_ID)
     if not price_id:
         raise HTTPException(
             status_code=500,
             detail=f"Stripe price not configured for plan '{req.plan}' "
                    f"(STRIPE_PRICE_{'SEASON' if req.plan == 'season' else 'MONTHLY'}_ID missing)")
-    # 20.9: aluehinta. Maa luetaan CF-otsakkeesta, EI pyynnon rungosta;
-    # tuntematon maa saa taysin hinnan (src/regional_pricing.py).
-    price_id, price_tier = resolve_price(
-        req.plan, request_country(request.headers), price_id)
+    if passi:
+        price_tier = "default"   # perustelu create_web_checkout_sessionissa
+    else:
+        # 20.9: aluehinta. Maa luetaan CF-otsakkeesta, EI pyynnon rungosta;
+        # tuntematon maa saa taysin hinnan (src/regional_pricing.py).
+        price_id, price_tier = resolve_price(
+            req.plan, request_country(request.headers), price_id)
 
     ip = client_ip(request.headers,
                    request.client.host if request.client else "")
@@ -4904,22 +4965,26 @@ def create_guest_checkout_session(
                             detail="Too many checkout attempts, try again later")
 
     base = _web_checkout_base_url(req.origin)
+    ref = _clean_affiliate_ref(req.ref)
+    # EI customer_email/client_reference_id — Stripe kerää emailin,
+    # webhook provisioi tilin sillä (account-after-payment).
+    metadata = {"plan": season_pass.SEASON_PASS_ID if passi else req.plan,
+                "source": "pro-web-guest", "price_tier": price_tier,
+                **({"ref": ref} if ref else {})}
+    tila = (_season_pass_checkout_kwargs(metadata) if passi else {
+        "mode": "subscription",
+        # 20.9: tier myos TILAUKSELLE, ei vain sessiolle. Session metadata
+        # ei kopioidu tilaukseen, ja 60 vrk:n paluuehto mitataan
+        # toteutuneesta tuotosta eli tilauksista ja niiden uusiutumisista.
+        # Ilman tata luku pitaisi johtaa yhdistamalla sessiot tilauksiin.
+        "subscription_data": {"metadata": {"price_tier": price_tier,
+                                           "plan": req.plan}},
+    })
     try:
         session = stripe.checkout.Session.create(
-            mode="subscription",
+            **tila,
             line_items=[{"price": price_id, "quantity": 1}],
-            # 20.9: tier myos TILAUKSELLE, ei vain sessiolle. Session metadata
-            # ei kopioidu tilaukseen, ja 60 vrk:n paluuehto mitataan
-            # toteutuneesta tuotosta eli tilauksista ja niiden uusiutumisista.
-            # Ilman tata luku pitaisi johtaa yhdistamalla sessiot tilauksiin.
-            subscription_data={"metadata": {"price_tier": price_tier,
-                                            "plan": req.plan}},
-            # EI customer_email/client_reference_id — Stripe kerää emailin,
-            # webhook provisioi tilin sillä (account-after-payment).
-            metadata={"plan": req.plan, "source": "pro-web-guest",
-                      "price_tier": price_tier,
-                      **({"ref": ref} if (ref := _clean_affiliate_ref(req.ref))
-                         else {})},
+            metadata=metadata,
             success_url=f"{base}/?checkout=success&guest=1&session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{base}/?checkout=cancelled",
             allow_promotion_codes=True,
@@ -4930,6 +4995,242 @@ def create_guest_checkout_session(
                             detail=f"Stripe error: {e.user_message or str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal error: {e}")
+
+
+# --- Kausipassi 2026/27: kertamaksu (ulkoasu WP6, Villen paatos 1.11.2026) ---
+#
+# Polku: SPA `plan=season` -> /api/web/checkout(/guest) -> `_season_pass_price`
+# antaa kertamaksuhinnan VAIN kun STRIPE_PRICE_SEASON_PASS_2026_27 on asetettu
+# -> Checkout `mode=payment` -> /api/webhook/stripe-web
+# (checkout.session.completed / async_payment_succeeded) -> `_fulfil_season_pass`.
+# Purku: hyvitys (`charge.refunded`) -> `_revoke_season_pass`. Paattyminen ei
+# tarvitse webhookia eika ajastusta: lukijat (`src.season_pass`) eivat anna
+# Premiumia `SEASON_PASS_END`in jalkeen.
+
+
+def _season_pass_price(plan: str, now: datetime | None = None) -> str:
+    """Kertamaksupassin hinta-ID kun kytkin on paalla JA plan on kausi, muuten ''.
+
+    2.11.2026 (julkaisutarkistajan sivuhavainto): EI passin loppuhetken
+    (`SEASON_PASS_END`) jalkeen. Ilman tata passia myytaisiin 30.5.2027
+    jalkeenkin, webhook kirjoittaisi menneen loppupaivan ja maksu menisi lapi
+    ilman oikeutta, eli sama vikaluokka kuin Premium-tilin esto. Lopun
+    jalkeen kaytos on sama kuin kytkin pois (entinen polku), ja hinta-endpoint
+    lukee saman funktion, joten pinta ja veloitus eivat voi erota."""
+    if plan != "season":
+        return ""
+    if season_pass.fixed_end_passed(season_pass.SEASON_PASS_ID, now):
+        return ""
+    return (STRIPE_PRICE_SEASON_PASS_2026_27 or "").strip()
+
+
+def _season_pass_checkout_kwargs(metadata: dict) -> dict:
+    """Checkout-session kertamaksuosa (korvaa `mode=subscription` +
+    `subscription_data`).
+
+    A7: EI `payment_method_types`ia. Maksutavat (kortti, Apple Pay, Google
+    Pay, Link) tulevat Stripen dashboardin asetuksista, joten lompakko ei voi
+    jaada pois koodiin kirjoitetun listan takia. Testi vartioi taman.
+    """
+    return {
+        "mode": "payment",
+        # Asiakas syntyy aina (ilmainen): hyvityksen kohdistus
+        # (`charge.customer` -> web-rivi) ja asiakasportaalin haku
+        # sahkopostilla tarvitsevat sen. Oletus `if_required` ei luo asiakasta.
+        "customer_creation": "always",
+        # Sama metadata maksulle, jotta dashboardin maksurivi ja hyvitys
+        # kertovat mista on kyse ilman sessiohakua.
+        "payment_intent_data": {"metadata": dict(metadata)},
+    }
+
+
+def _season_pass_session(obj: dict) -> bool:
+    """Onko Checkout-sessio kausipassin osto.
+
+    Oma checkoutimme merkitsee sen `metadata.plan`iin. Lisaksi `mode=payment`
+    lasketaan passiksi KUN kytkin on paalla: muuta kertaostoa ei myyda, eika
+    dashboardista tehty Payment Link kanna metadataamme. Kytkin pois ja ei
+    metadataa -> tasan entinen kaytos.
+    """
+    meta = obj.get("metadata") or {}
+    if isinstance(meta, dict) and meta.get("plan") == season_pass.SEASON_PASS_ID:
+        return True
+    return obj.get("mode") == "payment" and bool(STRIPE_PRICE_SEASON_PASS_2026_27)
+
+
+def _season_pass_paid(obj: dict) -> bool:
+    """Viivastetty maksutapa (esim. SEPA) antaa `payment_status=unpaid`
+    completed-hetkella; oikeus avataan vasta `async_payment_succeeded`illa.
+    Kortti ja lompakot ovat `paid` heti; 100 % kuponki `no_payment_required`."""
+    return obj.get("payment_status") in ("paid", "no_payment_required")
+
+
+def _is_season_pass_row(row) -> bool:
+    """Onko web_subscriptions-rivi passin rivi (kertaosto, loppu = passin loppu).
+
+    Rivi on `plan=season_pass_2026_27`, tai `season` jos kannan CHECK ei viela
+    sallinut tunnistetta (ks. `_fulfil_season_pass`); jalkimmainen tunnistetaan
+    tasmalleen passin paattymishetkesta, joten vanhat kertaostorivit eivat osu.
+    """
+    if not isinstance(row, dict) or row.get("stripe_subscription_id"):
+        return False
+    if row.get("plan") == season_pass.SEASON_PASS_ID:
+        return True
+    end = row.get("current_period_end")
+    try:
+        return end is not None and season_pass.parse_ts(end) == season_pass.SEASON_PASS_END
+    except (ValueError, TypeError):
+        return False
+
+
+def _get_profile_premium_state(user_id: str) -> Optional[dict]:
+    """{is_premium, premium_source} (tyhja dict jos rivia ei ole), None jos haku
+    epaonnistui. KIRJOITUSPAATOKSEEN (kumpi lahde omistaa oikeuden), ei
+    kysymykseen "onko kayttaja premium" - se on `src.season_pass`in tehtava."""
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        return None
+    try:
+        rows = requests.get(
+            f"{SUPABASE_URL}/rest/v1/profiles?id=eq.{user_id}"
+            f"&select=is_premium,premium_source",
+            headers={"apikey": SUPABASE_SERVICE_ROLE_KEY,
+                     "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}"},
+            timeout=10).json()
+    except Exception as e:  # noqa: BLE001
+        print(f"[Supabase] profiilin tila EXCEPTION user_id={user_id}: {type(e).__name__}")
+        return None
+    if not isinstance(rows, list):
+        return None
+    return rows[0] if rows and isinstance(rows[0], dict) else {}
+
+
+def _stamp_affiliate_payment(payment_intent_id: str, code: str, source: str) -> bool:
+    """Affiliate-leima kertamaksulle (PaymentIntentin metadata), tilauksen
+    `_stamp_affiliate`in pari. Fail-soft: leima ei saa estaa oikeutta.
+    HUOM: /api/admin/affiliate-report lukee viela vain tilauksia."""
+    try:
+        stripe.PaymentIntent.modify(
+            payment_intent_id,
+            metadata={"affiliate": code, "affiliate_source": source})
+        print(f"[affiliate] kertamaksu leimattu {payment_intent_id} <- {code} ({source})")
+        return True
+    except Exception as e:  # noqa: BLE001
+        print(f"[affiliate] kertamaksun leimaus EPÄONNISTUI {payment_intent_id} <- {code}: {e}")
+        return False
+
+
+def _fulfil_season_pass(user_id: str, obj: dict) -> None:
+    """Passin oikeus: web_subscriptions-rivi + profiili. Idempotentti: Stripen
+    uusinta kirjoittaa samat arvot.
+
+    Jarjestys on tarkoituksellinen ja eri kuin tilauksella:
+      0. Aktiivinen TILAUSrivi (stripe_subscription_id) jaa ennalleen: sen
+         korvaaminen katkaisisi linkin tilaukseen (yksi rivi per kayttaja), ja
+         tilauksen peruutus ei enaa loytaisi rivia. Loki kertoo, etta passi on
+         hyvitettava tai tilaus peruttava kasin.
+      1. Rivi. `plan` = passin tunniste; jos kannan CHECK ei viela salli sita
+         (migraatio 20261101120000 ajamatta), rivi kirjoitetaan `season`ina.
+         Kummassakin loppu on SEASON_PASS_END, joten rivi vanhenee itsestaan.
+      2. Avoin oikeus (comp, kaupan tilaus) EI lyhene: profiiliin ei kosketa.
+      3. Lahde ENNEN lippua. Tilauksella leima ei saa estaa avausta
+         (`_stamp_premium_source`), mutta passilla leima on se mika tekee
+         paattymisesta mahdollisen: ilman sita `is_premium` jaisi paalle
+         ikuisesti. Jos leima ei mene lapi, profiilia EI avata; oikeus kulkee
+         silloin web-rivin kautta (API + SPA), sovellus ei nae sita, ja loki
+         kertoo miksi.
+      4. `subscription_cancel_at_period_end = True`: sovelluksen tilikortti
+         nayttaa silloin "continues until <pvm>" eika "Renews on <pvm>".
+         Passi ei uusiudu, joten jalkimmainen olisi epatosi.
+    """
+    vanha = _get_web_subscription("user_id", user_id)
+    if vanha and vanha.get("stripe_subscription_id") and season_pass.web_row_active(vanha):
+        print(f"[Stripe web] KAUSIPASSI aktiivisen tilauksen paalle user_id={user_id} "
+              f"sub={vanha.get('stripe_subscription_id')}: tilausrivia EI korvata. "
+              f"Hyvita passi tai peru tilaus kasin.")
+        return
+    rivi = {
+        "user_id": user_id,
+        "plan": season_pass.SEASON_PASS_ID,
+        "status": "active",
+        "current_period_end": season_pass.SEASON_PASS_END_ISO,
+        "stripe_customer_id": obj.get("customer"),
+        "stripe_subscription_id": None,
+    }
+    if not _upsert_web_subscription(rivi):
+        print(f"[Stripe web] KAUSIPASSI rivi plan={season_pass.SEASON_PASS_ID} "
+              f"EPAONNISTUI (CHECK-migraatio ajamatta?) -> kirjoitetaan plan=season")
+        _upsert_web_subscription({**rivi, "plan": "season"})
+    tila = _get_profile_premium_state(user_id)
+    if tila and tila.get("is_premium") and \
+            tila.get("premium_source") in season_pass.OPEN_ENDED_SOURCES:
+        print(f"[Stripe web] KAUSIPASSI user_id={user_id}: avoin oikeus "
+              f"({tila.get('premium_source')}) sailyy, profiiliin ei kosketa")
+        return
+    if not _stamp_premium_source(user_id, season_pass.SEASON_PASS_ID):
+        print(f"[Stripe web] KAUSIPASSI user_id={user_id}: premium_source-leima "
+              f"EPAONNISTUI (CHECK-migraatio ajamatta?). Profiilia EI avata: "
+              f"oikeus kulkee web-rivin kautta, sovellus ei nae sita.")
+        return
+    _update_profile(user_id, {
+        "is_premium": True,
+        "subscription_cancel_at_period_end": True,
+        "subscription_current_period_end": season_pass.SEASON_PASS_END_ISO,
+    })
+    # Affiliate (provisio) kertamaksulle. Viimeisena ja fail-softina.
+    pi = obj.get("payment_intent")
+    if isinstance(pi, str) and pi:
+        try:
+            aff = _affiliate_code_from_session(obj)
+        except Exception as e:  # noqa: BLE001
+            print(f"[affiliate] kertamaksun koodin luku epaonnistui: {e}")
+            aff = None
+        if aff:
+            _stamp_affiliate_payment(pi, aff[0], aff[1])
+
+
+def _revoke_season_pass(charge: dict) -> None:
+    """`charge.refunded` -> passin oikeus pois.
+
+    Myyntipinnat lupaavat 30 vrk:n rahat takaisin verkko-ostoille; hyvitys
+    tehdaan Stripen dashboardista, ja tama purkaa oikeuden. Sama linja kuin
+    tilauksen peruutuksella (`customer.subscription.deleted`): rivi
+    `cancelled`, profiili alas VAIN jos passi omistaa oikeuden (no-clobber).
+    Osittainen hyvitys ei pura (Stripen `refunded` on tosi vasta taydesta).
+    Tilauksen laskun hyvitys ei kulje tasta: rivi on silloin tilausrivi, ja
+    tilauksen oikeus purkautuu kuten ennenkin peruutuksella.
+    Riidat (`charge.dispute.*`) eivat pura automaattisesti, kuten eivat
+    tilauksillakaan.
+    """
+    if charge.get("refunded") is not True:
+        print(f"[Stripe web] charge.refunded osittainen ({charge.get('amount_refunded')}"
+              f"/{charge.get('amount')}) charge={charge.get('id')}: oikeus sailyy")
+        return
+    meta = charge.get("metadata") if isinstance(charge.get("metadata"), dict) else {}
+    if meta.get("plan") and meta.get("plan") != season_pass.SEASON_PASS_ID:
+        return
+    rivi = _get_web_subscription("user_id", meta["user_id"]) if meta.get("user_id") else None
+    if not _is_season_pass_row(rivi) and charge.get("customer"):
+        rivi = _get_web_subscription("stripe_customer_id", charge["customer"])
+    if not _is_season_pass_row(rivi):
+        print(f"[Stripe web] charge.refunded charge={charge.get('id')}: ei passin rivia, ohitetaan")
+        return
+    uid = rivi["user_id"]
+    _upsert_web_subscription({"status": "cancelled"}, match={"user_id": uid})
+    tila = _get_profile_premium_state(uid)
+    if tila is None:
+        # Sama toipumispolku kuin guest-provisioinnissa: non-2xx -> Stripe
+        # yrittaa uudelleen. Ilman tata hyvitetty ostaja pitaisi Premiumin.
+        raise HTTPException(status_code=500, detail="profile read failed")
+    if tila.get("premium_source") == season_pass.SEASON_PASS_ID:
+        print(f"[Stripe web] KAUSIPASSI hyvitetty user_id={uid}: premium pois")
+        _update_profile(uid, {
+            "is_premium": False,
+            "subscription_cancel_at_period_end": False,
+            "subscription_current_period_end": None,
+        })
+    else:
+        print(f"[Stripe web] KAUSIPASSI hyvitetty user_id={uid}: oikeuden omistaa "
+              f"{tila.get('premium_source')}, is_premium sailyy (no-clobber)")
 
 
 def _kasittele_stripe_tapahtuma(event: dict) -> None:
@@ -5305,11 +5606,20 @@ async def stripe_web_webhook(request: Request):
     event_type = event["type"]
     obj = event["data"]["object"]
 
-    if event_type == "checkout.session.completed":
+    # 1.11.2026 (WP6): kausipassin kertamaksu. Viivastetty maksutapa
+    # vahvistuu vasta async_payment_succeeded-tapahtumassa; tilauksen
+    # sessiolle se ohitetaan kuten ennenkin (else-haara).
+    passi = _season_pass_session(obj) if isinstance(obj, dict) else False
+    if event_type == "checkout.session.completed" or (
+            event_type == "checkout.session.async_payment_succeeded" and passi):
         metadata = obj.get("metadata") or {}
+        if passi and not _season_pass_paid(obj):
+            print(f"[Stripe web] KAUSIPASSI {event_type} payment_status="
+                  f"{obj.get('payment_status')}: odotetaan maksun vahvistusta")
+            return {"received": True}
         user_id = obj.get("client_reference_id") or metadata.get("user_id")
         guest_email: str | None = None
-        if not user_id and metadata.get("source") == "pro-web-guest":
+        if not user_id and (metadata.get("source") == "pro-web-guest" or passi):
             # #101 account-after-payment: guest maksoi ilman tiliä → provisioi
             # Supabase-käyttäjä Checkoutin keräämällä emaililla. Magic link
             # lähetetään fulfillmentin LOPUKSI (premium ehtii aktivoitua
@@ -5330,6 +5640,12 @@ async def stripe_web_webhook(request: Request):
                                     detail="guest provisioning failed")
         if not user_id:
             print("[Stripe web] checkout.completed ilman user_id-referenssiä — ohitetaan")
+            return {"received": True}
+        if passi:
+            # Kiintea loppu (src.season_pass), ei tilausta, ei 30.6-arvausta.
+            _fulfil_season_pass(user_id, obj)
+            if guest_email:
+                _send_magic_link(guest_email)
             return {"received": True}
         plan = metadata.get("plan", "season")
         if obj.get("subscription"):
@@ -5416,6 +5732,10 @@ async def stripe_web_webhook(request: Request):
                     "subscription_cancel_at_period_end": False,
                     "subscription_current_period_end": None,
                 })
+    elif event_type == "charge.refunded":
+        # 1.11.2026 (WP6): kausipassin hyvitys purkaa oikeuden. Tilauksen
+        # laskun hyvitys ei muuta mitaan, kuten ennenkaan (_revoke_season_pass).
+        _revoke_season_pass(obj)
     else:
         # WEB-SUB-SYNC (13.8): nakyva jalki jokaisesta ohitetusta eventista.
         # Dashboard-tilaus ratkaisee mita tanne SAAPUU, ja tama rivi on ainoa
@@ -6777,4 +7097,25 @@ def _hintahaun_tila() -> dict:
             ulos[plan] = {"price_id": pid, "ok": True,
                           "amount": summa[0] / 100.0,
                           "currency": summa[1].upper()}
+    # 1.11.2026 (WP6): kausipassi VAIN kun kytkin on asetettu (muuten vastaus
+    # on tasan entinen). Ville tarkistaa taalta env-muuttujan asettamisen
+    # jalkeen, etta hinta on KERTAMAKSU: toistuva hinta `mode=payment`-
+    # sessiossa kaataisi jokaisen oston.
+    passi = (STRIPE_PRICE_SEASON_PASS_2026_27 or "").strip()
+    if passi:
+        summa = _stripe_price_amount(passi)
+        if summa is None:
+            ulos["season_pass"] = {"price_id": passi, "ok": False,
+                                   "error": _HINTA_VIRHE.get(passi, "tuntematon syy")}
+        else:
+            interval = _hinnan_interval(passi)
+            ulos["season_pass"] = {
+                "price_id": passi, "ok": interval is None,
+                "amount": summa[0] / 100.0, "currency": summa[1].upper(),
+                "one_time": interval is None,
+                "access_until": season_pass.SEASON_PASS_END_ISO,
+                **({} if interval is None else {
+                    "error": f"hinta on toistuva ({interval}); passi vaatii "
+                             f"kertamaksuhinnan (One-off)"}),
+            }
     return ulos

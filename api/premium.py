@@ -10,7 +10,10 @@ Premium-check (kun PREMIUM_ENFORCE=on):
      kuin main.py:n _verify_supabase_token / _get_supabase_user — projektissa
      EI ole SUPABASE_JWT_SECRET-kaytantoa, kaytetaan user-endpoint-hakua).
   3. profiles.is_premium == true TAI web_subscriptions.status='active'
-     (current_period_end NULL tai tulevaisuudessa) -> premium.
+     (current_period_end NULL tai tulevaisuudessa) -> premium. 1.11.2026:
+     molemmat rivit tulkitaan `src.season_pass`in lukijoilla, jotta
+     kertamaksupassi (kiintea loppu 30.5.2027) ei voi antaa Premiumia
+     paattymisen jalkeen vaikka kannan lippu olisi jaanyt paalle.
   4. Verkkovirhe premium-lookupissa -> fail-open (True): maksava kayttaja ei
      koskaan menetä dataa transientin Supabase-hairion takia (sama linja kuin
      _web_subscription_active main.py:ssa).
@@ -31,6 +34,7 @@ from datetime import datetime, timezone
 import requests
 from fastapi import HTTPException, Request
 
+from src import season_pass
 from src.free_window import until as _fw_until
 
 _SUPABASE_TIMEOUT = 10
@@ -311,37 +315,99 @@ def verify_token_identity(token: str) -> tuple[str | None, str | None]:
 
 
 def _profile_is_premium(user_id: str) -> bool:
+    """`profiles`-rivin premium-tila `src.season_pass.profile_premium`illa.
+
+    1.11.2026 (WP6, kertamaksupassi): raaka `is_premium` EI riita. Passille
+    lippu jaa todeksi 30.5.2027 yli, koska kertamaksusta ei tule
+    paattymiswebhookia. `premium_source` luetaan siksi samassa haussa.
+    Jos lukija nakee lipun jaaneen paalle kiintean lopun yli, se korjaa
+    kannan (`_expire_fixed_end_profile`): sovellus lukee lipun suoraan
+    Supabasesta eika kulje taman funktion kautta.
+    """
     url = _env("SUPABASE_URL")
     key = _env("SUPABASE_SERVICE_ROLE_KEY")
     rows = requests.get(
-        f"{url}/rest/v1/profiles?id=eq.{user_id}&select=is_premium",
+        f"{url}/rest/v1/profiles?id=eq.{user_id}&select=is_premium,premium_source",
         headers={"apikey": key, "Authorization": f"Bearer {key}"},
         timeout=_SUPABASE_TIMEOUT,
     ).json()
-    return bool(rows and isinstance(rows, list) and rows[0].get("is_premium"))
+    if not (rows and isinstance(rows, list) and isinstance(rows[0], dict)):
+        return False
+    row = rows[0]
+    lahde = row.get("premium_source")
+    if season_pass.profile_needs_expiry(row.get("is_premium"), lahde):
+        _expire_fixed_end_profile(user_id, lahde)
+    return season_pass.profile_premium(row.get("is_premium"), lahde)
 
 
 def _web_subscription_active(user_id: str) -> bool:
-    """Sama semantiikka kuin api.main._web_subscription_active: status=active
-    ja current_period_end NULL tai tulevaisuudessa."""
+    """Sama semantiikka kuin api.main._web_subscription_active: yksi rivilukija
+    `src.season_pass.web_row_active` (status=active, current_period_end NULL
+    tai tulevaisuudessa, kiintean lopun plan ratkaisee ensin)."""
     url = _env("SUPABASE_URL")
     key = _env("SUPABASE_SERVICE_ROLE_KEY")
     rows = requests.get(
         f"{url}/rest/v1/web_subscriptions?user_id=eq.{user_id}"
-        f"&status=eq.active&select=current_period_end",
+        f"&status=eq.active&select=current_period_end,plan,stripe_subscription_id",
         headers={"apikey": key, "Authorization": f"Bearer {key}"},
         timeout=_SUPABASE_TIMEOUT,
     ).json()
+    voimassa = False
     for r in rows if isinstance(rows, list) else []:
-        end = r.get("current_period_end")
-        if end is None:
-            return True
-        try:
-            if datetime.fromisoformat(end) > datetime.now(timezone.utc):
-                return True
-        except ValueError:
-            return True
-    return False
+        if season_pass.web_row_needs_expiry(r):
+            _expire_one_time_web_row(user_id)
+        if season_pass.web_row_active(r):
+            voimassa = True
+    return voimassa
+
+
+def _supabase_patch(path: str, fields: dict, mita: str) -> bool:
+    """Lukijan korjaava kirjoitus. Fail-soft: epaonnistuminen ei muuta
+    lukijan vastausta (se on jo oikea), seuraava haku yrittaa uudelleen."""
+    url = _env("SUPABASE_URL")
+    key = _env("SUPABASE_SERVICE_ROLE_KEY")
+    if not url or not key:
+        return False
+    try:
+        resp = requests.patch(
+            f"{url}/rest/v1/{path}", json=fields,
+            headers={"apikey": key, "Authorization": f"Bearer {key}",
+                     "Content-Type": "application/json",
+                     "Prefer": "return=minimal"},
+            timeout=_SUPABASE_TIMEOUT)
+        ok = resp.status_code in (200, 204)
+        print(f"[premium] {mita}: {'ok' if ok else f'FAILED {resp.status_code}'}")
+        return ok
+    except Exception as e:  # noqa: BLE001
+        print(f"[premium] {mita} EXCEPTION: {type(e).__name__}")
+        return False
+
+
+def _expire_fixed_end_profile(user_id: str, source: str) -> bool:
+    """Kiintean lopun ohittanut `is_premium` alas (vain ALASPAIN, koskaan ylos).
+
+    Suodatin `premium_source=eq.<passi>` rajaa kirjoituksen riviin jonka
+    oikeuden passi omistaa: jos kayttaja on sittemmin ostanut tilauksen tai
+    saanut comp-Premiumin, lahde on vaihtunut eika PATCH osu riviin. Ajetaan
+    vain kun `profile_needs_expiry` on tosi, eli ei koskaan ennen 30.5.2027.
+    """
+    return _supabase_patch(
+        f"profiles?id=eq.{user_id}&premium_source=eq.{source}",
+        {"is_premium": False, "subscription_cancel_at_period_end": False,
+         "subscription_current_period_end": None},
+        f"kiintea loppu ohi, profiili alas user_id={user_id} source={source}")
+
+
+def _expire_one_time_web_row(user_id: str) -> bool:
+    """Kertaoston `web_subscriptions`-rivi `expired`iksi (CHECK sallii arvon).
+
+    Suodatin `stripe_subscription_id=is.null` pitaa tilausrivit ulkona: niiden
+    tila kulkee Stripen webhookilla."""
+    return _supabase_patch(
+        f"web_subscriptions?user_id=eq.{user_id}&status=eq.active"
+        f"&stripe_subscription_id=is.null",
+        {"status": "expired"},
+        f"kertaoston rivi expired user_id={user_id}")
 
 
 def is_premium_request(request: Request) -> bool:
@@ -362,7 +428,12 @@ def is_premium_request(request: Request) -> bool:
     now = time.time()
     with _PREMIUM_CACHE_LOCK:
         hit = _PREMIUM_CACHE.get(cache_key)
-        if hit and now - hit[0] < _PREMIUM_CACHE_TTL:
+        # 1.11.2026 (WP6): ennen kiinteaa loppua (kausipassi 30.5.2027)
+        # tallennettu vastaus ei palvele lopun jalkeen. Ilman tata passin
+        # ostaja saisi Premiumin viela 5 min yli, eli lukija palauttaisi
+        # vaaran vastauksen valimuistista vaikka itse haku on oikein.
+        if hit and now - hit[0] < _PREMIUM_CACHE_TTL \
+                and not season_pass.crossed_fixed_end(hit[0], now):
             return hit[1]
 
     try:
@@ -389,6 +460,30 @@ def is_premium_request(request: Request) -> bool:
             _PREMIUM_CACHE.clear()  # karkea mutta riittava (500 tokenia)
         _PREMIUM_CACHE[cache_key] = (now, result)
     return result
+
+
+def account_has_premium(user_id: str) -> bool | None:
+    """Onko tililla jo Premium mista tahansa lahteesta (web-tilaus, kauppa,
+    comp, kausipassi). None = haku epaonnistui, kutsuja paattaa.
+
+    2.11.2026 (WP6, Villen paatos "esto"): kausipassin ostoa ei avata tilille,
+    jolla on jo Premium. Webhook ei kirjaa passia aktiivisen tilausrivin
+    paalle (`_fulfil_season_pass`), joten maksu menisi lapi ilman oikeutta ja
+    se pitaisi hyvittaa kasin.
+
+    Sama lukijapari kuin `is_premium_request`issa (profiili kiintean lopun
+    kanssa + web-rivi), kaksi eroa tarkoituksella:
+      - ei ilmaisikkunaa: ikkuna ei ole ostettu oikeus, eika se saa estaa
+        ostoa;
+      - ei valimuistia: 5 min vanha True estaisi ostajan, jonka tilaus
+        paattyi juuri.
+    """
+    try:
+        return bool(_profile_is_premium(user_id) or _web_subscription_active(user_id))
+    except Exception as e:  # noqa: BLE001
+        print(f"[premium] account_has_premium EXCEPTION user_id={user_id}: "
+              f"{type(e).__name__}")
+        return None
 
 
 # ---------------------------------------------------------------------------

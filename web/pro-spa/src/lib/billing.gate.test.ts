@@ -41,6 +41,35 @@ describe('billing: checkoutin epaonnistuminen on mitattu', () => {
 		}
 	});
 
+	it('Premium-tilin passiesto (409 already_premium) on mitattu ja sama koodi kuin palvelimella', () => {
+		// 2.11.2026 (WP6): palvelin estaa passin oston tililta jolla on jo
+		// Premium. Jos SPA ei tunnista koodia, kayttaja nakee "Checkout failed
+		// (409)" -virheen eika palvelimen tekstia.
+		const api = readFileSync(
+			fileURLToPath(new URL('../../../../api/main.py', import.meta.url)), 'utf8');
+		const palvelin = api.match(/SEASON_PASS_ALREADY_PREMIUM_CODE = "([a-z_]+)"/)?.[1];
+		expect(palvelin, 'api/main.py:n estokoodi puuttuu').toBeTruthy();
+		expect(koodi).toContain(`export const ALREADY_PREMIUM_CODE = '${palvelin}'`);
+		const haara = koodi.indexOf('body?.code === ALREADY_PREMIUM_CODE');
+		const kirjaus = koodi.indexOf("capture('checkout_already_premium'", haara);
+		const yleinen = koodi.indexOf('const detail = body?.detail;');
+		expect(haara).toBeGreaterThan(-1);
+		expect(kirjaus).toBeGreaterThan(haara);
+		expect(yleinen, 'esto on tarkistettava ennen yleista virhehaaraa').toBeGreaterThan(kirjaus);
+		// Haara tallentaa tekstin, jotta /checkout tunnistaa sen.
+		expect(koodi.slice(haara, yleinen)).toContain('alreadyPremiumText = body.detail');
+	});
+
+	it('/checkout ei tarjoa "Try again" -nappia passiestolle (sama 409 joka kerta)', () => {
+		const reitti = readFileSync(
+			fileURLToPath(new URL('../routes/checkout/+page.svelte', import.meta.url)), 'utf8');
+		const ehto = reitti.indexOf('{#if !isAlreadyPremiumMessage(error)}');
+		const nappi = reitti.indexOf("go('checkout_route_retry')");
+		expect(ehto).toBeGreaterThan(-1);
+		expect(nappi).toBeGreaterThan(ehto);
+		expect(reitti.indexOf('{/if}', ehto)).toBeGreaterThan(nappi);
+	});
+
 	it('checkout_opened lahtee vasta kun Stripe on antanut URLin', () => {
 		// Jos se lahtisi ennen fetchia, se mittaisi aikomusta kuten
 		// upgrade_tapped, ja koko 20 -> 11 -ero katoaisi nakyvista.
