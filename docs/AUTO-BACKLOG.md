@@ -271,6 +271,15 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
 - 2026-11: Chip Timing -työkalua ei ole vielä FPL Pulsella (merkitty tulossa), Fixin Premiumilla eikä FFH:lla (vain opas).
   GW19-deadline la 2.1.2027 on 62 päivän päässä. Jo avoin chip-tarkistinrivi kattaa ilmaisen puolen.
   (lähde: https://www.fplpulse.com/ , https://www.fantasyfootballfix.com/premium/)
+- 2026-11: Fixtures-rivin luku (kirjattu ennuste lokista) ja saman ottelun Predict-luku (malli ajetaan pyynnöstä) eroavat:
+  2.11 Everton-Coventry 49/29/22 vs 53/28/20, Arsenal-Hull 71/21/8 vs 65/25/10. Lukija näkee samasta ottelusta kaksi lukua
+  ilman selitystä. (lähde: /api/accuracy?include=pending, /api/predict, julkaisutarkistaja #85)
+- 2026-11: llms.txt ("that same logged prediction is what the public track record grades") ja ottelusivujen lause
+  "The prediction above is the one logged before kick-off and graded" eivät kerro, että kirjattu rivi voi muuttua aloitukseen
+  asti (`scripts/accuracy_pipeline.py` `_refreshable`). Record-sivu korjattiin #85:ssä; portti
+  `tests/test_record_ei_vaita_lukittua.py` laajennetaan näihin muotoiluihin samassa PR:ssä.
+- 2026-11: Kolme Mestarien liigan joukkuetta (Shaktar, Sporting CP, Sl. Bratislava) ei esitäytä Predictiä Fixturesista, koska
+  otteluohjelman ja mallin nimet eroavat (`web/pro-spa/src/lib/teamMatch.ts`, sama vika oli Forestilla ennen #85:tä).
 
 ## Avoimet
 
