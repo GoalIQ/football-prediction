@@ -142,6 +142,14 @@ describe('kutsupaikat', () => {
 		});
 	}
 
+	it('DecisionCard: JOKAINEN lukko saa captainOpenin, kapteeni- ja siirtovalilehti myos maaran', () => {
+		const src = read('DecisionCard.svelte');
+		const locks = src.match(/<PersonalLock tool="this-week"[^>]*\/>/g) ?? [];
+		expect(locks.length).toBe(3);
+		for (const l of locks) expect(l).toMatch(/captainOpen=\{openCap != null\}/);
+		expect(locks.filter((l) => /hidden=\{hiddenLine\}/.test(l)).length).toBe(2);
+	});
+
 	it('DecisionCard: avatussa lukossa ei vaihtoehtoa eika mallin lahderivia', () => {
 		const src = read('DecisionCard.svelte');
 		expect(src).toMatch(/openCap \? null : \(model\?\.alt \?\? null\)/);
