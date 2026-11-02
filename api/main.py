@@ -5827,7 +5827,12 @@ def fantasy_phase0(
     gw_cut = next_gw + span - 1
     out_teams = []
     for t in teams:
-        fx = [f for f in t.get("fixtures", []) if f.get("gw", 0) <= gw_cut]
+        # 2.11.2026: myos ALARAJA. Ennen rajattiin vain ylhaalta, joten kesken
+        # kierroksen (next_gameweek 9, deadline_gameweek 10) sovelluksen ja
+        # webin "Clean sheet outlook" alkoi GW9:sta ja naytti CS-%:n jo
+        # pelatuille otteluille (ARS@LIV 38 %, peli 0-1 1.11). Loydetty
+        # kauppakuvia ottaessa. Portti: tests/test_fantasy_outlook_phase.py.
+        fx = [f for f in t.get("fixtures", []) if next_gw <= f.get("gw", 0) <= gw_cut]
         out_teams.append({**t, "fixtures": fx})
 
     # horizon_gw kertoo mitä TÄSSÄ vastauksessa on, ei mitä tiedostossa on.
