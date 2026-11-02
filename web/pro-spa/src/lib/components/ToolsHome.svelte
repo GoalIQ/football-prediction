@@ -601,7 +601,7 @@
 				</div>
 			{:else if matchesView === 'fixtures'}
 				<div class="tool-card" id="mt-fixtures">
-					<Fixtures {premium} onUpgrade={goUpgrade} onPredict={(l, h, a) => goPredict(l, h, a)} />
+					<Fixtures onPredict={(l, h, a) => goPredict(l, h, a)} />
 				</div>
 			{:else}
 				<div class="tool-card" id="mt-standings"><Standings /></div>
