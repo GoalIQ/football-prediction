@@ -10,6 +10,7 @@
 		webCheckoutBlocked
 	} from '$lib/pricing.svelte';
 	import StoreOnlyNotice from './StoreOnlyNotice.svelte';
+	import { PAYWALL_TOP } from '$lib/paywallBullets';
 	// 20.9: hinta palvelimelta, ks. pricing.svelte.ts. Haku on kertaluontoinen
 	// ja fail-soft: jos se ei onnistu, PLANS jaa voimaan.
 	$effect(() => { void loadPricing(); });
@@ -92,8 +93,16 @@
 <!-- 17.10.2026 (tyokalut taakse): henkilokohtaiset tyokalut ensin, koska ne
      ovat se mita ilmainen nakee lukittuna. Sama joukko kuin PremiumPreview'n
      BULLETS-karjessa ja $lib/personalLock LOCK_COPYssa. -->
+<!-- WP8 / B2 (2.11.2026): nelja hyotya hinnan alle, loput avauksen takana
+     ($lib/paywallBullets). Kapteeni pois Premium-listalta: oman XI:n kapteeni
+     on ilmainen 1.11 alkaen (fp #77). -->
+<ul class="benefits">
+	{#each PAYWALL_TOP as b (b)}<li>{b}</li>{/each}
+</ul>
+<details class="all-features">
+<summary>See all Premium features</summary>
 <p class="muted">
-	<strong>FPL:</strong> the full Rate my team analysis with the captain pick for your own squad,
+	<strong>FPL:</strong> the full Rate my team analysis for your own squad,
 	mini-league head-to-head win probabilities, the fit checker, your gameweek review, the
 	watchlist, a live DefCon panel for your own squad during a gameweek, per-gameweek expected
 	points (xP), captain ranker and replacements that leave out the players you already own,
@@ -106,6 +115,7 @@
 	of three or more goals and the chance both teams score. The app adds form and momentum
 	trends and the head-to-head record.
 </p>
+</details>
 <!-- 23.9: kauppailmoitus sanoo jo saman tilin ja app-oston asian; nama kaksi
      rivia koskevat verkko-ostoa. -->
 {#if !webCheckoutBlocked()}
@@ -148,6 +158,24 @@
 		color: var(--giq-rust);
 		font-weight: 700;
 		letter-spacing: 2px;
+	}
+	.benefits {
+		margin: var(--s-4) 0 var(--s-2);
+		padding-left: 1.2em;
+		display: grid;
+		gap: var(--s-1);
+		max-width: 60ch;
+	}
+	.all-features {
+		margin: 0 0 var(--s-3);
+	}
+	.all-features summary {
+		cursor: pointer;
+		color: var(--giq-teal);
+		font-weight: 600;
+		min-height: 44px;
+		display: flex;
+		align-items: center;
 	}
 	.plans {
 		display: flex;
