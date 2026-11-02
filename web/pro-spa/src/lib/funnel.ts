@@ -30,6 +30,8 @@ export type FunnelStep =
 	| 'checkout_opened'
 	| 'checkout_failed'
 	| 'checkout_store_only'
+	// 2.11 (WP6): kausipassin esto Premium-tilille (billing.ts)
+	| 'checkout_already_premium'
 	| 'purchase';
 
 /** Paywall.svelten oma lahde: TAMA on paywall-nakyma, kaikki muut ovat lukkoja. */
@@ -133,6 +135,8 @@ export function funnelStep(event: string, props?: Record<string, unknown>): Funn
 			return 'checkout_failed';
 		case 'checkout_store_only':
 			return 'checkout_store_only';
+		case 'checkout_already_premium':
+			return 'checkout_already_premium';
 		case 'purchase_completed':
 			return 'purchase';
 		default:
