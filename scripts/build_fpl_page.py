@@ -826,12 +826,12 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
             # (tests/test_tool_tier_reader_discipline.py).
             (
                 "Yes. GoalIQ is built FPL-first: clean sheet probability, fixture "
-                "difficulty, a rating for your squad from rate my team, price watch and "
+                "difficulty, a rating and the captain pick for your squad from rate my team, price watch and "
                 "the full xG/xA/xGI leaderboard for every player "
                 "with data, a filterable player stats table with shots, "
                 "shots in the box and key passes, "
                 "are free, and GoalIQ Premium adds the tools for your own team "
-                "(the full rate my team analysis with the captain pick for your "
+                "(the full rate my team analysis for your "
                 "squad, a fit checker that searches for the strongest 15 around "
                 "your must-have players, mini-league head-to-head win "
                 "probability and your gameweek review), an interactive team manager "
@@ -849,7 +849,7 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
             "What FPL tools does GoalIQ have?",
             (
                 "Free: clean sheet probabilities, fixture difficulty ratings "
-                "(FDR), a rating for your squad from rate my team, your "
+                "(FDR), a rating and the captain pick for your squad from rate my team, your "
                 "mini-league table, price watch, a per-gameweek points table where each player's actual FPL points sit next to the expected points the model published before that deadline, "
                 "the "
                 "full xG/xA/xGI leaderboard for every player with data, expected points for the next gameweek alone, the top 20 players with each one's opponent and start chance (web), a "
@@ -860,7 +860,7 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
                 "watch tables on the web. GoalIQ "
                 "Premium: the tools for your own team, which are the full rate "
                 "my team and draft rater analysis (the weak spot in your XI, "
-                "the captain pick for your squad, the hold or transfer call and "
+                "the hold or transfer call and "
                 "your chips), the fit checker (lock must-have players, the "
                 "model searches for the strongest 15 around them), a second "
                 "squad rated next to yours, your gameweek review, a "
@@ -1879,12 +1879,12 @@ def jsonld_blocks(c: dict, faq: list[tuple[str, str]]) -> str:
         "applicationCategory": "SportsApplication",
         "description": (
             "Free FPL assistant and football prediction app. Free FPL tools: "
-            "clean sheet probability, fixture difficulty (web), a rating for "
+            "clean sheet probability, fixture difficulty (web), a rating and the captain pick for "
             "your squad from rate my team, your mini-league table, "
             "price watch, expected points for the next gameweek "
             "(the top 20, web), and shareable image cards of the free "
             "tables on the web. GoalIQ Premium adds the tools for your own "
-            "team (the full rate my team analysis with the captain pick for "
+            "team (the full rate my team analysis for "
             "your squad, mini-league head-to-head win probability, the fit "
             "checker, your gameweek review and the watchlist), an interactive "
             "team manager with a six-gameweek planner, per-gameweek "
