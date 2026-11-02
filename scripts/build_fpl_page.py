@@ -2752,8 +2752,7 @@ Model-derived, not the official FPL difficulty.</p>
 <p class="inline-up">The grid says which fixtures turn.
 <a href="https://pro.goaliq.app/team?src=fpl-fdr&amp;srcp=fpl" data-cta="inline-fdr">Rate my
 team</a> rates your squad for free, no account needed. Premium names the line that is
-costing you, gives you a captain for your squad and adds the transfer chains over the run
-with the hit priced in.</p>
+costing you and adds the transfer chains over the run with the hit priced in.</p>
 <!-- The proof follows the promise. This section used to sit directly under the
      hero, which left the page's own promise, the clean sheet table, 8,676px
      down on a phone: eleven screens away. Nothing is hidden. The block is fully

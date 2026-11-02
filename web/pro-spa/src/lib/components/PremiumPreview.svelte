@@ -43,7 +43,7 @@
 		"Rate my team in full: the weak spot, the hold or transfer call with the move itself, your chips and the pitch with each player's projection",
 		// WP8 (2.11): oman XI:n kapteeni on ilmainen (fp #77); Premium on lahin
 		// vaihtoehto, jonka palvelin antaa vain tiukassa tilanteessa.
-		'The closest alternative to your captain pick when it is a close call',
+		"The closest alternative to the suggested captain for your squad, when it's a close call",
 		"Mini-league head-to-head: the model's win probability for the next gameweek between any two managers",
 		'Which players actually close the gap on your mini-league rival, and whether they already have them',
 		'Season race breakdown: where the gap to the model came from, captaincy, bench points and autosubs, round by round',
