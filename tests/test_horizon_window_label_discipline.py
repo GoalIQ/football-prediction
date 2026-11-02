@@ -168,11 +168,12 @@ ALLOWED_READS: dict[str, str] = {
         "maara) EIKA kenttaan `count` (= summan pituus), eika lukija "
         "keksi `?? 6` -oletusta: kun `horizon_total_gw` puuttuu, "
         "`actionableOnly` on false eika yksikaan teksti sano \"next\".",
-    'api/main.py::"meta": {**meta, "horizon_gw": max(0, span_actual)},':
+    'api/main.py::out_meta = {**meta, "horizon_gw": max(0, span_actual)}':
         "KIRJOITTAJA (/api/fantasy, phase0-ottelulista): laskee montako "
         "kierrosta TASSA vastauksessa on ja kirjoittaa sen kenttaan. Ei "
         "xP-summaa koko reitilla (EXEMPT test_xp_horizon_total_meta_routes:ssa), "
-        "joten se ei voi nimeta yhtaan horisonttisummaa.",
+        "joten se ei voi nimeta yhtaan horisonttisummaa. 2.11.2026: rivi siirtyi "
+        "out_meta-muuttujaan (near_horizon_gw samasta vastauksesta), sama kirjoittaja.",
 }
 
 # --------------------------------------------------------------------------
