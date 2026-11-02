@@ -14,6 +14,17 @@ import { accessToken } from './auth.svelte';
 import { capture, captureBeforeUnload } from './analytics';
 import { REGION_STORE_ONLY, isStoreOnlyBody } from './region';
 
+/** Palvelimen esto (api/main.py SEASON_PASS_ALREADY_PREMIUM_CODE): passia ei
+ *  myyda tilille jolla on jo Premium. Portti: billing.gate.test.ts. */
+export const ALREADY_PREMIUM_CODE = 'already_premium';
+
+/** Viimeisin palvelimen estoteksti. /checkout-reitti piilottaa sen alta
+ *  "Try again" -napin: uusi yritys palauttaisi saman 409:n. */
+let alreadyPremiumText: string | null = null;
+export function isAlreadyPremiumMessage(msg: string | null): boolean {
+	return msg != null && msg === alreadyPremiumText;
+}
+
 /** 11.8: alennettu hinta hintapaikkaan ja koodi NAPIN TEKSTIIN. Ennen tata
  *  paywall sanoi "25 €/year" ja koodi mainittiin hintissa, eli kayttaja klikkasi
  *  itsensa Stripeen tietamatta etta kentta pitaa tayttaa.
@@ -95,6 +106,17 @@ export async function startCheckout(plan: PlanKey, source = 'pro_web'): Promise<
 					status: r.status, country: body?.country ?? null
 				});
 				return REGION_STORE_ONLY;
+			}
+			// 2.11.2026 (WP6, Villen paatos "esto"): kausipassia ei myyda
+			// tilille jolla on jo Premium. Palvelin vastaa ennen Stripea, joten
+			// tama ei ole vika vaan esto: oma tapahtuma kuten yllä, ja
+			// palvelimen tarkistettu teksti sellaisenaan ilman virhe-etuliitettä.
+			if (body?.code === ALREADY_PREMIUM_CODE && typeof body.detail === 'string' && body.detail) {
+				capture('checkout_already_premium', {
+					source, plan, price: PLANS[plan].price, status: r.status
+				});
+				alreadyPremiumText = body.detail;
+				return body.detail;
 			}
 			const detail = body?.detail;
 			// 20.9.2026 MITATTU: 180 vrk aikana webissa 20 upgrade_tapped mutta

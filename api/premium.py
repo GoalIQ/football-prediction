@@ -462,6 +462,30 @@ def is_premium_request(request: Request) -> bool:
     return result
 
 
+def account_has_premium(user_id: str) -> bool | None:
+    """Onko tililla jo Premium mista tahansa lahteesta (web-tilaus, kauppa,
+    comp, kausipassi). None = haku epaonnistui, kutsuja paattaa.
+
+    2.11.2026 (WP6, Villen paatos "esto"): kausipassin ostoa ei avata tilille,
+    jolla on jo Premium. Webhook ei kirjaa passia aktiivisen tilausrivin
+    paalle (`_fulfil_season_pass`), joten maksu menisi lapi ilman oikeutta ja
+    se pitaisi hyvittaa kasin.
+
+    Sama lukijapari kuin `is_premium_request`issa (profiili kiintean lopun
+    kanssa + web-rivi), kaksi eroa tarkoituksella:
+      - ei ilmaisikkunaa: ikkuna ei ole ostettu oikeus, eika se saa estaa
+        ostoa;
+      - ei valimuistia: 5 min vanha True estaisi ostajan, jonka tilaus
+        paattyi juuri.
+    """
+    try:
+        return bool(_profile_is_premium(user_id) or _web_subscription_active(user_id))
+    except Exception as e:  # noqa: BLE001
+        print(f"[premium] account_has_premium EXCEPTION user_id={user_id}: "
+              f"{type(e).__name__}")
+        return None
+
+
 # ---------------------------------------------------------------------------
 # Maskit olemassa oleville endpointeille. Suunnitteluperiaate: maski on
 # TYPISTYS, ei null-korvaus — kaikki jaljelle jaavat rivit ovat taysia ja

@@ -329,8 +329,10 @@ def test_api_valimuisti_ei_palvele_loppuhetken_yli(monkeypatch):
 # ---------------------------------------------------------------------------
 
 
-def _configure_checkout(monkeypatch, *, passi: str):
+def _configure_checkout(monkeypatch, *, passi: str, premium=False):
     import api.main as m
+    # Oletus: tililla ei ole Premiumia (estohaku ei saa osua verkkoon).
+    monkeypatch.setattr(m, "account_has_premium", lambda user_id: premium)
     monkeypatch.setattr(stripe, "api_key", "sk_test_x")
     monkeypatch.setattr(m, "STRIPE_PRICE_MONTHLY_ID", "price_monthly_test")
     monkeypatch.setattr(m, "STRIPE_PRICE_SEASON_ID", "price_season_test")
@@ -438,6 +440,105 @@ def test_guest_checkout_kytkin_paalla_on_kertamaksu(client, monkeypatch):
     assert "customer_email" not in created
     assert "client_reference_id" not in created
     assert "guest=1" in created["success_url"]
+
+
+# --- 5b. Esto: passia ei myyda tilille jolla on jo Premium (Ville 2.11) ---
+
+
+def test_checkout_passi_estetaan_kun_tililla_on_premium(client, monkeypatch):
+    """Kutsupaikka: esto on endpointissa ennen Stripe-kutsua, joten maksua ei synny."""
+    import api.main as m
+    created = _configure_checkout(monkeypatch, passi="price_pass_test", premium=True)
+    r = _checkout(client)
+    assert r.status_code == 409, r.text
+    assert r.json() == {"code": "already_premium",
+                        "detail": m.SEASON_PASS_ALREADY_PREMIUM_TEXT}
+    assert created == {}                    # Stripe-sessiota ei luotu
+
+
+def test_checkout_esto_ei_koske_kun_kytkin_pois(client, monkeypatch):
+    """Kytkin pois = tasan entinen, myos Premium-tilille (PR:n lupaus)."""
+    created = _configure_checkout(monkeypatch, passi="", premium=True)
+    r = _checkout(client)
+    assert r.status_code == 200, r.text
+    assert created["mode"] == "subscription"
+
+
+def test_checkout_esto_ei_koske_kuukausitilausta(client, monkeypatch):
+    created = _configure_checkout(monkeypatch, passi="price_pass_test", premium=True)
+    r = _checkout(client, plan="monthly")
+    assert r.status_code == 200, r.text
+    assert created["mode"] == "subscription"
+
+
+def test_checkout_estohaun_virhe_paastaa_oston_lapi(client, monkeypatch):
+    """None = haku epaonnistui -> entinen kaytos (webhook kirjaa lokiin)."""
+    created = _configure_checkout(monkeypatch, passi="price_pass_test", premium=None)
+    r = _checkout(client)
+    assert r.status_code == 200, r.text
+    assert created["mode"] == "payment"
+
+
+def test_estoteksti_on_asetettu_ja_tyylin_mukainen():
+    import api.main as m
+    t = m.SEASON_PASS_ALREADY_PREMIUM_TEXT
+    assert t and not t.startswith("__"), "julkaisutarkistajan teksti puuttuu"
+    assert "—" not in t and "–" not in t        # ei em/en dashia
+    assert "’" not in t and t.isascii()          # tarkistettu versio on ASCIIa
+    assert m.SEASON_PASS_ALREADY_PREMIUM_CODE == "already_premium"  # SPA lukee tata
+
+
+@pytest.mark.parametrize("hetki,myydaan", [
+    (sp.SEASON_PASS_END - timedelta(days=200), True),     # kauden alussa
+    (sp.SEASON_PASS_END - timedelta(seconds=1), True),    # viimeinen hetki
+    (sp.SEASON_PASS_END, False),                          # loppu = ei enaa
+    (sp.SEASON_PASS_END + timedelta(days=30), False),     # kauden jalkeen
+])
+def test_passia_ei_myyda_loppuhetken_jalkeen(monkeypatch, hetki, myydaan):
+    """6a kohta 3: invariantti synteettisilla hetkilla. Lopun jalkeen myyty
+    passi kirjoittaisi menneen loppupaivan, eli maksu ilman oikeutta."""
+    import api.main as m
+    monkeypatch.setattr(m, "STRIPE_PRICE_SEASON_PASS_2026_27", "price_pass_test")
+    assert (m._season_pass_price("season", now=hetki) == "price_pass_test") is myydaan
+    monkeypatch.setattr(sp, "_utcnow", lambda: hetki)      # kutsupaikat ilman now:ia
+    assert (m._season_pass_price("season") == "price_pass_test") is myydaan
+
+
+def test_checkout_lopun_jalkeen_on_entinen_polku(client, monkeypatch):
+    """Kutsupaikka: endpoint ei avaa kertamaksua lopun jalkeen."""
+    created = _configure_checkout(monkeypatch, passi="price_pass_test")
+    monkeypatch.setattr(sp, "_utcnow", lambda: sp.SEASON_PASS_END + timedelta(days=1))
+    r = _checkout(client)
+    assert r.status_code == 200, r.text
+    assert created["mode"] == "subscription"
+    assert created["line_items"] == [{"price": "price_season_test", "quantity": 1}]
+
+
+def test_account_has_premium_lukee_profiilin_ja_web_rivin(monkeypatch):
+    import api.premium as p
+    for prof, web, odotus in ((True, False, True), (False, True, True), (False, False, False)):
+        monkeypatch.setattr(p, "_profile_is_premium", lambda uid, v=prof: v)
+        monkeypatch.setattr(p, "_web_subscription_active", lambda uid, v=web: v)
+        assert p.account_has_premium("u") is odotus, (prof, web)
+
+
+def test_account_has_premium_ei_lue_ilmaisikkunaa(monkeypatch):
+    """Ikkuna ei ole ostettu oikeus: se ei saa estaa ostoa."""
+    import api.premium as p
+    monkeypatch.setattr(p, "free_premium_window_active", lambda now=None: True)
+    monkeypatch.setattr(p, "_profile_is_premium", lambda uid: False)
+    monkeypatch.setattr(p, "_web_subscription_active", lambda uid: False)
+    assert p.account_has_premium("u") is False
+
+
+def test_account_has_premium_virhe_on_none(monkeypatch):
+    import api.premium as p
+
+    def kaatuu(uid):
+        raise RuntimeError("supabase alhaalla")
+
+    monkeypatch.setattr(p, "_profile_is_premium", kaatuu)
+    assert p.account_has_premium("u") is None
 
 
 # ---------------------------------------------------------------------------

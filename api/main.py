@@ -62,6 +62,7 @@ from api.premium import (
     mask_my_team_ledger_payload, mask_fit_payload, mask_defcon_live_payload,
     mask_price_watch_entry_payload, mask_differentials_entry_payload,
     mask_captain_entry_payload,
+    account_has_premium,
 )
 
 # Stripe-konfiguraatio (Render env varseista)
@@ -82,6 +83,15 @@ STRIPE_PRICE_SEASON_ID = os.getenv("STRIPE_PRICE_SEASON_ID", "")
 # kaikki on tasan kuten ennen (vuositilaus STRIPE_PRICE_SEASON_ID:lla), joten
 # koodin voi mergeta ennen kuin Ville luo tuotteen Stripeen.
 STRIPE_PRICE_SEASON_PASS_2026_27 = os.getenv("STRIPE_PRICE_SEASON_PASS_2026_27", "")
+# 2.11.2026 (Villen paatos "esto"): passia ei myyda tilille jolla on jo
+# Premium. SPA tunnistaa koodin ja nayttaa tekstin sellaisenaan (billing.ts).
+SEASON_PASS_ALREADY_PREMIUM_CODE = "already_premium"
+# Teksti = julkaisutarkistajan korjattu versio 2.11 sanatarkasti (luonnos
+# blokattiin: "once your current Premium has ended" ei pida comp-tilille).
+SEASON_PASS_ALREADY_PREMIUM_TEXT = (
+    "This account already has Premium, so you can't buy the season pass on it. "
+    "To switch from a subscription, cancel it first. You can buy the pass once "
+    "the subscription has run out.")
 from src import season_pass  # noqa: E402
 from src.regional_pricing import (  # noqa: E402
     COUNTRY_HEADER, REGION_STORE_ONLY_ERROR, kuvaa_aluehinnat, request_country,
@@ -4816,6 +4826,15 @@ def create_web_checkout_session(
     supa_user = _get_supabase_user(token)
     if not supa_user:
         raise HTTPException(status_code=401, detail="Invalid or expired session")
+    # 2.11.2026 (WP6, Villen paatos "esto"): passia ei myyda tilille jolla on
+    # jo Premium. Ennen Stripe-kutsua, joten maksua ei synny. Haun virhe
+    # (None) paastaa oston lapi: silloin kaytos on sama kuin ennen estoa,
+    # eli webhook kirjaa tapauksen lokiin (`_fulfil_season_pass`).
+    # Guest-polulla tilia ei tunneta ennen maksua, joten siella estoa ei ole.
+    if passi and account_has_premium(supa_user["id"]) is True:
+        return JSONResponse(status_code=409, content={
+            "code": SEASON_PASS_ALREADY_PREMIUM_CODE,
+            "detail": SEASON_PASS_ALREADY_PREMIUM_TEXT})
 
     base = _web_checkout_base_url(req.origin)
     ref = _clean_affiliate_ref(req.ref)
@@ -4989,9 +5008,18 @@ def create_guest_checkout_session(
 # Premiumia `SEASON_PASS_END`in jalkeen.
 
 
-def _season_pass_price(plan: str) -> str:
-    """Kertamaksupassin hinta-ID kun kytkin on paalla JA plan on kausi, muuten ''."""
+def _season_pass_price(plan: str, now: datetime | None = None) -> str:
+    """Kertamaksupassin hinta-ID kun kytkin on paalla JA plan on kausi, muuten ''.
+
+    2.11.2026 (julkaisutarkistajan sivuhavainto): EI passin loppuhetken
+    (`SEASON_PASS_END`) jalkeen. Ilman tata passia myytaisiin 30.5.2027
+    jalkeenkin, webhook kirjoittaisi menneen loppupaivan ja maksu menisi lapi
+    ilman oikeutta, eli sama vikaluokka kuin Premium-tilin esto. Lopun
+    jalkeen kaytos on sama kuin kytkin pois (entinen polku), ja hinta-endpoint
+    lukee saman funktion, joten pinta ja veloitus eivat voi erota."""
     if plan != "season":
+        return ""
+    if season_pass.fixed_end_passed(season_pass.SEASON_PASS_ID, now):
         return ""
     return (STRIPE_PRICE_SEASON_PASS_2026_27 or "").strip()
 
