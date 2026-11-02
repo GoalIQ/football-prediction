@@ -39,14 +39,23 @@ KIELLETYT = [
     r"same logged prediction is what",
     r"percentages are the model's prediction, logged before",
     r"locked predictions?",
-    # Ottelusivujen generaattori (build_prediction_pages.py, 3 231 sivua)
-    # korjataan omassa PR:ssaan; sen kuviot lisataan silloin tahan.
+    # k2 B5 2.11: ottelusivujen generaattori (build_prediction_pages.py,
+    # 3 231 sivua) sanoi ennen ottelua "logged before kickoff on <pvm> and
+    # will be graded" ja metassa "Logged before kick-off in our public track
+    # record and graded after", vaikka sivun luku paivittyy aloitukseen asti.
+    r"this prediction was logged before kick-?off on",
+    r"will be graded in our",
+    r"logged before kick-?off in our public track record and graded after",
+    r"away, logged before kick-?off and graded after",
 ]
 
 # Pinnat: generoidut sivut, generaattorit, SPA, llms.txt. dist/ ja
 # node_modules eivat ole lahdetta.
 PINNAT = (
     sorted(ROOT.glob("*.html"))
+    # Generoidut ottelu- ja liigasivut: generaattorin korjaus ei riita, jos
+    # sivuja ei ole ajettu uudelleen (k2 B5 2.11).
+    + sorted((ROOT / "predictions").rglob("*.html"))
     + [ROOT / "llms.txt"]
     + sorted((ROOT / "scripts").glob("build_*.py"))
     + sorted((ROOT / "web" / "pro-spa" / "src").rglob("*.svelte"))
