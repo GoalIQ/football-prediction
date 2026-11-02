@@ -223,6 +223,14 @@
 		<span class="chk">{#if chk}Checked {chk}{:else}&nbsp;{/if}</span>
 	</p>
 
+	<!-- WP10 / B5 (2.11.2026): desktopilla (>= 1100 px) kaksi palstaa:
+	     paatoskortti vasemmalla, rivit ja Team ID -kentta oikealla. Ennen
+	     tata 760 px:n palsta oli kehyksen vasemmassa reunassa ja oikea puoli
+	     tyhja, ja ID-kentta oli vasta rivien alla (1440x900: 630 px ylhaalta).
+	     Jarjestys DOMissa on sama kuin puhelimessa (kortti, rivit, kentta),
+	     joten lukujarjestys ja fokus eivat muutu; puhelimessa palstat ovat
+	     tavallisia lohkoja eika mikaan liiku. -->
+	<div class="col-main">
 	<!-- DefCon-live vain kesken kierroksen (A3 5: tauolla se nayttaa
 	     paattynytta kierrosta paatosten edella). Komponentti on sama. -->
 	{#if phase?.liveGw != null}
@@ -252,7 +260,9 @@
 			<p class="muted">{loading ? 'Loading your squad…' : 'Loading this gameweek…'}</p>
 		</div>
 	{/if}
+	</div>
 
+	<div class="col-side">
 	<ul class="rows">
 		<!-- Last gameweek: viimeisin kierros mallin sarjassa. 22.9 (julkaisu-
 		     tarkistaja): nimi oli "Last call", joka englanniksi tarkoittaa
@@ -400,6 +410,7 @@
 		<!-- Paikka varattu kunnes tiedetaan kumpi nakyy. -->
 		<div class="entry-slot" aria-hidden="true"></div>
 	{/if}
+	</div>
 </section>
 
 <style>
@@ -615,6 +626,22 @@
 	@media (prefers-reduced-motion: reduce) {
 		summary::after {
 			transition: none;
+		}
+	}
+	/* WP10 / B5: kaksi palstaa desktopilla. Sama 1100 px:n raja kuin My teamin
+	   team-gridissa (ToolsHome). Kortti saa hieman leveamman palstan, koska
+	   sen kentta ja valilehdet tarvitsevat tilaa; rivit ja ID-kentta mahtuvat
+	   kapeampaan (puhelimessa ne ovat 390 px:n levyisia). */
+	@media (min-width: 1100px) {
+		.week {
+			max-width: none;
+			display: grid;
+			grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+			column-gap: var(--s-8);
+			align-items: start;
+		}
+		.gw-line {
+			grid-column: 1 / -1;
 		}
 	}
 </style>

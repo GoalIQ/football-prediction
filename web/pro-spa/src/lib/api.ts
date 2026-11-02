@@ -10,6 +10,7 @@
 import { predictRequest } from './predictRequest';
 import { API_BASE } from './config';
 import { accessToken } from './auth.svelte';
+import type { PendingRow } from './fixtureProbs';
 
 /** Edge-sprint kohta 1 (KRIITTINEN): Supabase-access_token Bearer-headeriin
  * kaikkiin goaliq-api-fantasy-kutsuihin kirjautuneena. Backend verifioi
@@ -590,6 +591,29 @@ export async function fetchFixtures(league: string, days: number): Promise<Fixtu
 export function fetchAccuracy(): Promise<AccuracyResponse> {
 	accuracyP ??= getJson<AccuracyResponse>('/api/accuracy').catch(() => ({}));
 	return accuracyP;
+}
+
+/** WP10 / B3 (2.11.2026): julkisen lokin kirjatut, pelaamattomat ennusteet
+ *  yhdelle kilpailulle (lokin koodi PL, PD, ..., ks. $lib/fixtureProbs
+ *  LOG_COMPETITION). Fixtures-rivin prosentti tulee tasta, ei Predict-
+ *  kutsusta. Kerran per kilpailu per sivulataus; virhe ei jaa valimuistiin,
+ *  ja kutsuja nayttaa silloin rivit ilman lukua (ei 0 %). */
+const pendingCache = new Map<string, Promise<PendingRow[]>>();
+export function fetchPendingPredictions(competition: string): Promise<PendingRow[]> {
+	let p = pendingCache.get(competition);
+	if (!p) {
+		p = getJson<{ pending_predictions?: PendingRow[] }>(
+			`/api/accuracy?include=pending&competition=${encodeURIComponent(competition)}`
+		).then(
+			(r) => r.pending_predictions ?? [],
+			(e) => {
+				pendingCache.delete(competition);
+				throw e;
+			}
+		);
+		pendingCache.set(competition, p);
+	}
+	return p;
 }
 
 /** #155 Fit checker: yksi rungon pelaaja (hinta miljoonina). */

@@ -28,6 +28,7 @@
 	} from '$lib/api';
 	import { LEAGUES as SPA_LEAGUES, findLeague } from '$lib/leagues';
 	import { capture } from '$lib/analytics';
+	import { matchTeam } from '$lib/teamMatch';
 
 	let {
 		premium = false,
@@ -79,65 +80,14 @@
 	// naiivi "aseta kaikki kerralla" hävittäisi kotijoukkueen välittömästi.
 	/** 28.7 (Villen havainto): otteluohjelman nimet ovat football-data.orgin
 	 *  muodossa ("Brighton Hove", "Nottingham", "Man City") ja mallin lista on
-	 *  omassaan ("Brighton", "Nottingham Forest", "Manchester City"). Tarkka
-	 *  vertailu jatti kotijoukkueen tyhjaksi aina kun nimet erosivat.
+	 *  omassaan ("Brighton", "Nott'm Forest", "Man City"). Tarkka vertailu
+	 *  jatti kotijoukkueen tyhjaksi aina kun nimet erosivat.
 	 *
-	 *  Tavallisia funktioita tarkoituksella: ei $state, ei $derived, ei uusia
-	 *  efekteja. Juuri uusi efekti rikkoi bind:valuen aiemmin tanaan. */
-	/** 22.8: diakriitit puretaan (Barça/Alavés/Vitória) ja "Utd" laajenee
-	 *  ("Sheffield Utd" -> "Sheffield United") — molemmat kaatoivat matchin
-	 *  aiemmin. Mitattu livedataa vasten: 10 liigan kaikki fixture-nimet
-	 *  (30 pv ikkuna) osuvat pooliin 0 failia. */
-	function norm(s: string): string {
-		return s
-			.normalize('NFD')
-			.replace(/[̀-ͯ]/g, '')
-			.toLowerCase()
-			.replace(/\butd\b/g, 'united')
-			.replace(/\b(fc|afc|cf|sc|ac|as|ss|us)\b/g, '')
-			.replace(/[^a-z0-9]/g, '');
-	}
-	/** Nimet joita substring-saanto ei saa kiinni: lyhenne ei sisally mallin
-	 *  nimeen eika painvastoin (PSG, HSV), tai osuma olisi moniselitteinen
-	 *  (Barça vs Espanyol de Barcelona, Deportivo vs Deportivo Alavés).
-	 *  Yleistetty samankaltaisuus sekoittaisi Man Cityn ja Man Unitedin,
-	 *  joten nama kirjataan kasin. Kartoitettu 22.8 livedatasta (football-
-	 *  data.orgin shortName -> mallin joukkuelista, kaikki 10 liigaa). */
-	const NAME_ALIASES: Record<string, string> = {
-		mancity: 'manchestercity',
-		manutd: 'manchesterunited',
-		manunited: 'manchesterunited',
-		spurs: 'tottenham',
-		wolverhampton: 'wolves',
-		psg: 'parissaintgermain',
-		rclens: 'lens',
-		mgladbach: 'gladbach',
-		hsv: 'hamburger',
-		atleti: 'atletico',
-		barca: 'fcbarcelona',
-		deportivo: 'lacoruna',
-		az: 'azalkmaar',
-		psv: 'psveindhoven',
-		nec: 'nijmegen',
-		sportingcp: 'splisbon',
-		vitoria: 'guimaraes',
-		amadora: 'estrela',
-		acadviseu: 'academicoviseu'
-	};
-	function matchTeam(name: string, pool: string[]): string | null {
-		if (pool.includes(name)) return name;
-		let n = norm(name);
-		n = NAME_ALIASES[n] ?? n;
-		const exact = pool.find((x) => norm(x) === n);
-		if (exact) return exact;
-		// "Atleti" -> "Club Atletico de Madrid", "Nottingham" -> "Nottingham
-		// Forest": substring kumpaan suuntaan vain. Alle 4 merkin nimi ei saa
-		// substring-osua (liian moniselitteinen), ja vain YKSIKASITTEINEN
-		// osuma kelpaa — muuten jatetaan tyhjaksi eika arvata.
-		if (n.length < 4) return null;
-		const partial = pool.filter((x) => norm(x).includes(n) || n.includes(norm(x)));
-		return partial.length === 1 ? partial[0] : null;
-	}
+	 *  WP10 (2.11.2026): sovitin siirtyi tasta $lib/teamMatch.ts:aan, koska
+	 *  Fixtures-rivin prosentti tarvitsee saman sovituksen (yksi sovitin, alias
+	 *  puretaan molemmista nimista). Mitattu tuotannosta: Forestin ottelut
+	 *  eivat taytaneet Predictia ("Nottingham" vs "Nott'm Forest"), eika
+	 *  Brasilian Vitoria, Mineiro tai Paranaense. Portti teamMatch.gate.test.ts. */
 
 	let pending = $state<{ league: string; home: string; away: string } | null>(null);
 	$effect(() => {
