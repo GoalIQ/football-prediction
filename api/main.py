@@ -5839,9 +5839,21 @@ def fantasy_phase0(
     span_actual = max(
         (f["gw"] for t in out_teams for f in t["fixtures"]), default=next_gw - 1
     ) - next_gw + 1
+    out_meta = {**meta, "horizon_gw": max(0, span_actual)}
+    # 2.11.2026: near_horizon_gw samoin TASTA vastauksesta. Artefaktin lahiraja
+    # on laskettu next_gameweekista (kesken kierroksen GW9-14), mutta alaraja
+    # (fp #82) alkaa nyt GW10:sta, joten lahikierroksia on viisi. Kun meta sanoi
+    # yha 6, sovelluksen oletusnakyma "Next 6" otti mukaan kaukokierroksen
+    # ilman CS-%:ia ja naytti "6 games, no clean sheet % yet". Lukija ei saa
+    # luvata enempaa lahikierroksia kuin vastauksessa on (saanto 6a).
+    near_gws = {f["gw"] for t in out_teams for f in t["fixtures"]
+                if f.get("tier") == "near"}
+    if near_gws and isinstance(meta.get("near_horizon_gw"), int):
+        out_meta["near_horizon_gw"] = min(meta["near_horizon_gw"],
+                                          max(near_gws) - next_gw + 1)
     return {
         **data,
-        "meta": {**meta, "horizon_gw": max(0, span_actual)},
+        "meta": out_meta,
         "teams": out_teams,
     }
 
