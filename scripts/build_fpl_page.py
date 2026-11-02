@@ -1313,10 +1313,14 @@ def record_table_html(preds: list[dict], c: dict) -> str:
         (
             "<h3 class=\"rec-subhead\">Upcoming: logged, awaiting result "
             f"({len(pending_rows)})</h3>"
+            # Julkaisutarkistaja 2.11 (WP10): "Nothing is edited once logged"
+            # oli epatosi - accuracy_pipeline paivittaa rivia aloitukseen asti
+            # (refresh_count > 0 kaikilla pending-riveilla). Korjattu versio
+            # sanatarkasti.
             "<p class=\"rec-note\">These predictions are logged before "
-            "kickoff and graded after the match. Nothing is edited once "
-            "logged; each row moves to the graded table above when the "
-            "result is in.</p>"
+            "kickoff and graded after the match. A prediction can change "
+            "until kickoff and is never edited after it. Each row moves to "
+            "the graded table above when the result is in.</p>"
             '<div class="rec-scroll"><table>'
             '<thead><tr><th scope="col">Kick-off</th>'
             '<th scope="col" class="m-hide">Competition</th>'
@@ -1371,8 +1375,8 @@ def record_table_html(preds: list[dict], c: dict) -> str:
     )
     pending_note = (
         f"<p class=\"rec-note\">{c['acc_pending']} further predictions are "
-        f"already logged and locked for upcoming matches; they are listed "
-        f"below and appear in the graded table once played.</p>"
+        f"already logged for upcoming matches. They're listed below and "
+        f"appear in the graded table once played.</p>"
         if pending_rows
         else ""
     )

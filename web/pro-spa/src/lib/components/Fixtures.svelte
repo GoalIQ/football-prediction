@@ -164,12 +164,14 @@
 {:else}
 	{#if tzLabel}<p class="muted tz-note">Kick-off times are in your time zone ({tzLabel}).</p>{/if}
 	{#if anyProbs}
-		<!-- Sanatarkasti sovelluksen fixtures.prob_source (julkaisutarkistaja k2,
-		     WP9 1.11). Linkki vie ilmaispinnan recordiin, jossa luku gradataan. -->
+		<!-- Julkaisutarkistajan korjattu versio sanatarkasti (WP10 2.11): lokirivi
+		     paivittyy aloitukseen asti (refresh_count > 0 kaikilla pending-riveilla),
+		     joten nakyva luku EI ole valttamatta se joka gradataan. Sovelluksen
+		     fixtures.prob_source = sama teksti (goaliq-app, seuraava OTA). -->
 		<p class="muted prob-source">
 			<a href="https://goaliq.app/predictions#record"
-				>Percentages are the model's prediction, logged before kick-off and graded in the public
-				track record.</a
+				>Percentages are the model's logged prediction. It can change until kick-off, and the
+				public track record grades the last version before kick-off.</a
 			>
 		</p>
 	{/if}
