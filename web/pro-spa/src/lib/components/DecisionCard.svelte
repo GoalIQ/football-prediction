@@ -27,7 +27,7 @@
 	 * ja vain siirtopari oli lukittu (`decision_transfer_lock`).
 	 */
 	import type { RateTeamResponse } from '$lib/fantasyTools';
-	import { personalLock } from '$lib/personalLock';
+	import { personalLock, thisWeekOpenCaptain, lockHiddenLine } from '$lib/personalLock';
 	import PersonalLock from './PersonalLock.svelte';
 	import { CHIP_NAMES } from '$lib/fantasyTools';
 	import { modelSourceLine, NO_FIXTURE, type ModelCaptainCard } from '$lib/weekRows';
@@ -69,8 +69,18 @@
 	const ownLocked = $derived(card != null && personalLock(premium, card));
 	/** Oma joukkue jonka paatokset saa nayttaa, tai null (mallin kortti). */
 	const mine = $derived(ownLocked ? null : card);
+	/** WP8 / B1 (2.11.2026): lukittunakin kayttajan OMAN XI:n kapteeni, jos
+	 *  palvelin avasi sen (`meta.free_open`). Lukija on fail-closed: vanha API
+	 *  tai taysi vastaus -> null -> mallin oma kapteeni kuten ennen. */
+	const openCap = $derived(ownLocked ? thisWeekOpenCaptain(card) : null);
+	/** Lukon maararivi ("Premium lists 5 transfer options for your squad."). */
+	const hiddenLine = $derived(ownLocked ? lockHiddenLine(card) : null);
 	/** true = kayttajan oma joukkue, false = mallin kortti. */
 	const own = $derived(mine != null);
+	/** Kortin kapteeni on kayttajan oma (auki tai lukitun vastauksen avattu). */
+	const ownCap = $derived(own || openCap != null);
+	/** Vastaus jonka meta ja runko kuvaavat kortin kapteenia. */
+	const capSrc = $derived(mine ?? (openCap ? card : null));
 
 	let tab = $state<Tab>('captain');
 	function pick(t: Tab) {
@@ -80,18 +90,21 @@
 
 	/** Kierros jolle kapteeni on laskettu (kesken kierroksen deadline-GW). */
 	const capGw = $derived(
-		mine
-			? (mine.meta.captain_gw ?? (mine.meta.gw_in_progress === true ? null : mine.meta.gw))
+		capSrc
+			? (capSrc.meta.captain_gw ?? (capSrc.meta.gw_in_progress === true ? null : capSrc.meta.gw))
 			: (model?.gw ?? null)
 	);
-	const cap = $derived(mine ? (mine.captain?.pick ?? null) : (model?.captain ?? null));
-	const alt = $derived(mine ? (mine.captain?.alternative ?? null) : (model?.alt ?? null));
+	const cap = $derived(mine ? (mine.captain?.pick ?? null) : (openCap ?? model?.captain ?? null));
+	/** Avatussa lukossa vaihtoehto on piilotettu (palvelin: alternative null). */
+	const alt = $derived(
+		mine ? (mine.captain?.alternative ?? null) : openCap ? null : (model?.alt ?? null)
+	);
 	/** Kapteenin vastustaja(t): oma kortti rungon pelaajarivista, mallin kortti
 	 *  lukijalta (`captain.opponents`: [] = ei ottelua, null = ei rivia). */
 	const capOpp = $derived.by(() => {
-		if (!mine) return model?.opp ?? null;
+		if (!capSrc) return model?.opp ?? null;
 		if (!cap || capGw == null) return null;
-		const row = mine.team?.players?.find((p) => p.id === cap.id);
+		const row = capSrc.team?.players?.find((p) => p.id === cap.id);
 		const g = row?.gameweeks?.find((x) => x.gw === capGw);
 		if (!g) return null;
 		if (g.opponents.length === 0) return NO_FIXTURE;
@@ -99,7 +112,7 @@
 	});
 	/** Mallin kortin tarkistusreitti: lahde palvelimen `meta.source`sta. */
 	const src = $derived(
-		!mine && model
+		!ownCap && model
 			? modelSourceLine(model.source)
 			: null
 	);
@@ -138,7 +151,7 @@
 		{#if tab === 'captain'}
 			{#if cap}
 				<p class="k">
-					{own ? 'Suggested captain' : "The model's captain"}{#if capGw != null}, GW{capGw}{/if}
+					{ownCap ? 'Suggested captain' : "The model's captain"}{#if capGw != null}, GW{capGw}{/if}
 				</p>
 				<p class="pick">
 					<button type="button" class="name" onclick={() => openPlayer(cap.id, 'decision_card')}
@@ -185,14 +198,15 @@
 				<p class="muted">No captain projection for this gameweek yet.</p>
 			{/if}
 			{#if ownLocked}
-				<!-- 17.10: mallin kapteeni ylla on sisaltoa; oman XI:n kapteeni on
-				     Premiumia (palvelin: captain null lukitussa rate-teamissa). -->
-				<PersonalLock tool="this-week" {onUpgrade} compact />
+				<!-- 17.10: mallin kapteeni ylla on sisaltoa. WP8 / B1 (2.11): jos
+				     palvelin avasi oman XI:n kapteenin, se on ylla ja lukon teksti
+				     ei lupaa kapteenia Premiumiin (captainOpen). -->
+				<PersonalLock tool="this-week" {onUpgrade} compact captainOpen={openCap != null} hidden={hiddenLine} />
 			{/if}
 		{:else if tab === 'transfer'}
 			{#if ownLocked}
 				<p class="k">Transfer</p>
-				<PersonalLock tool="this-week" {onUpgrade} compact />
+				<PersonalLock tool="this-week" {onUpgrade} compact captainOpen={openCap != null} hidden={hiddenLine} />
 			{:else if !mine}
 				<p class="k">Transfer</p>
 				<p>{#if premium}Add your FPL team ID below and the model checks transfers for your own squad.{:else}With GoalIQ Premium, add your FPL team ID below and the model checks transfers for your own squad.{/if}</p>
@@ -237,7 +251,7 @@
 		{:else}
 			<p class="k">Chip</p>
 			{#if ownLocked}
-				<PersonalLock tool="this-week" {onUpgrade} compact />
+				<PersonalLock tool="this-week" {onUpgrade} compact captainOpen={openCap != null} />
 			{:else if !mine}
 				<p>{#if premium}Add your FPL team ID below to see which chips you still have.{:else}With GoalIQ Premium, add your FPL team ID below to see which chips you still have.{/if}</p>
 			{:else if chips}

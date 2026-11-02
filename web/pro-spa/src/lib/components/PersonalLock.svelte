@@ -18,7 +18,7 @@
 	import { onMount } from 'svelte';
 	import { capture } from '$lib/analytics';
 	import {
-		LOCK_COPY,
+		lockCopy,
 		PERSONAL_LOCK_SOURCE,
 		lockUpgradeSource,
 		type PersonalSlug
@@ -27,27 +27,39 @@
 	let {
 		tool,
 		onUpgrade,
-		compact = false
+		compact = false,
+		captainOpen = false,
+		hidden = null
 	}: {
 		tool: PersonalSlug;
+		/** WP8 / B1: lukon ylla nakyy kayttajan oman XI:n kapteeni
+		 *  (personalLock.thisWeekOpenCaptain). Teksti ei silloin lupaa kapteenia
+		 *  Premiumiin (lockCopy valitsee "kapteeni auki" -muodon). */
+		captainOpen?: boolean;
+		/** WP8 / B1: lukon maararivi (personalLock.lockHiddenLine), tai null. */
+		hidden?: string | null;
 		/** Avaa upgrade-nakyman. Ei kirjaa tapahtumaa itse. */
 		onUpgrade?: () => void;
 		/** Yhden kappaleen muoto julkisen listan sisaan (price watch, differentials). */
 		compact?: boolean;
 	} = $props();
 
-	const copy = $derived(LOCK_COPY[tool]);
+	const copy = $derived(lockCopy(tool, { captainOpen }));
+	/** Haara analytiikkaan (auditoinnin mittari "lock_view -> lock_tap
+	 *  haaroittain"): lukko jonka ylla on kayttajan oma tulos vs ilman.
+	 *  Sama kentta kuin sovelluksessa (lock_variant). */
+	const variant = $derived(captainOpen ? 'own_result' : 'generic');
 
 	onMount(() => {
 		capture(
 			'paywall_shown',
-			{ source: PERSONAL_LOCK_SOURCE, tool },
+			{ source: PERSONAL_LOCK_SOURCE, tool, lock_variant: variant },
 			`paywall_shown_${PERSONAL_LOCK_SOURCE}_${tool}`
 		);
 	});
 
 	function open() {
-		capture('upgrade_tapped', { source: lockUpgradeSource(tool) });
+		capture('upgrade_tapped', { source: lockUpgradeSource(tool), tool, lock_variant: variant });
 		onUpgrade?.();
 	}
 </script>
@@ -56,6 +68,7 @@
 	<p class="plock-line" data-personal-lock={tool}>
 		<strong>{copy.title}.</strong>
 		{copy.body}
+		{#if hidden}<strong>{hidden}</strong>{/if}
 		<button type="button" class="linklike" onclick={open}>See Premium</button>
 	</p>
 {:else}
@@ -65,6 +78,7 @@
 			<span class="tag" aria-hidden="true">Premium</span>
 		</p>
 		<p class="muted plock-body">{copy.body}</p>
+		{#if hidden}<p class="plock-count">{hidden}</p>{/if}
 		<button type="button" class="secondary" onclick={open}>See Premium</button>
 	</div>
 {/if}
@@ -90,6 +104,11 @@
 		margin: 0 0 var(--s-3);
 		font-size: var(--step--1);
 		max-width: 60ch;
+	}
+	.plock-count {
+		margin: calc(-1 * var(--s-2)) 0 var(--s-3);
+		font-size: var(--step--1);
+		font-weight: 700;
 	}
 	.tag {
 		font-family: var(--font-mono);

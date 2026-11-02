@@ -47,7 +47,13 @@
 	import { xpHorizon } from '$lib/xpHorizon';
 	import { ratingGap, ratingGapBasis } from '$lib/ratingGap';
 	import { modelCaptainOf } from '$lib/pitchLineup';
-	import { personalLock, ratingPreview, type LockablePayload } from '$lib/personalLock';
+	import {
+		personalLock,
+		ratingPreview,
+		thisWeekOpenCaptain,
+		lockHiddenLine,
+		type LockablePayload
+	} from '$lib/personalLock';
 	import PersonalLock from './PersonalLock.svelte';
 	import { formatDeadline } from '$lib/gameweek';
 	/** Siirtoikkunan pituus sanoina: verdiktin oma ikkuna, sitten siirto-
@@ -870,6 +876,15 @@
 	);
 	/** Esimaun lause lukitulle (arvosana + ikkuna samasta metasta kuin muualla). */
 	const preview = $derived(data ? ratingPreview(data.rating, xpHorizon(data.meta).over) : null);
+	/** WP8 / B1 (2.11.2026): lukossa auki oleva oma tulos (palvelimen
+	 *  meta.free_open) ja piilotettujen siirtojen maara. Fail-closed lukijat. */
+	const openCap = $derived(locked ? thisWeekOpenCaptain(data) : null);
+	const hiddenLine = $derived(locked ? lockHiddenLine(data) : null);
+	const openCapGw = $derived(
+		openCap && data
+			? (data.meta.captain_gw ?? (data.meta.gw_in_progress === true ? null : data.meta.gw))
+			: null
+	);
 	/** 6.9: kentta + penkki -lohkon korkeus TeamPitchManagerista; sivupaneeli
 	 *  on tasan sen korkuinen ja lista rullaa sisalla (Villen tarkennus 2). */
 	let pitchCore = $state(0);
@@ -1274,7 +1289,20 @@
 				<p class="rp-text">{preview.text}</p>
 			</div>
 		{/if}
-		<PersonalLock tool="rate-my-team" {onUpgrade} />
+		{#if openCap}
+			<!-- WP8 / B1: kayttajan oman XI:n kapteeni on auki ilmaiseksi (sama
+			     kuin sovelluksen Rate my team, WP9). Vaihtoehto ja perustelu
+			     jaavat lukkoon. -->
+			<div class="rating-preview open-cap">
+				<p class="k">Suggested captain{#if openCapGw != null}, GW{openCapGw}{/if}</p>
+				<p class="oc-pick">
+					<strong>{openCap.web_name}</strong>
+					<span class="muted">{openCap.team_short}</span>
+					{#if openCap.gw_xp != null}<span class="oc-xp">{openCap.gw_xp.toFixed(1)} xP</span>{/if}
+				</p>
+			</div>
+		{/if}
+		<PersonalLock tool="rate-my-team" {onUpgrade} captainOpen={openCap != null} hidden={hiddenLine} />
 	{:else}
 	<!-- 17.10: kapteeni luetaan vahdin kautta. Lukittu vastaus (captain: null)
 	     ei paase tanne `locked`-haaran takia, mutta vanha esimakumaski tai
@@ -2159,6 +2187,21 @@
 		margin: 0;
 		font-size: var(--step--1);
 		max-width: 60ch;
+	}
+	/* WP8 / B1: lukon avattu oma kapteeni. */
+	.oc-pick {
+		margin: var(--s-1) 0 0;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--s-1) var(--s-2);
+		font-size: var(--step-1);
+	}
+	.oc-xp {
+		font-family: var(--font-mono);
+		font-weight: 700;
+		color: var(--accent);
+		font-variant-numeric: tabular-nums;
 	}
 
 	/* SOLIO-OPPI (19.8): yhteenvetonauha. Sama pintakieli kuin muissa

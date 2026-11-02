@@ -136,6 +136,96 @@ export const LOCK_COPY: Record<PersonalSlug, { title: string; body: string }> = 
 	}
 };
 
+// ---------------------------------------------------------------------------
+// WP8 / B1 (ulkoasu 2.11.2026, Villen paatos 1.11): lukko nayttaa kayttajan
+// OMAN tuloksen. Sama saanto kuin sovelluksessa (goaliq-app lib/personalLock.ts
+// thisWeekOpenCaptain / lockHiddenCounts, WP9) ja palvelimessa (fp
+// api/premium.py RATE_TEAM_FREE_OPEN, meta.free_open + meta.hidden_counts).
+// ---------------------------------------------------------------------------
+
+/** Lukot joiden perusteksti lupaa kapteenin Premiumiin: kapteenin ollessa auki
+ *  perusteksti olisi epatosi, joten niilla on oma "kapteeni auki" -muoto.
+ *  Tekstit ovat samat kuin sovelluksen en.ts:ssa (julkaisutarkistaja k2 1.11). */
+export const CAPTAIN_OPEN_COPY: Partial<Record<PersonalSlug, { title: string; body: string }>> = {
+	'this-week': {
+		title: 'Your transfer and chip call is part of GoalIQ Premium',
+		body: 'Premium adds the rest of this gameweek for your squad: whether to hold or which move to make, and which chips you still have.'
+	},
+	'rate-my-team': {
+		title: 'The full analysis is part of GoalIQ Premium',
+		body: "Premium adds the weak spot in your XI, the hold or transfer call with the move itself, your chips, the pitch with each player's projection, squad news and your season against the projection."
+	}
+};
+
+/** Lukon teksti. YKSI LUKIJA: komponentti ei valitse taulua itse. */
+export function lockCopy(
+	slug: PersonalSlug,
+	opts: { captainOpen?: boolean } = {}
+): { title: string; body: string } {
+	if (opts.captainOpen === true) {
+		const c = CAPTAIN_OPEN_COPY[slug];
+		if (c) return c;
+	}
+	return LOCK_COPY[slug];
+}
+
+/** Kayttajan oman XI:n kapteeni lukitusta vastauksesta (vain auki olevat kentat). */
+export interface OpenCaptain {
+	id: number;
+	web_name: string;
+	team_short: string;
+	gw_xp: number | null;
+}
+
+function lockedRateMeta(payload: LockablePayload): Record<string, unknown> | null {
+	if (serverLockedTool(payload) !== 'rate-my-team') return null;
+	return (payload as { meta: Record<string, unknown> }).meta;
+}
+
+/**
+ * Lukon YKSI auki oleva oma tulos: mallin kapteeni kayttajan omalle XI:lle.
+ *
+ * Saanto 6a kohta 1, fail-closed kolmesti (sama kuin sovelluksessa):
+ *   1. Vain palvelimen LUKITSEMA rate-team-vastaus (`meta.locked_tool`).
+ *      Taysi vastaus ei kelpaa: lukon ylla ei saa nakya mitaan mita palvelin
+ *      ei tarkoituksella avannut ilmaiselle.
+ *   2. Palvelin nimeaa avatun kentan (`meta.free_open` sisaltaa
+ *      'captain.pick'). Vanha API ei nimea -> null -> mallin oma kapteeni.
+ *   3. Vain nelja kenttaa kopioidaan. Uusi pick-kentta ei vuoda lukkoon.
+ */
+export function thisWeekOpenCaptain(payload: LockablePayload): OpenCaptain | null {
+	const meta = lockedRateMeta(payload);
+	if (!meta) return null;
+	const open = meta.free_open;
+	if (!Array.isArray(open) || !open.includes('captain.pick')) return null;
+	const cap = (payload as { captain?: unknown }).captain;
+	const pick = cap != null && typeof cap === 'object' ? (cap as { pick?: unknown }).pick : null;
+	if (pick == null || typeof pick !== 'object') return null;
+	const p = pick as Record<string, unknown>;
+	if (typeof p.id !== 'number' || !Number.isInteger(p.id) || p.id <= 0) return null;
+	if (typeof p.web_name !== 'string' || p.web_name.trim() === '') return null;
+	return {
+		id: p.id,
+		web_name: p.web_name,
+		team_short: typeof p.team_short === 'string' ? p.team_short : '',
+		gw_xp: typeof p.gw_xp === 'number' && Number.isFinite(p.gw_xp) ? p.gw_xp : null
+	};
+}
+
+/** Lukon maararivi lukitusta rate-team-vastauksesta (`meta.hidden_counts`), tai
+ *  null. Vain ei-negatiivinen kokonaisluku; 0 -> ei rivia (lause "0 transfer
+ *  options" lupaisi Premiumiin tyhjaa), puuttuva -> ei rivia (luku ilman
+ *  lahdetta olisi keksitty). */
+export function lockHiddenLine(payload: LockablePayload): string | null {
+	const h = lockedRateMeta(payload)?.hidden_counts;
+	if (h == null || typeof h !== 'object') return null;
+	const n = (h as Record<string, unknown>).transfer_options;
+	if (typeof n !== 'number' || !Number.isInteger(n) || n <= 0) return null;
+	return n === 1
+		? 'Premium lists 1 transfer option for your squad.'
+		: `Premium lists ${n} transfer options for your squad.`;
+}
+
 /** Rate my teamin ilmainen esimaku: arvosana. Palvelin jattaa nama kentat
  *  oikeiksi myos lukittuun vastaukseen (RATE_TEAM_PREVIEW_RATING_FIELDS),
  *  joten esimaku on sama ennen ja jalkeen kytkimen. */

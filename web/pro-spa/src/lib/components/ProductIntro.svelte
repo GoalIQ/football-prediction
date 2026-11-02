@@ -170,8 +170,8 @@
 		<h2>What Premium gives you</h2>
 		<ul>
 			<li>
-				Your own squad in full: the weak spot, the captain for your XI, the pitch, your
-				gameweek review and DefCon live during a gameweek.
+				Your own squad in full: the weak spot, the pitch, your gameweek review and DefCon
+				live during a gameweek.
 			</li>
 			<li>
 				The best move the model checked, with the hit priced in. Often that's a hold, and
