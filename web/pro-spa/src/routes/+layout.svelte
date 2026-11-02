@@ -4,6 +4,7 @@
 	import { initAnalytics, capture } from '$lib/analytics';
 	import { initAuth } from '$lib/auth.svelte';
 	import { captureRef, stripRefFromAddressBar } from '$lib/billing';
+	import { markEntry } from '$lib/funnel';
 	import { capturePartner } from '$lib/partnerAttribution';
 	import { fplEntry } from '$lib/fplEntry.svelte';
 
@@ -55,6 +56,10 @@
 		const props: Record<string, string> = {};
 		if (src) props.src = src;
 		if (srcPage) props.src_page = srcPage;
+		// WP3 / A1: hubin CTA-paikka on ostoketjun lahde, kunnes lukon
+		// napautus korvaa sen (funnel.ts). Ilman tata /checkout?plan=season
+		// -saapuminen kirjautui lahteella 'checkout_route'.
+		if (src) markEntry(`src:${src}`, srcPage);
 		capture(
 			'pro_page_viewed',
 			Object.keys(props).length ? props : undefined,

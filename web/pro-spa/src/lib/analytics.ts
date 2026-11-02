@@ -10,6 +10,7 @@
 import type PostHogJs from 'posthog-js';
 import { POSTHOG_KEY, POSTHOG_HOST } from './config';
 import { scrubSecrets } from './scrubSecrets';
+import { funnelProps } from './funnel';
 
 /* 2.8.2026 PERF: posthog-js EI ole enaa staattinen import.
  *
@@ -236,6 +237,9 @@ export function capture(
 		if (onceKeys.has(onceKey)) return;
 		onceKeys.add(onceKey);
 	}
+	// WP3 / A1 (2.11.2026): ostoketjun askel + lahde YHDESSA paikassa, ks.
+	// funnel.ts. Komponentit eivat kirjaa entry_sourcea itse.
+	props = funnelProps(event, props);
 	if (ready && posthog) posthog.capture(event, props);
 	else queue.push({ event, props });
 }
@@ -251,6 +255,7 @@ export function captureBeforeUnload(
 	props?: Record<string, unknown>
 ): void {
 	if (!POSTHOG_KEY) return;
+	props = funnelProps(event, props);
 	if (ready && posthog) {
 		posthog.capture(event, props, { transport: 'sendBeacon' });
 		return;
