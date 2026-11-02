@@ -35,7 +35,8 @@ RESULT = {"home_score": 3, "away_score": 1, "actual_outcome": "home",
 
 
 def _probs(html: str) -> list[str]:
-    return re.findall(r"\d+%", re.search(r'class="legend">(.*?)</div>', html).group(1))
+    # WP11 (1.11): kolme isoa lukua .p3-lohkossa (koti, tasapeli, vieras).
+    return re.findall(r'<div class="p3c [a-z]+"><b>(\d+%)</b>', html)
 
 
 def test_phases_keep_numbers_and_url():
@@ -49,8 +50,12 @@ def test_phases_keep_numbers_and_url():
     assert "Full time: Arsenal FC 3-1 Chelsea FC (home win)" in final
     assert "/predictions#record" in pending and "/predictions#record" in final
     assert "Result pending" not in before and "Full time" not in before
-    # Maskaus ennallaan: ei xG:ta eika tarkkaa tulosta sivulla
-    assert "expected goals and scoreline probabilities on" in final
+    # Lukko: tuleva sivu lupaa loput tulokset; pelattu ei (ruudukkoa ei ole
+    # tallessa), vaan ohjaa tuleviin otteluihin (julkaisutarkistaja 1.11).
+    assert "scorelines and expected goals in Premium." in before
+    for h in (pending, final):
+        assert "Scorelines and expected goals for upcoming matches are in Premium." in h
+        assert "more scorelines" not in h
 
 
 def test_numbers_come_from_log_row_only():

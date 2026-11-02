@@ -61,9 +61,11 @@ def _ajankohtainen_gw() -> int:
     from pathlib import Path as _P
     doc = _j.loads((_P(__file__).resolve().parents[1] / "data"
                     / "fpl_projections_phase0.json").read_text(encoding="utf-8"))
-    from src.models.fpl_gameweek import display_gameweek
+    # WP2 (1.11.2026): sivun nollapelitaulukko ja kortti lukevat
+    # `clean_sheet_table_gameweek`ia (kierros jonka deadline on edessa).
+    from src.models.fpl_gameweek import clean_sheet_table_gameweek
     gws = sorted({f["gameweek"] for f in doc["fixtures"] if f.get("gameweek")})
-    gw = display_gameweek(doc.get("meta") or {}, doc.get("fixtures") or [])
+    gw = clean_sheet_table_gameweek(doc.get("meta") or {}, doc.get("fixtures") or [])
     if gw in gws:
         return gw
     return gws[0] if gws else 1
@@ -304,7 +306,7 @@ def test_blank_gameweek_row_has_no_goals_and_caption_does_not_promise_them(monke
             row("Everton", "Fulham", "H", (None, None, None, None))]
     monkeypatch.setattr(bfp, "_turnover_by_model_team",
                         lambda: {bfp.map_name("Arsenal"): {"minutes_churn_pct": 5.0}})
-    c = {"cs_rows": rows, "next_gw": 4, "season": "2026/27"}
+    c = {"cs_rows": rows, "next_gw": 4, "cs_gw": 4, "season": "2026/27"}
     html = bfp.cs_table_html(c)
     assert "projected goals<br>ARS 1.64 v SUN 0.67" in html
     assert html.count("projected goals") == 1
@@ -638,10 +640,11 @@ def test_kortti_ja_sivu_lukevat_SAMAA_kierrosfunktiota():
     i = kortti.find("def card_gw_outlook")
     assert i > 0
     runko = kortti[i:i + 3000]
-    assert "display_gameweek" in runko, (
-        "card_gw_outlook ei KUTSU display_gameweekia (kommentit poistettu "
-        "ennen etsintaa) — kortti voi olla eri kierroksessa kuin sivu")
-    assert "display_gameweek" in sivu, "sivu ei lue display_gameweekia"
+    # WP2 (1.11.2026): yhteinen funktio on clean_sheet_table_gameweek.
+    assert "clean_sheet_table_gameweek(" in runko, (
+        "card_gw_outlook ei KUTSU clean_sheet_table_gameweekia (kommentit "
+        "poistettu ennen etsintaa) — kortti voi olla eri kierroksessa kuin sivu")
+    assert "clean_sheet_table_gameweek(" in sivu, "sivu ei lue clean_sheet_table_gameweekia"
 
 
 def test_kortin_kierros_on_sivun_kierros_JOKA_VAIHEESSA():
@@ -657,7 +660,7 @@ def test_kortin_kierros_on_sivun_kierros_JOKA_VAIHEESSA():
     Tassa vaihe annetaan synteettisesti, joten ero on aina mitattavissa.
     """
     from scripts import gen_share_card as g
-    from src.models.fpl_gameweek import display_gameweek
+    from src.models.fpl_gameweek import clean_sheet_table_gameweek as display_gameweek
 
     # Vaihe: GW4:n kaikki ottelut potkaistu, FPL:n finished laahaa ->
     # display_gameweek sanoo 5, min(fixtures) sanoisi 4.
@@ -722,7 +725,8 @@ def test_kortti_ja_sivu_lukevat_SAMAA_kierrosfunktiota():
     kertoo vaarasta asiasta. 12.9 kaikki 20 ottelua ilmoitettiin puuttuvina
     vaikka sivu oli oikeassa.
 
-    Tama mittaa lahteesta etta kumpikin polku paatyy `display_gameweek`iin.
+    Tama mittaa lahteesta etta kumpikin polku paatyy samaan funktioon
+    (WP2 1.11.2026: `clean_sheet_table_gameweek`, ennen `display_gameweek`).
     """
     from pathlib import Path as _P
     root = _P(__file__).resolve().parents[1]
@@ -731,9 +735,9 @@ def test_kortti_ja_sivu_lukevat_SAMAA_kierrosfunktiota():
     i = kortti.find("def card_gw_outlook")
     assert i > 0
     runko = kortti[i:i + 3000]
-    assert "display_gameweek" in runko, (
-        "card_gw_outlook ei lue display_gameweekia — kortti voi olla eri "
-        "kierroksessa kuin sivu jolle se linkittaa")
-    assert "display_gameweek" in sivu, "sivu ei lue display_gameweekia"
+    assert "clean_sheet_table_gameweek(" in runko, (
+        "card_gw_outlook ei lue clean_sheet_table_gameweekia — kortti voi olla "
+        "eri kierroksessa kuin sivu jolle se linkittaa")
+    assert "clean_sheet_table_gameweek(" in sivu, "sivu ei lue clean_sheet_table_gameweekia"
 
 

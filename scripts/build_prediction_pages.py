@@ -35,6 +35,7 @@ from datetime import datetime, timedelta, timezone
 from html import escape
 from pathlib import Path
 from typing import NamedTuple
+from urllib.parse import quote
 
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -49,10 +50,13 @@ from src import price_copy as PC  # noqa: E402
 from src.models import accuracy as acc
 from src.models.call_margin import call_state, pct_int
 from scripts.build_fpl_page import ROOT as _FP_ROOT, write_urlset
+# Olemassa oleva kassa (sama osoite kuin landingilla ja /predictionsissa).
+from scripts.build_fpl_page import PRO_CHECKOUT_SEASON_URL as CHECKOUT_URL
 from scripts.mobile_css import MOBILE_COLS_JS, MOBILE_CSS
 # Ylapalkki ja julkaisijasolmu yhdesta lahteesta (22.9, web-audit T5 + T7).
 from src.site_identity import publisher_node  # noqa: E402
 from src.site_nav import SITE_NAV_CSS, site_nav_html  # noqa: E402
+from src.local_time import time_tag, with_local_time_script  # WP2  # noqa: E402
 from scripts.slugs import fold_ascii, slug
 from scripts import site_output
 
@@ -308,6 +312,87 @@ footer a{color:var(--muted);}
 .note{color:var(--muted);font-size:12px;margin:18px 0;}
 @media (max-width:520px){.cta-row{flex-direction:column;align-items:stretch;}
 .btn{text-align:center;}}
+/* --- 1 Nov 2026 (UI programme WP11): match page as proof, hub grouped. ---
+   Tokens only from this :root and the landing page (--green is the
+   landing's #5FD97A). NOTE the naming here is inverted against the landing:
+   --ink is the light text colour and --cream the dark ground. The section
+   bar is the landing's .bar; that class name is taken here by the 1px rule,
+   hence .secbar. Nothing below 12px. */
+:root{--green:#5FD97A;}
+.secbar{display:flex;justify-content:space-between;align-items:center;gap:12px;
+padding:7px 12px;margin-top:24px;font-family:var(--mono);font-size:12px;font-weight:700;
+letter-spacing:.14em;text-transform:uppercase;background:var(--ink);color:var(--cream);}
+.secbar-amber{background:var(--amber);} .secbar-teal{background:var(--teal);}
+.secbar-dim{background:var(--paper);color:var(--ink);}
+.secbar + .card{border-top:0;}
+.stamp{font-size:13px;color:var(--muted);margin-top:6px;}
+.stamp b{color:var(--ink);font-weight:600;}
+.p3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;text-align:center;}
+.p3c b{display:block;font-family:var(--mono);font-size:32px;line-height:1.1;font-weight:700;
+font-variant-numeric:tabular-nums;color:var(--ink);}
+.p3c span{display:block;font-size:13px;color:var(--muted);overflow-wrap:anywhere;}
+.p3c.fav b{color:var(--amber);font-size:40px;}
+.p3c.fav span{color:var(--ink);font-weight:600;}
+.p3c.draw b{color:var(--muted);}
+@media (min-width:560px){.p3c b{font-size:44px;}.p3c.fav b{font-size:54px;}}
+/* The favourite is the full-height amber segment; the other side teal and the
+   draw a neutral line, so the bar reads the same on every surface. */
+.pbar{display:flex;align-items:center;gap:2px;height:12px;margin:14px 0 4px;}
+.pbar span{display:block;flex:1 1 0;height:6px;}
+.pbar .fav{background:var(--amber);height:12px;}
+.pbar .side{background:var(--teal);opacity:.7;}
+.pbar .draw{background:rgba(243,242,242,0.40);}
+.pbar.mini{height:6px;margin:6px 0 0;max-width:240px;}
+.pbar.mini span{height:3px;} .pbar.mini .fav{height:6px;}
+.p-say{margin-top:12px;font-size:16px;}
+.ts{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 14px;}
+.ts .lbl{flex:1 1 100%;font-size:13px;color:var(--muted);}
+.ts b{font-family:var(--mono);font-size:34px;line-height:1.1;color:var(--amber);
+font-variant-numeric:tabular-nums;}
+.ts .p{font-family:var(--mono);font-size:18px;color:var(--ink);}
+.lock-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:16px 0 12px;
+filter:blur(4px);user-select:none;pointer-events:none;}
+.lock-grid span{display:flex;justify-content:space-between;padding:8px 10px;background:var(--paper);
+border:1px solid var(--line);font-family:var(--mono);font-size:14px;color:var(--muted);}
+.lock-grid .xg{grid-column:1/-1;}
+.lock-txt{font-size:15px;margin:4px 0 14px;}
+.btn.solid{display:inline-block;background:var(--amber);color:var(--cream);border-color:var(--amber);}
+.btn.solid:hover{background:var(--gold);}
+@media (max-width:520px){.btn.solid{display:block;}}
+.form-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;
+border-bottom:1px solid var(--line);}
+.form-row:last-of-type{border-bottom:0;}
+.form-row .t{font-weight:600;overflow-wrap:anywhere;}
+.fchips{display:flex;gap:4px;flex:none;}
+.fc{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;
+font-family:var(--mono);font-size:13px;font-weight:700;}
+.fc.w{background:var(--green);color:var(--cream);}
+.fc.d{background:var(--paper);color:var(--ink);border:1px solid var(--line-strong,rgba(243,242,242,0.40));}
+.fc.l{background:var(--ember);color:var(--cream);}
+.form-note{font-size:12px;color:var(--muted);margin-top:8px;}
+.verdict{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;margin:22px 0 0;
+padding:12px 14px;background:var(--paper);border:1px solid var(--line);
+border-left:4px solid var(--muted);font-size:15px;}
+.verdict.hit{border-left-color:var(--green);} .verdict.miss{border-left-color:var(--ember);}
+.verdict b{font-family:var(--mono);color:var(--ink);}
+.verdict .sep{color:var(--muted);}
+.verdict a b{color:var(--teal);}
+.v-note{font-size:13px;color:var(--muted);margin-top:6px;}
+.share{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:22px 0 0;}
+.share .lbl{font-size:13px;color:var(--muted);margin-right:4px;}
+.share-btn{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--teal);
+background:transparent;border:1px solid var(--line);padding:8px 12px;text-decoration:none;cursor:pointer;}
+.share-btn:hover{border-color:var(--teal);}
+.hub-sum{font-size:15px;margin:0 0 6px;}
+.dgrp{font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.08em;
+text-transform:uppercase;color:var(--muted);margin:18px 0 0;padding-bottom:4px;
+border-bottom:1px solid var(--line);}
+.card .dgrp:first-child{margin-top:0;}
+details.more{margin-top:12px;}
+details.more>summary{cursor:pointer;font-family:var(--mono);font-weight:700;color:var(--teal);
+padding:12px 0;min-height:44px;}
+.mark{font-family:var(--mono);font-size:12px;font-weight:700;margin-left:8px;white-space:nowrap;}
+.mark.hit{color:var(--green);} .mark.miss{color:var(--ember);}
 """ + MOBILE_CSS
 
 # theme-color + Google Fonts (preconnect minimoi latauskustannuksen; sama
@@ -379,6 +464,44 @@ def _fmt_kickoff(iso: str) -> str:
     return dt.strftime("%a %d %b %Y, %H:%M UTC")
 
 
+def _kickoff_html(iso: str, short: bool = False) -> str:
+    """Kickoff `<time>`-elementtina YHDELLA saannolla (src/local_time.py, WP2):
+    staattinen teksti on UTC (oikein ilman JS:aa), selain vaihtaa lukijan aikaan
+    samaan muotoon kuin SPA. Vahvistamaton aika (00:00-paikkamerkki) ja
+    jasentymaton arvo jaavat tekstiksi: niissa ei ole kellonaikaa lokalisoitavaksi.
+    `short` = hubin rivi, jonka paiva on jo ryhman otsikossa (ilman JS:aa "16:30 UTC").
+    """
+    txt = _fmt_kickoff(iso)
+    try:
+        dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
+    except Exception:
+        return escape(txt)
+    if not txt.endswith(" UTC"):
+        return escape(txt)
+    return time_tag(dt, dt.strftime("%H:%M UTC") if short else txt)
+
+
+def _logged_stamp(e: dict) -> str:
+    """"Logged before kick-off" + kirjausaika lokirivin `logged_at`ista.
+
+    Fail-closed: ilman kirjausaikaa tai jos se EI ole ennen kickoffia, vaitetta
+    ei tehda lainkaan. Aika on se jolla rivi on lokissa (viimeisin paivitys
+    ennen kickoffia, sama jonka track record gradaa), ei laskettu. Sama
+    aikasaanto kuin kickoffilla (src/local_time.py time_tag).
+    """
+    ko = _kickoff_dt(e)
+    try:
+        logged = datetime.fromisoformat((e.get("logged_at") or "").replace("Z", "+00:00"))
+    except ValueError:
+        return ""
+    if ko is None or logged.tzinfo is None or not logged < ko:
+        return ""
+    logged = logged.astimezone(timezone.utc)
+    return ('<p class="stamp">Logged before kick-off: <b>'
+            + time_tag(logged, logged.strftime("%a %d %b %Y, %H:%M UTC"))
+            + "</b></p>")
+
+
 SOCIAL_IMAGE = f"{BASE}/assets/brand/goaliq-social-1200x630.png"
 
 
@@ -438,8 +561,23 @@ def _page(title: str, desc: str, canonical: str, hero: str, body: str,
         f'<div class="wrap hero">\n{hero}\n</div>\n</header>\n'
         f'<div class="wrap content">\n{body}\n'
         f"{FOOTER}"
-        "</div>\n" + MOBILE_COLS_JS + "</body>\n</html>\n"
+        "</div>\n" + MOBILE_COLS_JS + with_local_time_script(hero + body) + PAGE_JS
+        + "</body>\n</html>\n"
     )
+
+
+# 1.11.2026 (WP11): kickoff kavijan omassa ajassa. HTML:ssa on aina UTC
+# (hakukone, ilman JS:aa, Intl puuttuu), ja <time datetime> kantaa ISO-ajan.
+# Ei kolmannen osapuolen skripteja. Sama skripti nayttaa "Copy link" -napin
+# vain kun leikepoyta on kaytettavissa (ilman JS:aa nappi ei tekisi mitaan).
+PAGE_JS = """<script>
+(function(){
+var bs=document.querySelectorAll('button[data-copy]');
+for(var j=0;j<bs.length;j++){(function(b){if(!navigator.clipboard)return;b.hidden=false;
+b.addEventListener('click',function(){navigator.clipboard.writeText(b.getAttribute('data-copy')).then(function(){b.textContent='Link copied';});});})(bs[j]);}
+})();
+</script>
+"""
 
 
 def _upcoming_by_comp(log: dict, now: datetime) -> dict[str, list[dict]]:
@@ -611,6 +749,10 @@ class Feed(NamedTuple):
     n_conf: int
     mapped: set
     unmapped: set
+    #: Siirretyt/perutut (`void`) rivit nayttonimilla, ika rajaamatta: form-
+    #: nauhan lukija tarvitsee ne (team_form). `_played_by_comp` pudottaa yli
+    #: PENDING_MAX_DAYS vanhat gradaamattomat rivit, joten ne eivat ole `played`issa.
+    voided: dict = {}
 
 
 def load_feed(log: dict, now: datetime) -> Feed:
@@ -623,28 +765,305 @@ def load_feed(log: dict, now: datetime) -> Feed:
     """
     upcoming = _upcoming_by_comp(log, now)
     played = _played_by_comp(log, now)
+    voided = _void_by_comp(log)
     n_conf = _attach_confidence(upcoming)
     mapped, unmapped = _apply_display_names(upcoming)
     mapped_p, unmapped_p = _apply_display_names(played)
+    _apply_display_names(voided)
     for comp, rows in upcoming.items():
         _assign_filenames(rows + (played.get(comp) or []))
-    return Feed(upcoming, played, n_conf, mapped | mapped_p, unmapped | unmapped_p)
+    return Feed(upcoming, played, n_conf, mapped | mapped_p, unmapped | unmapped_p,
+                voided)
+
+
+def _void_by_comp(log: dict) -> dict[str, list[dict]]:
+    """Siirretyt/perutut ottelut (`void`) kilpailuittain, ika rajaamatta.
+
+    Julkaisutarkistaja 1.11.2026 (PR #76): siirretty ottelu jaa lokiin void-
+    rivina eika uusintaa kirjata (sama FD-id, upsert ei lisaa rivia, reconcile
+    ei koske void-riveihin). Form ohitti siksi pelatun ottelun: Athletic
+    Bilbaon sivulla W D D D W, oikea D D D L W (tappio Levantelle 21.10 puuttui).
+    """
+    out: dict[str, list[dict]] = {}
+    for e in log["predictions"]:
+        comp = e.get("competition")
+        if comp in LEAGUES and e.get("void"):
+            out.setdefault(comp, []).append(e)
+    return out
 
 
 def match_page_url(comp: str, e: dict) -> str:
     return f"{BASE}/predictions/{LEAGUES[comp]['slug']}/{_match_filename(e)[:-5]}"
 
 
-def _prob_block(e: dict) -> str:
-    ph, pd_, pa = e["p_home"], e["p_draw"], e["p_away"]
+def _side_roles(call: dict) -> tuple[str, str]:
+    """(koti, vieras) -> "fav" | "side". Suosikki tulee VAIN call_statesta;
+    "too close" = kumpikaan ei ole suosikki eika kumpaakaan korosteta."""
+    fav = call.get("favourite")
+    return ("fav" if fav == "home" else "side",
+            "fav" if fav == "away" else "side")
+
+
+def _prob_bar(e: dict, call: dict, mini: bool = False) -> str:
+    """Kolmiosainen palkki: suosikki tayskorkea amber, toinen puoli teal,
+    tasapeli neutraali. Sama funktio ottelusivulle ja hubin riveille, joten
+    variavain ei voi erota pinnoittain. Koriste (aria-hidden): luvut ovat
+    tekstina vieressa."""
+    rh, ra = _side_roles(call)
+    seg = lambda role, p: (f'<span class="{role}" '
+                           f'style="flex-grow:{max(p, 0.0) * 1000:.0f}"></span>')
+    return (f'<div class="pbar{" mini" if mini else ""}" aria-hidden="true">'
+            + seg(rh, e["p_home"]) + seg("draw", e["p_draw"]) + seg(ra, e["p_away"])
+            + "</div>")
+
+
+def _prob_block(e: dict, call: dict) -> str:
+    """Kolme isoa kokonaislukua (koti / tasapeli / vieras) + palkki."""
+    rh, ra = _side_roles(call)
+    cell = lambda role, pct, label: (
+        f'<div class="p3c {role}"><b>{pct}</b><span>{escape(label)}</span></div>')
     return (
-        f'<div class="probbar" aria-hidden="true">'
-        f'<span class="h" style="width:{ph * 100:.1f}%"></span>'
-        f'<span class="d" style="width:{pd_ * 100:.1f}%"></span>'
-        f'<span class="a" style="width:{pa * 100:.1f}%"></span></div>'
-        f'<div class="legend"><span>{escape(e["home_team"])} {_fmt_pct(ph)}</span>'
-        f"<span>Draw {_fmt_pct(pd_)}</span>"
-        f'<span>{escape(e["away_team"])} {_fmt_pct(pa)}</span></div>'
+        '<div class="p3">'
+        + cell(rh, _fmt_pct(e["p_home"]), e["home_team"])
+        + cell("draw", _fmt_pct(e["p_draw"]), "Draw")
+        + cell(ra, _fmt_pct(e["p_away"]), e["away_team"])
+        + "</div>" + _prob_bar(e, call)
+    )
+
+
+def _prob_sentence(e: dict, call: dict, played: bool) -> str:
+    """Yksi lause todennakoisyyksista. Malli EI simuloi otteluita: 1X2 on
+    Dixon-Coles-tulosmatriisin summa (src/models/dixon_coles.predict_1x2),
+    joten lause ei puhu simulaatioista. Too close -> vanha mitattu lause.
+
+    PELATTU SIVU (julkaisutarkistaja 1.11, PR #76): ei suosikkia. `call_state`
+    lasketaan TAMAN PAIVAN marginaalilla (16 -> 8 pp 25.10), joten 82 pelattua
+    sivua olisi sanonut "made X the favourite", vaikka sama URL sanoi ennen
+    ottelua "too close". Kirjattu ennuste sellaisenaan, ei tulkintaa."""
+    if played:
+        return (
+            f"Logged prediction: {escape(e['home_team'])} {_fmt_pct(e['p_home'])}, "
+            f"draw {_fmt_pct(e['p_draw'])}, {escape(e['away_team'])} {_fmt_pct(e['p_away'])}."
+        )
+    fav = call.get("favourite")
+    if fav not in ("home", "away"):
+        return _too_close_sentence(e["home_team"], e["away_team"],
+                                   e["p_home"], e["p_away"], call)
+    if fav == "home":
+        win, lose = ("home_team", "p_home"), ("away_team", "p_away")
+    else:
+        win, lose = ("away_team", "p_away"), ("home_team", "p_home")
+    return (
+        f"The model {'made' if played else 'makes'} "
+        f"<strong>{escape(e[win[0]])}</strong> the favourite: "
+        f"{_fmt_pct(e[win[1]])} to win, {_fmt_pct(e['p_draw'])} draw, "
+        f"{_fmt_pct(e[lose[1]])} {escape(e[lose[0]])}."
+    )
+
+
+# Premiumin Predict nayttaa ylimmat 10 tulosta (web/pro-spa Predict.svelte
+# `premium ? 10 : 5`; portti tests/test_match_page_proof.py lukee sen sielta).
+PREMIUM_TOP_SCORES = 10
+
+
+def _secbar(label: str, tone: str = "") -> str:
+    return (f'<div class="secbar{" secbar-" + tone if tone else ""}">'
+            f"<span>&#9612; {label}</span></div>")
+
+
+def _scoreline_lock(e: dict, played: bool = False) -> str:
+    """Ylin tulos ilmaiseksi (Villen paatos 1.11) + sumennettu ruudukko.
+
+    🔴 PELATTU SIVU (julkaisutarkistaja 1.11, PR #76): ottelun ennakkoruudukkoa
+    ja xG:ta ei ole tallessa (lokissa vain ylin tulos, xG nollataan ennen
+    ottelua), joten "9 more scorelines ... in Premium" ei toteutuisi tasta
+    ottelusta. Pelatulla sivulla ei ruudukkoa eika maaraa, vain ylin tulos ja
+    lause tulevista otteluista.
+
+    🔴 RUUDUKOSSA EI OLE OIKEITA LUKUJA. CSS-sumennus ei piilota mitaan
+    DOM:sta, joten solut ovat paikkamerkkeja ("?-?", "?%"). Builder lukee
+    vain lokia, jossa ei ole muita tulosrivejä eika ennen ottelua xG:ta;
+    portti (tests/test_match_page_proof.py) vaatii etta ruudukossa ei ole
+    yhtaan numeroa ja etta rivin Premium-kentat eivat paady sivulle.
+    """
+    score = e.get("most_likely_score")
+    shown = bool(score) and bool(re.fullmatch(r"\d{1,2}-\d{1,2}", str(score)))
+    p = e.get("most_likely_score_p")
+    top = ""
+    if shown:
+        top = (
+            '<div class="ts"><span class="lbl">Top scoreline</span>'
+            f"<b>{escape(str(score))}</b>"
+            + (f'<span class="p">{_fmt_pct(p)}</span>'
+               if isinstance(p, (int, float)) and 0 < p < 1 else "")
+            + "</div>"
+        )
+    button = (f'<a class="btn solid" href="{CHECKOUT_URL}" data-cta="match-page-premium">'
+              f"Start Premium, {PC.season()} a year</a>")
+    if played:
+        return (
+            _secbar("Scorelines", "teal")
+            + '<div class="card">' + top
+            + '<p class="lock-txt"><strong>Scorelines and expected goals for upcoming '
+            "matches are in Premium.</strong></p>" + button + "</div>"
+        )
+    hidden = PREMIUM_TOP_SCORES - (1 if shown else 0)
+    # 3 x 3 paikkamerkkia + xG-rivi: esikatselu, ei dataa.
+    cells = '<span><i>?-?</i><i>?%</i></span>' * 9
+    grid = (f'<div class="lock-grid" aria-hidden="true">{cells}'
+            '<span class="xg"><i>xG</i><i>?.? - ?.?</i></span></div>')
+    what = (f"{hidden} more scorelines" if shown else f"{hidden} scorelines")
+    return (
+        _secbar("Scorelines", "teal")
+        + '<div class="card">' + top + grid
+        + f'<p class="lock-txt"><strong>{what} and expected goals in Premium.</strong></p>'
+        + button + "</div>"
+    )
+
+
+FORM_N = 5
+# Alle kolmen tuloksen "form" ei kerro mitaan (Mestarien liigan alku: 1-2
+# ottelua lokissa), joten lohko jaa pois.
+FORM_MIN = 3
+
+
+def team_form(team: str, history: list[dict] | tuple, before: datetime | None,
+              n: int = FORM_N) -> list[str]:
+    """Joukkueen viimeiset gradatut tulokset ("W"/"D"/"L"), vanhin ensin.
+
+    YKSI LUKIJA. Vain rivit joiden kickoff on ENNEN `before`a, joten pelatun
+    ottelun sivu ei koskaan nayta omaa tai myohempaa tulostaan (vaihe-
+    invariantti). Lahde on sama loki kuin sivun ennuste (sama kilpailu,
+    nayttonimet samasta kartasta); ei uutta hakua. Void-rivi ei ole tulos.
+
+    🔴 FAIL-CLOSED SIIRRETYLLE OTTELULLE (julkaisutarkistaja 1.11): jos
+    joukkueella on samassa kilpailussa void-rivi ennen `before`a, palautetaan
+    tyhja. Uusintaa ei kirjata lokiin, joten emme tieda puuttuuko tulos
+    nauhasta; vajaa nauha olisi vaara vaite (W D D D W vs oikea D D D L W).
+    """
+    for r in history:
+        if not r.get("void") or team not in (r.get("home_team"), r.get("away_team")):
+            continue
+        ko = _kickoff_dt(r)
+        if ko is not None and before is not None and ko < before:
+            return []
+    rows = []
+    for r in history:
+        res = r.get("result")
+        if not res or r.get("void"):
+            continue
+        if team not in (r.get("home_team"), r.get("away_team")):
+            continue
+        ko = _kickoff_dt(r)
+        if ko is None or before is None or not ko < before:
+            continue
+        rows.append((ko, r))
+    rows.sort(key=lambda t: t[0])
+    out = []
+    for _, r in rows[-n:]:
+        res = r["result"]
+        hs, as_ = res.get("home_score"), res.get("away_score")
+        if hs is None or as_ is None:
+            continue
+        mine, theirs = (hs, as_) if r.get("home_team") == team else (as_, hs)
+        out.append("W" if mine > theirs else "L" if mine < theirs else "D")
+    return out
+
+
+_FORM_WORD = {"W": "win", "D": "draw", "L": "loss"}
+
+
+def _form_block(comp: str, e: dict, history) -> str:
+    """Form-nauha molemmille. Sama maara molemmille (lyhyemman mukaan), jotta
+    otsikon luku on tosi kummallekin; alle FORM_MIN -> ei lohkoa."""
+    before = _kickoff_dt(e)
+    fh = team_form(e["home_team"], history, before)
+    fa = team_form(e["away_team"], history, before)
+    n = min(len(fh), len(fa))
+    if n < FORM_MIN:
+        return ""
+    fh, fa = fh[-n:], fa[-n:]
+
+    def row(team: str, form: list[str]) -> str:
+        chips = "".join(
+            f'<span class="fc {x.lower()}" title="{_FORM_WORD[x]}">{x}</span>'
+            for x in form)
+        label = ", ".join(_FORM_WORD[x] for x in form)
+        return (f'<div class="form-row"><span class="t">{escape(team)}</span>'
+                f'<span class="fchips" role="img" aria-label="{escape(label)}">{chips}</span></div>')
+
+    league = LEAGUES[comp]["name"]
+    return (
+        _secbar(f"Form, last {n} {escape(league)} {'result' if n == 1 else 'results'}", "dim")
+        + '<div class="card">' + row(e["home_team"], fh) + row(e["away_team"], fa)
+        + '<p class="form-note">Oldest on the left. '
+        "From the results in our prediction log.</p></div>"
+    )
+
+
+def record_verdict(e: dict) -> dict | None:
+    """Gradatun rivin tuomio TASMALLEEN kuten julkinen track record sen nayttaa.
+
+    YKSI LUKIJA, ei uutta gradausta: samat kentat kuin
+    build_fpl_page.record_table_html (rivi laskee vain jos
+    `acc.counts_in_record`, pick = `predicted_winner` eli record nimeaa aina
+    todennakoisemman puolen, osuma = `result.hit_1x2` 90 min -normilla).
+    tests/test_match_page_proof.py vertaa tata recordin taulukon riviin.
+    """
+    res = e.get("result")
+    if not res:
+        return None
+    side = e.get("predicted_winner")
+    name = {"home": e.get("home_team"), "away": e.get("away_team"),
+            "draw": "Draw"}.get(side)
+    p = {"home": e.get("p_home"), "draw": e.get("p_draw"),
+         "away": e.get("p_away")}.get(side)
+    nonregular = res.get("duration") not in (None, "REGULAR")
+    return {
+        "counted": acc.counts_in_record(e),
+        "hit": bool(res.get("hit_1x2")),
+        "pick": name or "",
+        "pct": _fmt_pct(p) if isinstance(p, (int, float)) else "",
+        "score": res.get("actual_score") or f"{res.get('home_score')}-{res.get('away_score')}",
+        "regular_score": res.get("regular_score") if nonregular else None,
+    }
+
+
+def _verdict_html(e: dict, call: dict) -> str:
+    v = record_verdict(e)
+    if v is None:
+        return ""
+    said = escape(f"{v['pick']} {v['pct']}".strip())
+    score = escape(v["score"])
+    if v["regular_score"]:
+        score += f" (graded on the 90-minute score, {escape(v['regular_score'])})"
+    if v["counted"]:
+        cls = "hit" if v["hit"] else "miss"
+        tail = f"Counted as a {cls}"
+    else:
+        cls, tail = "", "Not counted in the track record"
+    sep = '<span class="sep" aria-hidden="true">&middot;</span>'
+    note = ('<p class="v-note">The track record always names the more likely side, '
+            "even when the pre-match page called it too close.</p>"
+            if v["counted"] and call.get("favourite") not in ("home", "away") else "")
+    return (f'<div class="verdict {cls}"><span>Model said <b>{said}</b></span>{sep}'
+            f"<span>Result <b>{score}</b></span>{sep}"
+            f'<span><a href="/predictions#record"><b>{tail}</b></a></span></div>{note}')
+
+
+def _share_block(url: str, home: str, away: str) -> str:
+    """Jakonapit: tavalliset linkit (X, WhatsApp) + JS:n kopiointinappi.
+    Ei kolmannen osapuolen skripteja eika seurantaa."""
+    text = f"{home} vs {away} prediction"
+    x = ("https://x.com/intent/post?text=" + quote(text, safe="")
+         + "&url=" + quote(url, safe=""))
+    wa = "https://wa.me/?text=" + quote(f"{text} {url}", safe="")
+    return (
+        '<div class="share"><span class="lbl">Share</span>'
+        f'<button type="button" class="share-btn" data-copy="{escape(url)}" hidden>Copy link</button>'
+        f'<a class="share-btn" href="{escape(x)}" target="_blank" rel="noopener">X</a>'
+        f'<a class="share-btn" href="{escape(wa)}" target="_blank" rel="noopener">WhatsApp</a>'
+        "</div>"
     )
 
 
@@ -760,7 +1179,10 @@ def _result_html(e: dict, state: str) -> str:
     )
 
 
-def render_match_page(comp: str, e: dict, now: datetime | None = None) -> str:
+def render_match_page(comp: str, e: dict, now: datetime | None = None,
+                      history: list[dict] | tuple = ()) -> str:
+    """Ottelusivu. `history` = saman kilpailun lokirivit (form-nauha); ilman
+    sita lohko jaa pois. Kaikki ennusteluvut tulevat lokirivilta `e`."""
     cfg = LEAGUES[comp]
     state = _played_state(e, now)
     played = state != "upcoming"
@@ -771,6 +1193,9 @@ def render_match_page(comp: str, e: dict, now: datetime | None = None) -> str:
     # `else away` -haara olisi renderoinut minka tahansa muun arvon kuin
     # "home" vierasjoukkueeksi.
     call = call_state(ph, pd_, pa)
+    # Pelatulla sivulla palkki ei korosta suosikkia (sama syy kuin
+    # _prob_sentence: tamanhetkinen marginaali ei ole ottelua edeltava).
+    shown_call = {**call, "favourite": None} if played else call
     fav, fav_pct = _favourite_label(e, call)
     url = f"{BASE}/predictions/{cfg['slug']}/{_match_filename(e)[:-5]}"
     title = f"{home} vs {away} Prediction: {cfg['name']} | GoalIQ"
@@ -789,11 +1214,6 @@ def render_match_page(comp: str, e: dict, now: datetime | None = None) -> str:
             f"gives {fav} a {fav_pct} chance to win. Logged before kick-off in our "
             f"public track record and graded after the match."
         )
-        lede_claim = (
-            f"The GoalIQ match model {'made' if played else 'makes'} "
-            f"<strong>{escape(fav)}</strong> the favourite "
-            f"at <strong>{fav_pct}</strong> to win."
-        )
     else:
         # Portti 10.9: "too close" ensin, SERP katkaisee ~155 merkkiin.
         desc = (
@@ -801,25 +1221,30 @@ def render_match_page(comp: str, e: dict, now: datetime | None = None) -> str:
             f"{_fmt_pct(ph)} home, {_fmt_pct(pd_)} draw, {_fmt_pct(pa)} away, "
             f"logged before kick-off and graded after."
         )
-        lede_claim = _too_close_sentence(home, away, ph, pa, call)
+    # 1.11.2026 (WP11, mobiili ensin): paikallinen aika + kirjausleima,
+    # gradatulla sivulla tuomio heti, sitten kolme isoa lukua ja yksi lause,
+    # ylin tulos + lukko, form, jako. Vaiheet: upcoming / pending / final.
     hero = (
         f"<h1>{escape(home)} vs {escape(away)} prediction</h1>"
-        f'<p class="lede">{escape(cfg["name"])} · kickoff {_fmt_kickoff(e.get("kickoff") or "")}. '
-        f"{lede_claim}</p>"
+        f'<p class="lede">{escape(cfg["name"])} · kickoff '
+        f'{_kickoff_html(e.get("kickoff") or "")}</p>'
+        + _logged_stamp(e)
     )
     body = (
-        f'<div class="card big">{_prob_block(e)}</div>'
-        f'<div class="stat-row">'
-        f'<div class="stat"><b>Premium</b><span>expected goals and scoreline probabilities on '
-        f'<a href="https://pro.goaliq.app/?tab=premium&amp;src=predict-page&amp;srcp=predictions">GoalIQ Premium</a></span></div>'
-        f"</div>"
+        (_verdict_html(e, call) if state == "final" else "")
+        + _secbar("Win probability", "amber")
+        + f'<div class="card big">{_prob_block(e, shown_call)}'
+        f'<p class="p-say">{_prob_sentence(e, call, played)}</p></div>'
         + _confidence_block(e)
+        + _scoreline_lock(e, played)
+        + _form_block(comp, e, history)
         + (_result_html(e, state) if played else
            f'<div class="rec">This prediction was logged before kickoff on '
            f'{escape((e.get("logged_at") or "")[:10])} and will be graded in our '
            f'<a href="/predictions">public track record</a>, hits and misses included.</div>')
+        + _share_block(url, home, away)
         + f'<div class="cta-row">'
-        f'<a class="btn" href="https://pro.goaliq.app/matches/predict">Run your own prediction</a>'
+        f'<a class="btn ghost" href="https://pro.goaliq.app/matches/predict">Run your own prediction</a>'
         f'<a class="btn ghost" href="/predictions/{cfg["slug"]}/">More {escape(cfg["name"])} predictions</a>'
         f"</div>"
         f'<p class="note">{DISCLAIMER}</p>'
@@ -849,40 +1274,116 @@ def render_match_page(comp: str, e: dict, now: datetime | None = None) -> str:
 
 
 def _hub_row(cfg: dict, e: dict, played: bool) -> str:
-    fav, fav_pct = _favourite_label(
-        e, call_state(e["p_home"], e["p_draw"], e["p_away"]))
+    call = call_state(e["p_home"], e["p_draw"], e["p_away"])
+    fav, fav_pct = _favourite_label(e, call)
     pick_html = (
         f'<span class="pick">{escape(fav)} {fav_pct}</span>' if fav
         else f'<span class="pick close">{TOO_CLOSE_LABEL}</span>'
     )
-    meta = _fmt_kickoff(e.get("kickoff") or "")
+    mark = ""
     if played:
+        meta = escape(_fmt_kickoff(e.get("kickoff") or ""))
         res = e.get("result")
         meta += (f" · full time {res.get('home_score')}-{res.get('away_score')}"
                  if res else " · result pending")
+        v = record_verdict(e)
+        if v and v["counted"]:
+            # Gradattu rivi on track recordin rivi: sama pick ja rasti kuin
+            # recordissa (ottelusivun tuomio sanoo saman), myos silloin kun
+            # sivu kutsui ottelua liian tasaiseksi.
+            pick_html = f'<span class="pick">{escape(v["pick"])} {v["pct"]}</span>'
+            mark = ('<span class="mark hit">&#10003; hit</span>' if v["hit"]
+                    else '<span class="mark miss">&#10007; miss</span>')
+    else:
+        meta = _kickoff_html(e.get("kickoff") or "", short=True)
     return (
         f'<div class="mrow"><div>'
         f'<a href="/predictions/{cfg["slug"]}/{_match_filename(e)[:-5]}">'
         f'{escape(e["home_team"])} vs {escape(e["away_team"])}</a>'
-        f'<div class="meta">{meta}</div></div>'
+        f'<div class="meta">{meta}{mark}</div>{_prob_bar(e, call, mini=True)}</div>'
         f'{pick_html}</div>'
     )
+
+
+# 1.11.2026 (WP11, B9): hub oli 22 000 px litteä lista toukokuuhun 2027
+# otsikolla "This Week". Oletuksena nakyy tama ikkuna paivittain
+# ryhmiteltyna; loput <details>-elementissa (toimii ilman JS:aa, ja rivit
+# ovat DOM:ssa, joten hakukone ja ItemList nakevat kaikki).
+HUB_VISIBLE_DAYS = 14
+
+
+def hub_split(rows: list[dict], now: datetime) -> tuple[list[dict], list[dict]]:
+    """(oletuksena nakyvat, laajennuksen takana). YKSI LUKIJA hubille.
+
+    Nakyvat = kickoff alle HUB_VISIBLE_DAYS:n paassa. Jos ikkuna on tyhja
+    (maaottelutauko, kauden alku), seuraava ottelupaiva naytetaan, jotta
+    sivu ei ala tyhjalla listalla. Jarjestys = kickoff.
+    """
+    rows = sorted(rows, key=lambda e: e.get("kickoff") or "")
+    limit = now + timedelta(days=HUB_VISIBLE_DAYS)
+    near = [e for e in rows if (_kickoff_dt(e) or limit) < limit]
+    if not near and rows:
+        first_day = (rows[0].get("kickoff") or "")[:10]
+        near = [e for e in rows if (e.get("kickoff") or "")[:10] == first_day]
+    near_ids = {id(e) for e in near}
+    return near, [e for e in rows if id(e) not in near_ids]
+
+
+def _day_groups(cfg: dict, rows: list[dict]) -> str:
+    """Rivit paivittain (UTC-paiva; rivin kellonaika kavijan aikana)."""
+    out, day = [], None
+    for e in rows:
+        ko = _kickoff_dt(e)
+        d = ko.strftime("%a %d %b %Y") if ko else ""
+        if d != day:
+            out.append(f'<h2 class="dgrp">{escape(d)}</h2>')
+            day = d
+        out.append(_hub_row(cfg, e, False))
+    return "".join(out)
+
+
+def recent_hits(recent: list[dict] | tuple) -> tuple[int, int]:
+    """(osumat, lasketut) viimeisen 7 vrk:n gradatuista. record_verdict-lukija,
+    joten luku on sama kuin track recordin rivien rastit."""
+    vs = [v for v in (record_verdict(e) for e in recent) if v and v["counted"]]
+    return sum(1 for v in vs if v["hit"]), len(vs)
 
 
 def render_league_hub(comp: str, rows: list[dict], now: datetime,
                       recent: list[dict] | tuple = ()) -> str:
     cfg = LEAGUES[comp]
     url = f"{BASE}/predictions/{cfg['slug']}/"
-    title = f"{cfg['name']} Predictions This Week: Win Probability | GoalIQ"
+    title = f"{cfg['name']} Predictions and Win Probability | GoalIQ"
     desc = (
         f"Model win probabilities for upcoming {cfg['name']} matches. Every "
         f"prediction is logged before kickoff in GoalIQ's public track record "
         f"and graded after the match, hits and misses included."
     )
-    items = [_hub_row(cfg, e, False) for e in rows]
+    near, later = hub_split(rows, now)
+    window_all_later = bool(near) and all(
+        (_kickoff_dt(e) or now) >= now + timedelta(days=HUB_VISIBLE_DAYS) for e in near)
+    hits, n_counted = recent_hits(recent)
+    summary = (
+        f'<p class="hub-sum">Last 7 days: <strong>{hits} of {n_counted}</strong> '
+        f"predictions were hits in our "
+        f'<a href="/predictions#record">public track record</a>.</p>'
+        if n_counted else ""
+    )
+    sections = []
+    if near:
+        sections.append(
+            _secbar("Next fixtures" if window_all_later
+                    else f"Next {HUB_VISIBLE_DAYS} days", "amber")
+            + f'<div class="card">{_day_groups(cfg, near)}'
+            + (f'<details class="more"><summary>Show all fixtures '
+               f"({len(later)} more)</summary>{_day_groups(cfg, later)}</details>"
+               if later else "")
+            + "</div>")
     if recent:
-        items.append('<div class="meta"><strong>Played in the last 7 days</strong></div>')
-        items.extend(_hub_row(cfg, e, True) for e in recent)
+        sections.append(
+            _secbar("Played in the last 7 days", "dim")
+            + '<div class="card">'
+            + "".join(_hub_row(cfg, e, True) for e in recent) + "</div>")
     hero = (
         f"<h1>{escape(cfg['name'])} predictions</h1>"
         f'<p class="lede">The GoalIQ match model predicts upcoming '
@@ -891,8 +1392,8 @@ def render_league_hub(comp: str, rows: list[dict], now: datetime,
         f"are logged before kickoff and graded in a public track record.</p>"
     )
     body = (
-        f'<div class="card">{"".join(items)}</div>'
-        f'<div class="cta-row">'
+        summary + "".join(sections)
+        + f'<div class="cta-row">'
         f'<a class="btn" href="https://pro.goaliq.app/matches/predict">Run your own prediction</a>'
         f'<a class="btn ghost" href="/predictions">All football predictions</a>'
         f"</div>"
@@ -1194,7 +1695,9 @@ def main() -> int:
             (out_dir / "index.html").unlink()
         for e in rows + done:
             (out_dir / _match_filename(e)).write_text(
-                render_match_page(comp, e, now), encoding="utf-8"
+                render_match_page(comp, e, now,
+                                  history=done + (feed.voided.get(comp) or [])),
+                encoding="utf-8"
             )
         played_entries.extend(
             (f"{BASE}/predictions/{cfg['slug']}/{_match_filename(e)[:-5]}",

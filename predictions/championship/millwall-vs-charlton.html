@@ -158,6 +158,87 @@ footer a{color:var(--muted);}
 .note{color:var(--muted);font-size:12px;margin:18px 0;}
 @media (max-width:520px){.cta-row{flex-direction:column;align-items:stretch;}
 .btn{text-align:center;}}
+/* --- 1 Nov 2026 (UI programme WP11): match page as proof, hub grouped. ---
+   Tokens only from this :root and the landing page (--green is the
+   landing's #5FD97A). NOTE the naming here is inverted against the landing:
+   --ink is the light text colour and --cream the dark ground. The section
+   bar is the landing's .bar; that class name is taken here by the 1px rule,
+   hence .secbar. Nothing below 12px. */
+:root{--green:#5FD97A;}
+.secbar{display:flex;justify-content:space-between;align-items:center;gap:12px;
+padding:7px 12px;margin-top:24px;font-family:var(--mono);font-size:12px;font-weight:700;
+letter-spacing:.14em;text-transform:uppercase;background:var(--ink);color:var(--cream);}
+.secbar-amber{background:var(--amber);} .secbar-teal{background:var(--teal);}
+.secbar-dim{background:var(--paper);color:var(--ink);}
+.secbar + .card{border-top:0;}
+.stamp{font-size:13px;color:var(--muted);margin-top:6px;}
+.stamp b{color:var(--ink);font-weight:600;}
+.p3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;text-align:center;}
+.p3c b{display:block;font-family:var(--mono);font-size:32px;line-height:1.1;font-weight:700;
+font-variant-numeric:tabular-nums;color:var(--ink);}
+.p3c span{display:block;font-size:13px;color:var(--muted);overflow-wrap:anywhere;}
+.p3c.fav b{color:var(--amber);font-size:40px;}
+.p3c.fav span{color:var(--ink);font-weight:600;}
+.p3c.draw b{color:var(--muted);}
+@media (min-width:560px){.p3c b{font-size:44px;}.p3c.fav b{font-size:54px;}}
+/* The favourite is the full-height amber segment; the other side teal and the
+   draw a neutral line, so the bar reads the same on every surface. */
+.pbar{display:flex;align-items:center;gap:2px;height:12px;margin:14px 0 4px;}
+.pbar span{display:block;flex:1 1 0;height:6px;}
+.pbar .fav{background:var(--amber);height:12px;}
+.pbar .side{background:var(--teal);opacity:.7;}
+.pbar .draw{background:rgba(243,242,242,0.40);}
+.pbar.mini{height:6px;margin:6px 0 0;max-width:240px;}
+.pbar.mini span{height:3px;} .pbar.mini .fav{height:6px;}
+.p-say{margin-top:12px;font-size:16px;}
+.ts{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 14px;}
+.ts .lbl{flex:1 1 100%;font-size:13px;color:var(--muted);}
+.ts b{font-family:var(--mono);font-size:34px;line-height:1.1;color:var(--amber);
+font-variant-numeric:tabular-nums;}
+.ts .p{font-family:var(--mono);font-size:18px;color:var(--ink);}
+.lock-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:16px 0 12px;
+filter:blur(4px);user-select:none;pointer-events:none;}
+.lock-grid span{display:flex;justify-content:space-between;padding:8px 10px;background:var(--paper);
+border:1px solid var(--line);font-family:var(--mono);font-size:14px;color:var(--muted);}
+.lock-grid .xg{grid-column:1/-1;}
+.lock-txt{font-size:15px;margin:4px 0 14px;}
+.btn.solid{display:inline-block;background:var(--amber);color:var(--cream);border-color:var(--amber);}
+.btn.solid:hover{background:var(--gold);}
+@media (max-width:520px){.btn.solid{display:block;}}
+.form-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;
+border-bottom:1px solid var(--line);}
+.form-row:last-of-type{border-bottom:0;}
+.form-row .t{font-weight:600;overflow-wrap:anywhere;}
+.fchips{display:flex;gap:4px;flex:none;}
+.fc{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;
+font-family:var(--mono);font-size:13px;font-weight:700;}
+.fc.w{background:var(--green);color:var(--cream);}
+.fc.d{background:var(--paper);color:var(--ink);border:1px solid var(--line-strong,rgba(243,242,242,0.40));}
+.fc.l{background:var(--ember);color:var(--cream);}
+.form-note{font-size:12px;color:var(--muted);margin-top:8px;}
+.verdict{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;margin:22px 0 0;
+padding:12px 14px;background:var(--paper);border:1px solid var(--line);
+border-left:4px solid var(--muted);font-size:15px;}
+.verdict.hit{border-left-color:var(--green);} .verdict.miss{border-left-color:var(--ember);}
+.verdict b{font-family:var(--mono);color:var(--ink);}
+.verdict .sep{color:var(--muted);}
+.verdict a b{color:var(--teal);}
+.v-note{font-size:13px;color:var(--muted);margin-top:6px;}
+.share{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:22px 0 0;}
+.share .lbl{font-size:13px;color:var(--muted);margin-right:4px;}
+.share-btn{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--teal);
+background:transparent;border:1px solid var(--line);padding:8px 12px;text-decoration:none;cursor:pointer;}
+.share-btn:hover{border-color:var(--teal);}
+.hub-sum{font-size:15px;margin:0 0 6px;}
+.dgrp{font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.08em;
+text-transform:uppercase;color:var(--muted);margin:18px 0 0;padding-bottom:4px;
+border-bottom:1px solid var(--line);}
+.card .dgrp:first-child{margin-top:0;}
+details.more{margin-top:12px;}
+details.more>summary{cursor:pointer;font-family:var(--mono);font-weight:700;color:var(--teal);
+padding:12px 0;min-height:44px;}
+.mark{font-family:var(--mono);font-size:12px;font-weight:700;margin-left:8px;white-space:nowrap;}
+.mark.hit{color:var(--green);} .mark.miss{color:var(--ember);}
 /* GEN:MOBILE-CSS */
 /* Note shown only on narrow screens. Hidden by default so that pages on
    wide screens do not change at all. */
@@ -338,11 +419,11 @@ nav.gqn,nav.gqn *{box-sizing:border-box;}nav.gqn{display:block;position:relative
 <nav class="gqn" aria-label="GoalIQ"><div class="gqn-in"><a class="gqn-brand" href="/"><svg class="gqn-icon" width="26" height="26" viewBox="0 0 44 44" role="img" aria-label="GoalIQ" focusable="false"><rect x="0" y="0" width="44" height="44" fill="#F5C542"/><text x="22" y="30" text-anchor="middle" font-family="IBM Plex Mono,ui-monospace,Consolas,monospace" font-size="20" font-weight="700" letter-spacing="-0.5" fill="#0B0A09">IQ</text></svg><span class="gqn-word">Goal<span>IQ</span></span></a><div class="gqn-main"><a class="gqn-sec" href="/fpl">FPL tools</a><a class="gqn-sec" href="/predictions" aria-current="true">Predictions</a></div><div class="gqn-acct"><a class="gqn-signin" href="https://pro.goaliq.app/" data-cta="nav-signin">Sign in</a><a class="gqn-cta" href="https://pro.goaliq.app/?tab=premium" data-cta="nav">Try Premium</a></div></div></nav>
 <header class="dark">
 <div class="wrap hero">
-<h1>Millwall vs Charlton prediction</h1><p class="lede">Championship · kickoff Sat 19 Dec 2026, 12:30 UTC. The GoalIQ match model makes <strong>Millwall</strong> the favourite at <strong>54%</strong> to win.</p>
+<h1>Millwall vs Charlton prediction</h1><p class="lede">Championship · kickoff <time datetime="2026-12-19T12:30:00Z" data-giq-local>Sat 19 Dec 2026, 12:30 UTC</time></p><p class="stamp">Logged before kick-off: <b><time datetime="2026-11-01T06:53:06Z" data-giq-local>Sun 01 Nov 2026, 06:53 UTC</time></b></p>
 </div>
 </header>
 <div class="wrap content">
-<div class="card big"><div class="probbar" aria-hidden="true"><span class="h" style="width:54.2%"></span><span class="d" style="width:26.8%"></span><span class="a" style="width:19.0%"></span></div><div class="legend"><span>Millwall 54%</span><span>Draw 27%</span><span>Charlton 19%</span></div></div><div class="stat-row"><div class="stat"><b>Premium</b><span>expected goals and scoreline probabilities on <a href="https://pro.goaliq.app/?tab=premium&amp;src=predict-page&amp;srcp=predictions">GoalIQ Premium</a></span></div></div><div class="rec">This prediction was logged before kickoff on 2026-11-01 and will be graded in our <a href="/predictions">public track record</a>, hits and misses included.</div><div class="cta-row"><a class="btn" href="https://pro.goaliq.app/matches/predict">Run your own prediction</a><a class="btn ghost" href="/predictions/championship/">More Championship predictions</a></div><p class="note">GoalIQ model predictions are statistical estimates for fun and analysis, not betting advice, and not a gambling service.</p>
+<div class="secbar secbar-amber"><span>&#9612; Win probability</span></div><div class="card big"><div class="p3"><div class="p3c fav"><b>54%</b><span>Millwall</span></div><div class="p3c draw"><b>27%</b><span>Draw</span></div><div class="p3c side"><b>19%</b><span>Charlton</span></div></div><div class="pbar" aria-hidden="true"><span class="fav" style="flex-grow:542"></span><span class="draw" style="flex-grow:268"></span><span class="side" style="flex-grow:190"></span></div><p class="p-say">The model makes <strong>Millwall</strong> the favourite: 54% to win, 27% draw, 19% Charlton.</p></div><div class="secbar secbar-teal"><span>&#9612; Scorelines</span></div><div class="card"><div class="ts"><span class="lbl">Top scoreline</span><b>1-0</b></div><div class="lock-grid" aria-hidden="true"><span><i>?-?</i><i>?%</i></span><span><i>?-?</i><i>?%</i></span><span><i>?-?</i><i>?%</i></span><span><i>?-?</i><i>?%</i></span><span><i>?-?</i><i>?%</i></span><span><i>?-?</i><i>?%</i></span><span><i>?-?</i><i>?%</i></span><span><i>?-?</i><i>?%</i></span><span><i>?-?</i><i>?%</i></span><span class="xg"><i>xG</i><i>?.? - ?.?</i></span></div><p class="lock-txt"><strong>9 more scorelines and expected goals in Premium.</strong></p><a class="btn solid" href="https://pro.goaliq.app/checkout?plan=season" data-cta="match-page-premium">Start Premium, €25 a year</a></div><div class="secbar secbar-dim"><span>&#9612; Form, last 5 Championship results</span></div><div class="card"><div class="form-row"><span class="t">Millwall</span><span class="fchips" role="img" aria-label="win, loss, draw, loss, win"><span class="fc w" title="win">W</span><span class="fc l" title="loss">L</span><span class="fc d" title="draw">D</span><span class="fc l" title="loss">L</span><span class="fc w" title="win">W</span></span></div><div class="form-row"><span class="t">Charlton</span><span class="fchips" role="img" aria-label="draw, draw, loss, loss, loss"><span class="fc d" title="draw">D</span><span class="fc d" title="draw">D</span><span class="fc l" title="loss">L</span><span class="fc l" title="loss">L</span><span class="fc l" title="loss">L</span></span></div><p class="form-note">Oldest on the left. From the results in our prediction log.</p></div><div class="rec">This prediction was logged before kickoff on 2026-11-01 and will be graded in our <a href="/predictions">public track record</a>, hits and misses included.</div><div class="share"><span class="lbl">Share</span><button type="button" class="share-btn" data-copy="https://goaliq.app/predictions/championship/millwall-vs-charlton" hidden>Copy link</button><a class="share-btn" href="https://x.com/intent/post?text=Millwall%20vs%20Charlton%20prediction&amp;url=https%3A%2F%2Fgoaliq.app%2Fpredictions%2Fchampionship%2Fmillwall-vs-charlton" target="_blank" rel="noopener">X</a><a class="share-btn" href="https://wa.me/?text=Millwall%20vs%20Charlton%20prediction%20https%3A%2F%2Fgoaliq.app%2Fpredictions%2Fchampionship%2Fmillwall-vs-charlton" target="_blank" rel="noopener">WhatsApp</a></div><div class="cta-row"><a class="btn ghost" href="https://pro.goaliq.app/matches/predict">Run your own prediction</a><a class="btn ghost" href="/predictions/championship/">More Championship predictions</a></div><p class="note">GoalIQ model predictions are statistical estimates for fun and analysis, not betting advice, and not a gambling service.</p>
 <footer>© 2026 GoalIQ · <a href="/predictions">Football predictions</a> · <a href="/fpl">Free FPL tools</a> · <a href="/privacy">Privacy</a><br>GoalIQ: FPL Assistant is free on <a href="https://play.google.com/store/apps/details?id=com.veikkoville.goaliq">Google Play</a> and the <a href="https://apps.apple.com/app/id6780047163">App Store</a>. Premium is 3.99 €/month or 25 €/year. One subscription on web, iOS and Android.<br>GoalIQ model predictions are statistical estimates for fun and analysis, not betting advice, and not a gambling service.</footer>
 </div>
 <!-- GEN:MOBILE-COLS -->
@@ -401,5 +482,12 @@ nav.gqn,nav.gqn *{box-sizing:border-box;}nav.gqn{display:block;position:relative
 </script>
 <!-- /GEN:MOBILE-COLS -->
 <script defer src="/ref-bridge.js"></script>
+<script>(function(){function run(){var els=document.querySelectorAll('time[data-giq-local]'),i;for(i=0;i<els.length;i++){var el=els[i],d=new Date(el.getAttribute('datetime'));if(isNaN(d.getTime()))continue;try{var w=d.toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});var z='',p=new Intl.DateTimeFormat('en-GB',{timeZoneName:'short'}).formatToParts(d),j;for(j=0;j<p.length;j++)if(p[j].type==='timeZoneName')z=p[j].value;if(!el.title)el.title=el.textContent;el.textContent=w+(z?' '+z:'');}catch(e){}}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();})();</script><script>
+(function(){
+var bs=document.querySelectorAll('button[data-copy]');
+for(var j=0;j<bs.length;j++){(function(b){if(!navigator.clipboard)return;b.hidden=false;
+b.addEventListener('click',function(){navigator.clipboard.writeText(b.getAttribute('data-copy')).then(function(){b.textContent='Link copied';});});})(bs[j]);}
+})();
+</script>
 </body>
 </html>

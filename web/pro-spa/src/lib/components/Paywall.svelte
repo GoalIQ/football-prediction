@@ -15,7 +15,6 @@
 	$effect(() => { void loadPricing(); });
 	import { capture } from '$lib/analytics';
 	import { fetchXp, gwXp, type XpResponse } from '$lib/api';
-	import { freePremiumWindowActive, FREE_PREMIUM_UNTIL_DAY, FREE_PREMIUM_UNTIL_GW } from '$lib/auth.svelte';
 
 	/* 21.9 (julkaisutarkistaja): /ucl-sivulla FPL-teaseri nayttaisi saman
 	   sivun UCL-kymmenikon alla toisen kaarjen (B. Fernandes, Mbeumo, Saka).
@@ -49,20 +48,7 @@
 	});
 </script>
 
-<!-- 🔴 Ikkunan aikana talle sivulle tullaan "Keep it after that" -napista, eli
-     kayttajalla ON jo Premium. "Unlock" olisi vaara verbi ja lukisi silta etta
-     jotain on kiinni. 🔴 POISTA HAARA 12.9.2026 12:30 UTC jalkeen. -->
-{#if freePremiumWindowActive()}
-	<h3>Keep Premium after {FREE_PREMIUM_UNTIL_DAY}</h3>
-	<p class="muted">
-		Nothing is locked right now, so there is no rush. Worth saying plainly: paying today
-		starts the subscription today, it does not wait for {FREE_PREMIUM_UNTIL_DAY}, so you would be
-		paying for weeks you already have for free. Coming back after the window is the
-		cheaper move, and this is only here for anyone who would rather deal with it now.
-	</p>
-{:else}
-	<h3>Unlock GoalIQ Premium</h3>
-{/if}
+<h3>Unlock GoalIQ Premium</h3>
 <!-- 🔴 22.9 (web-audit K2/T3, Villen GO): hinnat ja ostonapit heti otsikon
      alle, kuvaus niiden jalkeen. Ennen viisi kappaletta tekstia ja teaseri
      tulivat ensin, ja ostonapit jaivat ruudun alle. -->
@@ -145,15 +131,6 @@
 	</div>
 {/if}
 
-<!-- 16.8: puolustava rivi. Ikkunan aikana kirjautunut kayttaja ei normaalisti
-     paady tanne lainkaan (auth.sub on tosi), mutta jos han paatyy, hanelle ei
-     saa myyda hintaan sita mika on juuri nyt ilmaista.
-     🔴 POISTA 12.9.2026 12:30 UTC jalkeen. -->
-{#if freePremiumWindowActive()}
-	<p class="banner success">
-		Premium is free until the GW{FREE_PREMIUM_UNTIL_GW} deadline on {FREE_PREMIUM_UNTIL_DAY}. You do not need to pay yet.
-	</p>
-{/if}
 
 <style>
 	.teaser {

@@ -78,8 +78,15 @@ def test_spa_alaviite_lukee_seuramallin_lohkoa():
     # (all_time) ei saa palata lauseeseen joka vaittaa "the same match model".
     src = (ROOT / "web/pro-spa/src/lib/components/Provenance.svelte").read_text(encoding="utf-8")
     koodi = src.split("</script>")[0]
-    assert "by_model?.club" in koodi
-    assert "fmtPct(" in koodi
+    # WP2 (1.11.2026): luku /api/accuracy:n headline-kentasta (backendin
+    # public_headline), valmiiksi muotoiltuna. SPA ei valitse rajausta eika
+    # muotoile: kumpikin olisi toinen lukija samalle luvulle.
+    koodi = "\n".join(r.split("//", 1)[0] for r in koodi.splitlines())
+    assert "acc?.headline" in koodi
+    assert "h.scope === 'club'" in koodi
+    assert "h.pct_text" in koodi
+    assert "fmtPct(" not in koodi
+    assert "by_model" not in koodi
     assert "all_time" not in src
     assert "pre-match-logged club" in src and "graded club matches" in src
     assert "https://goaliq.app/predictions#record" in src

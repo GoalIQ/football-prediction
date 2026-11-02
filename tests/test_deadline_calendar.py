@@ -99,7 +99,10 @@ def test_sivu_ja_kalenteri_sanovat_saman_seuraavan_deadlinen():
     dls = _meta().get("deadlines") or []
     eka = dt.datetime.fromisoformat(dls[0]["utc"]).astimezone(dt.timezone.utc)
     html = SIVU.read_text(encoding="utf-8", errors="replace")
-    m = re.search(r"Next deadline: Gameweek (\d+), (\d+ \w+) at (\d{2}:\d{2}) UTC", html)
+    # WP2 (1.11.2026): UTC-teksti on <time datetime>-elementissa, jonka selain
+    # lokalisoi (src/local_time.py); staattinen teksti ja hetki ovat samat.
+    m = re.search(r"Next deadline: Gameweek (\d+), (?:<time [^>]*>)?(\d+ \w+) at "
+                  r"(\d{2}:\d{2}) UTC", html)
     assert m, "fpl.html ei kerro seuraavaa deadlinea -> paluusyy katosi sivulta"
     assert int(m.group(1)) == dls[0]["gw"]
     assert m.group(3) == eka.strftime("%H:%M")

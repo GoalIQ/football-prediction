@@ -195,7 +195,7 @@ REFRESH_SWEEP_MIN_AGE_H = _env_int("ACC_REFRESH_SWEEP_MIN_AGE_H", 20)
 # Kentat jotka refresh ylikirjoittaa. match_id/kickoff/competition eivat muutu.
 REFRESH_FIELDS = (
     "p_home", "p_draw", "p_away", "xg_home", "xg_away",
-    "most_likely_score", "predicted_winner",
+    "most_likely_score", "most_likely_score_p", "predicted_winner",
 )
 
 
@@ -489,6 +489,13 @@ def prediction_row_from_api(
         "xg_home": round(float(d["expected_goals_home"]), 3),
         "xg_away": round(float(d["expected_goals_away"]), 3),
         "most_likely_score": (top[0].get("score") if top else None),
+        # 1.11.2026 (ulkoasu WP11): ottelusivu nayttaa ylimman tuloksen
+        # todennakoisyyden ilmaiseksi (Villen paatos). Sivu lukee VAIN lokia,
+        # joten luku kirjataan tahan eika lasketa sivulla uudelleen. Vain
+        # ylin rivi: loput top_scores-rivit ja xG ovat Premiumia.
+        "most_likely_score_p": (
+            round(float(top[0]["probability"]), 4)
+            if top and top[0].get("probability") is not None else None),
         "predicted_winner": acc.named_winner(d["p_home_win"], d["p_away_win"]),
     }
 
@@ -577,6 +584,8 @@ def log_domestic_matches(
                 "home_team", "away_team", "p_home", "p_draw", "p_away",
                 "xg_home", "xg_away", "most_likely_score", "predicted_winner",
             )},
+            # .get: vanhat predict_fn-toteutukset (testit) eivat anna kenttaa.
+            "most_likely_score_p": pred.get("most_likely_score_p"),
             "logged_at": acc._now_iso(),
             "result": None,
         }

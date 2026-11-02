@@ -301,10 +301,10 @@
 		font-variant-numeric: tabular-nums;
 	}
 	.ahead {
-		color: var(--ok, #2e7d32);
+		color: var(--ok);
 	}
 	.behind {
-		color: var(--bad, #b3261e);
+		color: var(--bad);
 	}
 	.call {
 		display: flex;

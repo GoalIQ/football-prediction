@@ -17,7 +17,6 @@
 	$effect(() => { void loadPricing(); });
 	import Provenance from './Provenance.svelte';
 	import { preferredStore, appCtaLabel, STORE_URL } from '$lib/appHandoff';
-	import { freePremiumWindowActive, FREE_PREMIUM_UNTIL_DAY, FREE_PREMIUM_UNTIL_GW, FREE_PREMIUM_GWS } from '$lib/auth.svelte';
 
 	// #95: login-seinä myy ennen lomaketta — sama arvolupaus kuin mobiilin
 	// UpgradeCard-paywallissa. Copy 1:1 paywall.bullet_* -en-avaimista
@@ -112,17 +111,6 @@
 <section class="preview card" aria-label="What GoalIQ Premium includes">
 	<h3>What Premium unlocks</h3>
 
-	<!-- 16.8: tama on ANONYYMIN kavijan nakyma, eli se ainoa paikka jossa
-	     ikkunasta voi kertoa jollekulle joka ei ole viela kirjautunut. Ilman
-	     tata koko ilmaisikkuna oli nakyvissa vasta sille joka oli jo saanut
-	     sen. Ilmoitus on hintojen YLAPUOLELLA tarkoituksella.
-	     🔴 POISTA 12.9.2026 12:30 UTC jalkeen. -->
-	{#if freePremiumWindowActive()}
-		<p class="banner success">
-			Premium is free until the GW{FREE_PREMIUM_UNTIL_GW} deadline on {FREE_PREMIUM_UNTIL_DAY}, so {FREE_PREMIUM_GWS}. Create a free
-			account below and it's on. No card, nothing to cancel.
-		</p>
-	{/if}
 	<!-- 🔴 22.9 (web-audit K2, Villen GO): hinnat ja ostonapit ENSIN, sitten mita
 	     Premium avaa. Ennen ominaisuuslista, todiste, esikatselu ja kauppanappi
 	     tulivat ensin, ja ostonapit jaivat 1,9 ruutua upgrade-nakyman alkua
@@ -157,11 +145,6 @@
 	<!-- 23.9: UK -> kauppailmoitus Stripe-nappien tilalle ($lib/region). -->
 	{#if webCheckoutBlocked()}
 		<StoreOnlyNotice source="pro_web_preview" />
-	{:else if freePremiumWindowActive()}
-		<details class="pay-later">
-			<summary>Rather pay now and keep Premium after {FREE_PREMIUM_UNTIL_DAY}?</summary>
-			{@render planButtons(true)}
-		</details>
 	{:else}
 		{@render planButtons(false)}
 	{/if}
@@ -169,13 +152,6 @@
 	     joten "No account needed" oli faktavirhe. -->
 	{#if webCheckoutBlocked()}
 		<!-- 23.9: ei Stripe-copya kun verkko-osto on suljettu. -->
-	{:else if freePremiumWindowActive()}
-		<!-- Ikkunan aikana "skip the signup" on suoraan vastakkainen ohje kuin
-		     se jonka haluamme: tili ON se polku. 🔴 POISTA 12.9.2026 12:30 UTC. -->
-		<p class="muted no-account">
-			After {FREE_PREMIUM_UNTIL_DAY} it is {PLANS.monthly.label} or {PLANS.season.label}. One subscription
-			covers web, iOS and Android, and you can cancel from the Account menu once you are signed in.
-		</p>
 	{:else}
 		<p class="muted no-account">
 			Skip the signup: pay with Stripe and we'll set up your account and email you a sign-in

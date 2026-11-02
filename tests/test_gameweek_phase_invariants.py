@@ -125,3 +125,108 @@ def test_the_guard_itself_would_fail_on_the_old_behaviour():
     vihrea siksi ettei se mittaa mitaan."""
     gws = [g["gw"] for g in _player_gameweeks(_player(), min_gw=None)]
     assert min(gws) < PHASES[0][2]
+
+
+# ---------------------------------------------------------------------------
+# WP2 (1.11.2026): /fpl:n nollapelitaulukko ei nayta kierrosta jonka deadline
+# on mennyt.
+#
+# MITATTU 1.11: sivu sanoi "Gameweek 9 is being played" ja "Next deadline:
+# Gameweek 10", mutta sen ensimmainen taulukko oli "Gameweek 9 clean sheet
+# probabilities" (display_gameweek piti kesken olevan kierroksen). Lisaksi
+# sivu paistetaan uudelleen pitkin paivaa jo committattua payloadia vasten,
+# joten payloadin `deadline_gameweek` voi olla deadlinen jalkeen vanha
+# ("live-stale"). Lukija `open_gameweek` tarkistaa saman payloadin
+# deadline-listan kellosta.
+# ---------------------------------------------------------------------------
+import datetime as _dt  # noqa: E402
+
+from src.models.fpl_gameweek import clean_sheet_table_gameweek  # noqa: E402
+
+_UTC = _dt.timezone.utc
+_DL = {3: _dt.datetime(2026, 9, 12, 10, 0, tzinfo=_UTC),
+       4: _dt.datetime(2026, 9, 19, 10, 0, tzinfo=_UTC),
+       5: _dt.datetime(2026, 9, 26, 10, 0, tzinfo=_UTC)}
+
+
+def _cs_meta(dl_gw: int, cur: int) -> dict:
+    # `deadlines` = kauden jaljella olevat deadlinet PAYLOADIN rakennushetkella.
+    return {"deadline_gameweek": dl_gw, "next_gameweek": cur,
+            "deadlines": [{"gw": g, "utc": t.isoformat()} for g, t in _DL.items() if g >= dl_gw]}
+
+
+# (vaihe, payloadin deadline_gameweek, payloadin next_gameweek, kello)
+CS_PHASES = [
+    ("before", 3, 3, _DL[3] - _dt.timedelta(hours=1)),
+    ("live-stale", 3, 3, _DL[3] + _dt.timedelta(hours=1)),
+    ("live", 4, 3, _DL[3] + _dt.timedelta(hours=1)),
+    ("after", 4, 4, _DL[3] + _dt.timedelta(days=3)),
+]
+
+
+@pytest.mark.parametrize("phase,dl_gw,cur,now", CS_PHASES)
+def test_clean_sheet_table_never_shows_a_closed_gameweek(phase, dl_gw, cur, now):
+    gw = clean_sheet_table_gameweek(_cs_meta(dl_gw, cur), None, now)
+    assert gw in _DL, (phase, gw)
+    assert _DL[gw] > now, (phase, gw, "deadline mennyt")
+    # ja se on ENSIMMAINEN avoin kierros, ei mika tahansa tuleva
+    assert gw == min(g for g, t in _DL.items() if t > now), (phase, gw)
+
+
+def test_clean_sheet_guard_would_fail_on_the_old_reader():
+    """Negatiivinen kontrolli: vanha lukija (display_gameweek) ja pelkka
+    actionable_gameweek antavat live-stale-vaiheessa suljetun GW3:n."""
+    from src.models.fpl_gameweek import display_gameweek
+    meta = _cs_meta(3, 3)
+    assert display_gameweek(meta, None) == 3
+    assert actionable_gameweek(meta) == 3
+    assert clean_sheet_table_gameweek(meta, None, _DL[3] + _dt.timedelta(hours=1)) == 4
+
+
+def _real_phase0():
+    import json
+    from pathlib import Path
+    p = Path(__file__).resolve().parents[1] / "data" / "fpl_projections_phase0.json"
+    if not p.exists():
+        pytest.skip("fpl_projections_phase0.json puuttuu")
+    return json.loads(p.read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize("phase", ["before", "live-stale", "after"])
+def test_fpl_page_cs_table_call_site_in_every_phase(phase):
+    """KUTSUPAIKKA: build_context + oikea payload synteettisella kellolla.
+
+    Vaiheet johdetaan payloadin omista deadlineista, joten testi ei vanhene
+    kierroksen mukana (6a, mekanismi 3)."""
+    import copy
+    from scripts import build_fpl_page as b
+    fpl = copy.deepcopy(_real_phase0())
+    meta = fpl["meta"]
+    dls = sorted(((int(d["gw"]), _dt.datetime.fromisoformat(d["utc"])) for d in meta.get("deadlines") or []),
+                 key=lambda x: x[1])
+    near = {f["gw"] for t in fpl["teams"] for f in t.get("fixtures") or []
+            if (f.get("tier") or "near") == "near" and f.get("cs_pct") is not None}
+    if len(dls) < 2 or dls[1][0] not in near:
+        pytest.skip("kauden loppu: ei kahta deadlinea lahihorisontissa")
+    (g0, d0), (g1, _d1) = dls[0], dls[1]
+    if phase == "before":
+        now = d0 - _dt.timedelta(hours=1)
+        meta["deadline_gameweek"] = g0
+    elif phase == "live-stale":
+        now = d0 + _dt.timedelta(hours=1)
+        meta["deadline_gameweek"] = g0
+    else:
+        now = d0 + _dt.timedelta(hours=1)
+        meta["deadline_gameweek"] = g1
+        meta["deadlines"] = [d for d in meta["deadlines"] if int(d["gw"]) != g0]
+    want = g0 if phase == "before" else g1
+    c = b.build_context(fpl, {"all_time": {}, "logged_with_timestamp": 0, "pending": 0,
+                              "updated_at": "2026-11-01T00:00:00+00:00"}, now=now)
+    assert c["cs_gw"] == want, (phase, c["cs_gw"], want)
+    # Taulukon rivit ovat TAMAN kierroksen otteluita, ei kesken olevan.
+    by_team = {t["name"]: [f for f in t["fixtures"] if f["gw"] == want] for t in fpl["teams"]}
+    assert c["cs_rows"]
+    for r in c["cs_rows"]:
+        assert any(f["opponent"] == r["opponent"] for f in by_team[r["team"]]), (phase, r["team"])
+    # ja deadline-rivi puhuu samasta kierroksesta
+    assert f"Next deadline: Gameweek {want}," in b._deadline_row(c)

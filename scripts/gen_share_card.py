@@ -983,9 +983,12 @@ def card_gw_outlook(args) -> dict:
     # sivuvaikutuksesta, ei saannosta. Kortti on jakopinta ja sivu on sen
     # tarkistusreitti: jos ne eivat lue samaa funktiota, lukija joka klikkaa
     # linkkia nakee eri kierroksen kuin kuvassa.
-    from src.models.fpl_gameweek import display_gameweek
-    gw = args.gw or display_gameweek(doc.get("meta") or {},
-                                     doc.get("fixtures") or []) \
+    # WP2 (1.11.2026): sivun nollapelitaulukko siirtyi `display_gameweek`ista
+    # `clean_sheet_table_gameweek`iin (kierros jonka deadline on edessa), joten
+    # kortti seuraa samaa funktiota.
+    from src.models.fpl_gameweek import clean_sheet_table_gameweek
+    gw = args.gw or clean_sheet_table_gameweek(doc.get("meta") or {},
+                                               doc.get("fixtures") or []) \
         or min((f["gameweek"] for f in doc["fixtures"]), default=1)
     fx = [f for f in doc["fixtures"] if f["gameweek"] == gw]
     if not fx:

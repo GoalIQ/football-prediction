@@ -97,17 +97,21 @@ describe('ilmaisikkunan paiva: yksi lahde', () => {
 		expect(DAY_MONTH.test(code('<!-- 12 September -->'))).toBe(false);
 	});
 
-	it('kuusi komponenttia lukevat johdetut nimet', () => {
+	// WP2 (1.11.2026): ikkuna paattyi 12.9.2026. Viiden komponentin
+	// freePremiumWindowActive()-haarat olivat kuollutta koodia ja poistettiin.
+	// ToolsHome kantaa yha 'gw1-3-free'-tilauksen bannerin (auth.svelte.ts:n
+	// synteettinen tilaus), ja se lukee johdetut nimet.
+	it('jaljella oleva ikkunateksti lukee johdetut nimet, poistetut pinnat eivat palaa', () => {
 		const read = (f: string) => readFileSync(resolve(SRC, f), 'utf-8');
+		expect(read('lib/components/ToolsHome.svelte')).toContain('FREE_PREMIUM_UNTIL_DAY');
 		for (const f of [
-			'lib/components/ToolsHome.svelte',
 			'lib/components/ProductIntro.svelte',
 			'lib/components/PremiumPreview.svelte',
 			'lib/components/Paywall.svelte',
 			'lib/components/Hero.svelte',
 			'lib/components/LoginBox.svelte'
 		]) {
-			expect(read(f), f).toContain('FREE_PREMIUM_UNTIL_DAY');
+			expect(code(read(f)), f).not.toMatch(/freePremiumWindowActive|FREE_PREMIUM_UNTIL|free until/i);
 		}
 	});
 });

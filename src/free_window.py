@@ -253,6 +253,12 @@ def self_closing_block(key: str, closed_html: str, open_html: str,
 PRO_URL = "https://pro.goaliq.app/"
 
 
+def season_checkout_url() -> str:
+    """Kausipassin kassa. Sama osoite kuin index.html:n hintapaneelin
+    "Get the season pass" -napilla (tests/test_hero_cta_checkout.py)."""
+    return f"{PRO_URL}checkout?plan=season"
+
+
 def band_open_html() -> str:
     return (
         '<div class="free-band">\n'
@@ -286,8 +292,13 @@ def hero_cta_closed_html() -> str:
     kaksi klikkausta ja vieritys. Hinta nakyi ensimmaisen kerran pienena
     versaalirivina napin alla, ja landingin suorat hintanapit saivat 0
     klikkausta 30 vrk:ssa. `?tab=premium` avaa pron hinnastonakyman.
+
+    WP2/A2 (1.11.2026): hinnastonakyma oli viela yksi askel (esikatselu +
+    kirjautumislaatikko) innokkaimmalle kavijalle, kun hintapaneelin napit
+    veivat suoraan kassaan. Nappi vie nyt SAMAAN osoitteeseen kuin paneelin
+    "Get the season pass" (`season_checkout_url`), teksti ja hinta ennallaan.
     """
-    return (f'<a class="btn btn-primary" href="{PRO_URL}?tab=premium" '
+    return (f'<a class="btn btn-primary" href="{season_checkout_url()}" '
             f'data-cta="hero-premium">Get Premium &middot; &euro;{PC.SEASON} '
             'a year &#9656;</a>')
 

@@ -77,7 +77,7 @@
 	};
 
 	const checkedAt = $derived(
-		report ? new Date(report.generated_at).toLocaleTimeString(undefined, { timeStyle: 'short' }) : ''
+		report ? new Date(report.generated_at).toLocaleTimeString('en-GB', { timeStyle: 'short' }) : ''
 	);
 
 	async function load() {

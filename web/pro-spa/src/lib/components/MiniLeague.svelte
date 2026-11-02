@@ -314,7 +314,7 @@
 		border: 1px solid var(--accent);
 		border-radius: var(--radius);
 		background: var(--surface);
-		color: var(--giq-rust);
+		color: var(--giq-teal);
 		font-weight: 700;
 		font-size: var(--step--1);
 		padding: 4px 12px;
