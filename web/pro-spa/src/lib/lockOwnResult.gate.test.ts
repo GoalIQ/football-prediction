@@ -50,7 +50,8 @@ describe('thisWeekOpenCaptain: fail-closed', () => {
 	});
 
 	it('taysi vastaus (ei locked_toolia) ei kelpaa, vaikka kapteeni on siina', () => {
-		expect(thisWeekOpenCaptain({ meta: { free_open: ['captain.pick'] }, captain: { pick: PICK } })).toBeNull();
+		const full = { meta: { free_open: ['captain.pick'] }, captain: { pick: PICK } };
+		expect(thisWeekOpenCaptain(full)).toBeNull();
 	});
 
 	it('vanha API ilman free_openia tai ilman captain.pickia -> null', () => {
