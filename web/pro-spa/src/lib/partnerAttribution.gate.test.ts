@@ -89,8 +89,9 @@ describe('kutsupaikat', () => {
 	   kutsupaikka kirjaa klikkausta toista kertaa. */
 	it('lukittu paatoskortti: oma source seka naytolle etta klikkaukselle', () => {
 		const lock = src('./components/PersonalLock.svelte');
-		expect(lock).toMatch(/capture\(\s*'paywall_shown',\s*\{ source: PERSONAL_LOCK_SOURCE, tool \}/);
-		expect(lock).toMatch(/capture\('upgrade_tapped', \{ source: lockUpgradeSource\(tool\) \}\)/);
+		// WP8 (2.11): lisakentat tool + lock_variant sallittu, lahde ei muutu.
+		expect(lock).toMatch(/capture\(\s*'paywall_shown',\s*\{ source: PERSONAL_LOCK_SOURCE, tool(, lock_variant: variant)? \}/);
+		expect(lock).toMatch(/capture\('upgrade_tapped', \{ source: lockUpgradeSource\(tool\)(, tool, lock_variant: variant)? \}\)/);
 		const d = src('./components/DecisionCard.svelte');
 		expect(d).toMatch(/<PersonalLock tool="this-week" \{onUpgrade\}/);
 		expect(d).not.toMatch(/decision_transfer_lock/);
