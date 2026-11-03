@@ -37,7 +37,7 @@
 	import type { SplView } from '$lib/tools';
 	// 22.9 (T6): otsikko, kuvaus ja canonical yhdesta lahteesta, jota myos
 	// buildin spl.html:n og/twitter-tagit lukevat. Ks. $lib/routeHeads.
-	import { SPL_HEAD, ORIGIN } from '$lib/routeHeads';
+	import { SPL_HEAD, SPL_CANONICAL } from '$lib/routeHeads';
 
 	let cs = $state<FantasyResponse | null>(null);
 	let xp = $state<XpResponse | null>(null);
@@ -473,10 +473,11 @@
 <svelte:head>
 	<title>{SPL_HEAD.title}</title>
 	<meta name="description" content={SPL_HEAD.description} />
-	<!-- /spl-prerender (7.8): canonical tälle työkalusivulle itselleen —
-	     goaliq.app/spl (staattinen landing) on erillinen sisältösivu joka
-	     linkittää tänne, ei duplikaatti. -->
-	<link rel="canonical" href="{ORIGIN}/spl" />
+	<!-- 3.11 (LOYDETTAVYYS-1): canonical hubin goaliq.app/spl:aan. 7.8
+	     paatettiin pitaa canonical tassa, mutta GSC mittasi 2.11 etta reitit
+	     kilpailivat samoista hauista (hubin sija 18,1). Arvo routeHeadsista,
+	     jotta buildin og:url ja tama tagi eivat voi erota. -->
+	<link rel="canonical" href={SPL_CANONICAL} />
 	<!-- Prerenderoidulla reitillä boot-runko näkyisi sisällön YLLÄ kunnes
 	     hydraatio poistaa sen — tällä reitillä sisältö on jo HTML:ssä,
 	     joten runko piilotetaan heti. -->

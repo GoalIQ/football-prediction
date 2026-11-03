@@ -11,19 +11,26 @@
  * app.html-templaatista, joten se kaatuu jo ennen buildia, ja se todistaa
  * erottelevalla kontrollilla etta predikaatti huomaa vanhan tilan.
  */
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { blankComments } from './sourceScan';
 import { GROUPS, TOOLS, toolPath } from './tools';
 import {
+	NOINDEX_ROUTES,
+	NOT_SERVED_ROUTES,
 	ORIGIN,
+	ROOT_CANONICAL,
+	SPL_CANONICAL,
 	SPL_HEAD,
 	UCL_HEAD,
 	applyRouteHead,
+	applyShell,
 	buildProblems,
 	readHead,
 	routeHeads,
+	shellPages,
+	shellProblems,
 	type RouteHead
 } from './routeHeads';
 
@@ -45,7 +52,7 @@ function splPrerender(): string {
 	return APP_HTML.replace(
 		'%sveltekit.head%',
 		`<title>${SPL_HEAD.title}</title><meta name="description" content="${SPL_HEAD.description}"/>` +
-			`<link rel="canonical" href="${ORIGIN}/spl"/>`
+			`<link rel="canonical" href="${SPL_CANONICAL}"/>`
 	);
 }
 
@@ -76,8 +83,10 @@ describe('reittikohtaiset headit', () => {
 		const h = readHead(servedAfter().get('/spl')!);
 		expect(h.titles).toEqual([SPL_HEAD.title]);
 		expect(h.social['og:title']).toEqual([SPL_HEAD.title]);
-		expect(h.social['og:url']).toEqual([`${ORIGIN}/spl`]);
-		expect(h.canonicals).toEqual([`${ORIGIN}/spl`]);
+		expect(h.social['og:url']).toEqual([SPL_CANONICAL]);
+		expect(h.canonicals).toEqual([SPL_CANONICAL]);
+		// 3.11: hubin sivu on kanoninen (GSC 2.11: reitit kilpailivat).
+		expect(SPL_CANONICAL).toBe('https://goaliq.app/spl');
 	});
 
 	it('otsikot eroavat toisistaan ja templaatista (paitsi saman sivun kaksi osoitetta)', () => {
@@ -138,5 +147,93 @@ describe('yksi lahde: sivut ja build lukevat samat vakiot', () => {
 		expect(script).toContain("import('../src/lib/routeHeads.ts')");
 		expect(script).toMatch(/applyRouteHead\(/);
 		expect(script).toMatch(/buildProblems\(/);
+	});
+});
+
+/** src/routes-hakemiston sivureitit polkuina: '/', '/checkout', '/[group]/[tool]'. */
+function routeDirs(): string[] {
+	const root = fileURLToPath(new URL('../routes/', import.meta.url));
+	const out: string[] = [];
+	const walk = (dir: string, rel: string) => {
+		for (const name of readdirSync(dir)) {
+			const full = `${dir}/${name}`;
+			if (statSync(full).isDirectory()) walk(full, `${rel}/${name}`);
+			else if (name === '+page.svelte') out.push(rel || '/');
+		}
+	};
+	walk(root.replace(/[\/]$/, ''), '');
+	return out.sort();
+}
+
+describe('kuoret ja 404 (3.11, LOYDETTAVYYS-1)', () => {
+	const tablePaths = new Set(heads.map((h) => h.path));
+	const noindex = new Set(NOINDEX_ROUTES.map((r) => r.path));
+	const notServed = new Set(NOT_SERVED_ROUTES.map((r) => r.path));
+
+	it('jokainen sivureitti on taulukossa, noindex-listalla tai ei-tarjoiltu-listalla', () => {
+		// 404.html sammuttaa Pagesin SPA-fallbackin: reitti ilman omaa
+		// tiedostoa vastaisi 404. Uusi reitti ei saa paatya siihen hiljaa.
+		const dirs = routeDirs();
+		expect(dirs).toContain('/checkout');
+		for (const d of dirs) {
+			if (d === '/' || d === '/[group]' || d === '/[group]/[tool]') continue;
+			expect(d.includes('['), `${d}: uusi dynaaminen reitti, lisaa sille tiedostot`).toBe(false);
+			const listed = [tablePaths.has(d), noindex.has(d), notServed.has(d)].filter(Boolean).length;
+			expect(listed, `${d}: lisaa routeHeads-taulukkoon, NOINDEX_ROUTES:iin tai NOT_SERVED_ROUTES:iin`).toBe(1);
+		}
+	});
+
+	it('listoilla ei ole vanhentuneita riveja, ja jokaisella on perustelu', () => {
+		const dirs = new Set(routeDirs());
+		for (const r of [...NOINDEX_ROUTES, ...NOT_SERVED_ROUTES]) {
+			expect(dirs.has(r.path), `${r.path}: reittia ei ole enaa`).toBe(true);
+			expect(r.why.length, r.path).toBeGreaterThan(15);
+		}
+	});
+
+	it('build kirjoittaa 404.html:n, juuren ja jokaisen noindex-reitin', () => {
+		const files = shellPages().map((s) => s.file);
+		expect(files).toContain('404.html');
+		expect(files).toContain('index.html');
+		for (const r of NOINDEX_ROUTES) expect(files).toContain(`${r.path.slice(1)}.html`);
+		expect(new Set(files).size).toBe(files.length);
+	});
+
+	it('juuri: canonical juureen eika robotsia; 404 ja noindex-reitit: noindex eika canonicalia', () => {
+		const root = readHead(applyShell(APP_HTML, 'root'));
+		expect(root.canonicals).toEqual([ROOT_CANONICAL]);
+		expect(ROOT_CANONICAL).toBe(`${ORIGIN}/`);
+		expect(root.robots).toEqual([]);
+		const nf = readHead(applyShell(APP_HTML, 'noindex'));
+		expect(nf.robots).toEqual(['noindex']);
+		expect(nf.canonicals).toEqual([]);
+		expect(nf.titles.length).toBe(1);
+		for (const s of shellPages()) expect(shellProblems(applyShell(APP_HTML, s.kind), s.kind), s.file).toEqual([]);
+	});
+
+	it('erotteleva kontrolli: 2.11 tila (kuori sellaisenaan) kaatuu molemmissa', () => {
+		expect(shellProblems(APP_HTML, 'root').join(' ')).toMatch(/canonical/);
+		expect(shellProblems(APP_HTML, 'noindex').join(' ')).toMatch(/robots/);
+	});
+
+	it('noindex vuotaa taulukon reitille -> jalkiehto kaatuu', () => {
+		const leaked = APP_HTML.replace('</title>', '</title><meta name="robots" content="noindex" />');
+		const ucl = heads.find((h) => h.path === '/ucl') as RouteHead;
+		expect(() => applyRouteHead(leaked, ucl)).toThrow(/robots/);
+		// Ja templaattiin jo tuotu canonical tai robots kaataa kuorimuunnoksen.
+		expect(() => applyShell(leaked, 'root')).toThrow(/robots/);
+	});
+
+	it('spl-sivu lukee canonicalin SPL_CANONICAL-vakiosta', () => {
+		const spl = blankComments(read('../routes/spl/+page.svelte'));
+		expect(spl).toContain('href={SPL_CANONICAL}');
+		expect(spl).not.toMatch(/\{ORIGIN\}\/spl/);
+	});
+
+	it('build-skripti kirjoittaa kuoret ja tarkistaa ne levylta', () => {
+		const script = read('../../scripts/route-heads.mjs');
+		expect(script).toMatch(/applyShell\(/);
+		expect(script).toMatch(/shellProblems\(readFileSync/);
+		expect(script).toContain('NOT_SERVED_ROUTES');
 	});
 });
