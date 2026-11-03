@@ -34,6 +34,51 @@ import {
 
 export const ORIGIN = 'https://pro.goaliq.app';
 
+/** Hubi (goaliq.app). /spl:n canonical osoittaa sinne (3.11, LOYDETTAVYYS-1). */
+export const HUB_ORIGIN = 'https://goaliq.app';
+
+/** /spl:n kanoninen osoite. 🔴 MITATTU 2.11 (GSC): pron /spl kilpaili
+ *  goaliq.app/spl:n kanssa samoista hauista, ja hubin sija oli 18,1. Sama
+ *  aihe kahdessa osoitteessa jakaa signaalin; hubin sivu on staattinen ja
+ *  sisaltorikkaampi, joten se on kanoninen ja pron reitti on tyokalu. */
+export const SPL_CANONICAL = `${HUB_ORIGIN}/spl`;
+
+/** Juuren canonical. Juuri on SvelteKitin fallback-kuori (index.html), joka
+ *  vastaa myos `/?ref=...`-tyyppisiin osoitteisiin: ilman tata GSC listasi
+ *  parametrikopioita (2.11: 3/38 pron URL:ia oli `/?...`). */
+export const ROOT_CANONICAL = `${ORIGIN}/`;
+
+/**
+ * Reitit jotka tarjoillaan mutta eivat ole hakutulos (noindex raa'assa
+ * HTML:ssa). 3.11 alkaen tuntematon polku palauttaa 404:n (build/404.html:
+ * Cloudflare Pagesin SPA-fallback sammuu kun tiedosto on olemassa), joten
+ * jokaisella todellisella reitilla on oltava oma tiedosto. Reitti joka ei
+ * ole taulukossa, tassa listassa eika NOT_SERVED_ROUTES:ssa kaataa portin
+ * (routeHeads.gate.test.ts): uusi reitti ei voi hiljaa muuttua 404:ksi.
+ */
+export const NOINDEX_ROUTES: readonly { path: string; why: string }[] = [
+	{
+		path: '/checkout',
+		why: 'Stripe-kassa ja paluu kassalta. 3 221 ottelusivua linkittaa tanne, mutta sivu ei ole hakutulos.'
+	},
+	{
+		path: '/creator',
+		why: 'Luojan raporttisivu tokenin takana (robots.txt Disallow 16.8).'
+	},
+	{
+		path: '/embed/fdr',
+		why: 'Muiden sivujen iframe-upotus. Sama sisalto on reitilla /matches.'
+	}
+];
+
+/** Reitit joita EI tarjoilla tuotannossa (404). */
+export const NOT_SERVED_ROUTES: readonly { path: string; why: string }[] = [
+	{
+		path: '/dev-premium',
+		why: 'Vain vite dev -esikatselu; tuotantobuildissa sivu nayttaa pelkan ohjeen.'
+	}
+];
+
 /** UCL-sivun oma otsikko ja kuvaus (routes/ucl/+page.svelte lukee nama). */
 export const UCL_HEAD = {
 	// 3.10.2026: UCL Fantasy lopetettu (Villen paatos); reitti on ilmoitus.
@@ -93,7 +138,7 @@ function groupDescription(group: string): string | null {
 export function routeHeads(): RouteHead[] {
 	const out: RouteHead[] = [
 		{ path: '/ucl', ...UCL_HEAD, canonical: `${ORIGIN}/ucl` },
-		{ path: '/spl', ...SPL_HEAD, canonical: `${ORIGIN}/spl`, prerendered: true }
+		{ path: '/spl', ...SPL_HEAD, canonical: SPL_CANONICAL, prerendered: true }
 	];
 	for (const g of GROUPS) {
 		out.push({
@@ -161,7 +206,7 @@ function all(re: RegExp, html: string): string[] {
 	return [...html.matchAll(re)].map((m) => unesc(m[1]));
 }
 
-function replaceOnce(html: string, re: RegExp, make: () => string, what: string): string {
+function replaceOnce(html: string, re: RegExp, make: (m: string) => string, what: string): string {
 	const n = [...html.matchAll(re)].length;
 	if (n !== 1) throw new Error(`route-heads: ${what}: odotettiin 1 osuma, oli ${n}`);
 	return html.replace(re, make);
@@ -175,6 +220,7 @@ export type ParsedHead = {
 	canonicals: string[];
 	social: Record<string, string[]>;
 	twitterCard: string[];
+	robots: string[];
 };
 
 export function readHead(html: string): ParsedHead {
@@ -187,7 +233,8 @@ export function readHead(html: string): ParsedHead {
 		descriptions: all(DESC_RE(), head),
 		canonicals: all(CANONICAL_RE, head),
 		social,
-		twitterCard: all(metaRe('name', 'twitter:card'), head)
+		twitterCard: all(metaRe('name', 'twitter:card'), head),
+		robots: all(metaRe('name', 'robots'), head)
 	};
 }
 
@@ -259,6 +306,8 @@ export function headProblems(html: string, head: RouteHead, desc: string): strin
 	one('canonical', h.canonicals, head.canonical);
 	for (const s of SOCIAL) one(s.key, h.social[s.key], s.pick(head, desc));
 	one('twitter:card', h.twitterCard, 'summary_large_image');
+	// Taulukon reitit ovat hakutuloksia: noindex niissa olisi hiljainen vika.
+	if (h.robots.length) p.push(`robots=${JSON.stringify(h.robots)} (indeksoitava reitti)`);
 	return p;
 }
 
@@ -306,4 +355,69 @@ export function buildProblems(served: Map<string, string>, heads: RouteHead[] = 
 /** Tiedosto johon reitin HTML kirjoitetaan buildissa (suhteessa build/). */
 export function routeFile(path: string): string {
 	return `${path.replace(/^\//, '')}.html`;
+}
+
+// ---------------------------------------------------------------------------
+// Kuoret ilman omaa headia: juuri, noindex-reitit ja 404 (3.11, LOYDETTAVYYS-1).
+//
+// 🔴 MITATTU 2.11: pro.goaliq.app/zz-nope ja /sitemap.xml vastasivat 200 ja
+// samalla 13 468 tavun kuorella kuin juuri (soft-404), eika juuressa ollut
+// canonicalia. Cloudflare Pages tarjoilee index.html:n jokaiselle
+// tuntemattomalle polulle tasan silloin kun build/404.html puuttuu (muisti
+// cf-pages-404-html-on-kytkin). Siksi 404.html kirjoitetaan aina, ja
+// jokainen todellinen reitti saa oman tiedostonsa (taulukko tai
+// NOINDEX_ROUTES). SPA kaynnistyy 404.html:sta samoin kuin index.html:sta,
+// joten tuntematon polku ohjautuu selaimessa kuten ennenkin.
+// ---------------------------------------------------------------------------
+
+export type ShellKind = 'root' | 'noindex';
+export type ShellPage = { file: string; kind: ShellKind; path: string | null };
+
+/** Kaikki kuoritiedostot jotka build kirjoittaa (suhteessa build/). */
+export function shellPages(): ShellPage[] {
+	return [
+		{ file: 'index.html', kind: 'root', path: '/' },
+		{ file: '404.html', kind: 'noindex', path: null },
+		...NOINDEX_ROUTES.map((r) => ({ file: routeFile(r.path), kind: 'noindex' as const, path: r.path }))
+	];
+}
+
+function insertAfterDescription(html: string, tag: string, what: string): string {
+	return replaceOnce(html, DESC_RE(), (m) => `${m}\n\t\t${tag}`, what);
+}
+
+/** Kuoren muunnos. `shell` on vite buildin koskematon index.html. */
+export function applyShell(shell: string, kind: ShellKind): string {
+	const before = readHead(shell);
+	if (before.canonicals.length)
+		throw new Error(`route-heads: kuori: canonical on jo templaatissa (${before.canonicals.join(',')})`);
+	if (before.robots.length)
+		throw new Error(`route-heads: kuori: robots on jo templaatissa (${before.robots.join(',')})`);
+	const tag =
+		kind === 'root'
+			? `<link rel="canonical" href="${escAttr(ROOT_CANONICAL)}" />`
+			: '<meta name="robots" content="noindex" />';
+	const out = insertAfterDescription(shell, tag, `kuori ${kind} description`);
+	const p = shellProblems(out, kind);
+	if (p.length) throw new Error(`route-heads: kuori ${kind}: ${p.join('; ')}`);
+	return out;
+}
+
+/** Jalkiehto kuorelle. Juuri: canonical juureen eika robotsia. Noindex:
+ *  robots noindex eika canonicalia (noindex + canonical on ristiriita). */
+export function shellProblems(html: string, kind: ShellKind): string[] {
+	const h = readHead(html);
+	const p: string[] = [];
+	if (h.titles.length !== 1) p.push(`title=${JSON.stringify(h.titles)}`);
+	if (h.descriptions.length !== 1) p.push(`description=${JSON.stringify(h.descriptions)}`);
+	if (kind === 'root') {
+		if (h.canonicals.length !== 1 || h.canonicals[0] !== ROOT_CANONICAL)
+			p.push(`canonical=${JSON.stringify(h.canonicals)} (odotettiin "${ROOT_CANONICAL}")`);
+		if (h.robots.length) p.push(`robots=${JSON.stringify(h.robots)} (juuri on hakutulos)`);
+	} else {
+		if (h.canonicals.length) p.push(`canonical=${JSON.stringify(h.canonicals)} (noindex-sivulla ei canonicalia)`);
+		if (h.robots.length !== 1 || h.robots[0] !== 'noindex')
+			p.push(`robots=${JSON.stringify(h.robots)} (odotettiin "noindex")`);
+	}
+	return p;
 }

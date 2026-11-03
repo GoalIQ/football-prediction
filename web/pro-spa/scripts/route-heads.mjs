@@ -13,6 +13,10 @@
  *     jalkitarkistus kaataa buildin jos niin ei ole.
  *   - Prerenderoitu /spl: templaatin title ja description poistetaan (sivu
  *     tuo omansa), og/twitter-tagit vaihdetaan SPL:n omiin.
+ *   - Kuoret (3.11): index.html saa canonicalin juureen; 404.html ja
+ *     NOINDEX_ROUTES-reitit (/checkout, /creator, /embed/fdr) saavat
+ *     noindexin. 404.html sammuttaa Pagesin SPA-fallbackin, joten
+ *     tuntematon polku vastaa 404 eika 200.
  *
  * FAIL-CLOSED: jokainen korvaus osuu tasan kerran tai build kaatuu (exit 1).
  * Hiljainen puolikorjaus olisi sama vika jota tama korjaa.
@@ -37,7 +41,17 @@ try {
 			'tarvitaan 22.18+ tai 23.6+ (TypeScript-tyyppien riisunta ilman lippua).'
 	);
 }
-const { routeHeads, applyRouteHead, buildProblems, readHead, routeFile } = mod;
+const {
+	routeHeads,
+	applyRouteHead,
+	buildProblems,
+	readHead,
+	routeFile,
+	shellPages,
+	applyShell,
+	shellProblems,
+	NOT_SERVED_ROUTES
+} = mod;
 
 // 22.9 (A3): vanhojen polkujen 301 palvelimella. Sama lahde kuin portissa
 // (src/lib/legacyPaths.ts), joten kartta ja tiedosto eivat voi erota.
@@ -88,9 +102,35 @@ for (const head of heads) {
 // Sama predikaatti kuin vitest-portissa (routeHeads.gate.test.ts).
 const served = new Map(written.map(({ head, rel }) => [head.path, readFileSync(`${BUILD}${rel}`, 'utf8')]));
 const problems = buildProblems(served, heads);
-// Fallback (juuri + tuntemattomat polut) pysyy templaatin mukaisena.
-if (readFileSync(INDEX, 'utf8') !== shell) problems.push('index.html muuttui');
+if (readFileSync(INDEX, 'utf8') !== shell) problems.push('index.html muuttui ennen kuorivaihetta');
 if (problems.length) fail(`jalkitarkistus kaatui:\n  ${problems.join('\n  ')}`);
+
+// --- Kuoret: juuri (canonical), noindex-reitit ja 404.html (3.11) ----------
+// 404.html sammuttaa Cloudflare Pagesin SPA-fallbackin: tuntematon polku saa
+// 404:n eika 200:aa. Siksi jokainen todellinen reitti tarvitsee oman
+// tiedostonsa; portti routeHeads.gate.test.ts pitaa listat kattavina.
+const shells = shellPages();
+for (const s of shells) {
+	const file = `${BUILD}${s.file}`;
+	if (s.file !== 'index.html' && existsSync(file)) fail(`${s.file} on jo olemassa (static/? prerender?)`);
+	let out;
+	try {
+		out = applyShell(shell, s.kind);
+	} catch (e) {
+		fail(e.message);
+	}
+	mkdirSync(dirname(file), { recursive: true });
+	writeFileSync(file, out);
+}
+const shellIssues = [];
+for (const s of shells) {
+	for (const p of shellProblems(readFileSync(`${BUILD}${s.file}`, 'utf8'), s.kind)) shellIssues.push(`${s.file}: ${p}`);
+	if (served.has(s.path)) shellIssues.push(`${s.file}: polulla on jo oma head`);
+}
+for (const r of NOT_SERVED_ROUTES) {
+	if (existsSync(`${BUILD}${routeFile(r.path)}`)) shellIssues.push(`${r.path}: ei saa tarjoilla tuotannossa`);
+}
+if (shellIssues.length) fail(`kuoret:\n  ${shellIssues.join('\n  ')}`);
 
 // --- _redirects (Cloudflare Pages) -----------------------------------------
 // Fail-closed: kasin kirjoitettu static/_redirects ohitettaisiin hiljaa, joten
@@ -107,5 +147,5 @@ for (const r of legacy.redirectRules()) {
 
 const titles = new Set([...served.values()].map((h) => readHead(h).titles[0]));
 console.log(
-	`route-heads: OK (${written.length} reittia, ${titles.size} eri titlea, /ucl = "${readHead(served.get('/ucl')).titles[0]}", _redirects ${legacy.redirectRules().length} saantoa)`
+	`route-heads: OK (${written.length} reittia, ${titles.size} eri titlea, /ucl = "${readHead(served.get('/ucl')).titles[0]}", _redirects ${legacy.redirectRules().length} saantoa, kuoret ${shells.map((s) => s.file).join(' ')})`
 );
