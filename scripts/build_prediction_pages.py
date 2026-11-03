@@ -58,6 +58,7 @@ from src.site_identity import publisher_node  # noqa: E402
 from src.site_nav import SITE_NAV_CSS, site_nav_html  # noqa: E402
 from src.local_time import time_tag, with_local_time_script  # WP2  # noqa: E402
 from scripts.slugs import fold_ascii, slug
+from scripts import seo_meta
 from scripts import site_output
 
 # #119b: KAIKKI generoidut sivut (hubit + ottelusivut) omaan lapsi-sitemapiin,
@@ -529,6 +530,9 @@ def _social_meta(title: str, desc: str, canonical: str) -> str:
 
 def _page(title: str, desc: str, canonical: str, hero: str, body: str,
           jsonld: list[dict]) -> str:
+    # LOYDETTAVYYS-5 (3.11): yli 160 merkin kuvausta tai yli 60 merkin
+    # otsikkoa ei kirjoiteta (scripts/seo_meta.py).
+    seo_meta.check(title, desc, canonical)
     ld = "".join(
         '<script type="application/ld+json">\n'
         + json.dumps(b, ensure_ascii=False, indent=1)
@@ -770,10 +774,60 @@ def load_feed(log: dict, now: datetime) -> Feed:
     mapped, unmapped = _apply_display_names(upcoming)
     mapped_p, unmapped_p = _apply_display_names(played)
     _apply_display_names(voided)
-    for comp, rows in upcoming.items():
-        _assign_filenames(rows + (played.get(comp) or []))
-    return Feed(upcoming, played, n_conf, mapped | mapped_p, unmapped | unmapped_p,
+    # 3.11: kaikki kilpailut joilla on sivuja, myos ne joilla on vain pelattuja
+    # (kauden loppu). Ennen tata `_file` annettiin vain `upcoming`in
+    # kilpailuille, ja pelkkien pelattujen kilpailun saman parin toinen
+    # ottelu sai perusslugin eli edellisen ottelun URLin. main() korjasi sen
+    # omalla kutsullaan, mutta muut lukijat (record-taulun linkit, reply-
+    # moduuli) eivat.
+    feed = Feed(upcoming, played, n_conf, mapped | mapped_p, unmapped | unmapped_p,
                 voided)
+    for comp in LEAGUES:
+        _assign_filenames(page_rows(feed, comp))
+    return feed
+
+
+def page_rows(feed: Feed, comp: str) -> list[dict]:
+    """Kilpailun rivit joista main() kirjoittaa ottelusivun: tulevat + pelatut.
+
+    YKSI LUKIJA sivujen kirjoitukselle ja record-taulun linkeille
+    (`published_match_pages`): jos joukko eroaa, linkki osoittaa sivuun jota
+    ei ole tai jaa pois sivulta joka on."""
+    return (feed.upcoming.get(comp) or []) + (feed.played.get(comp) or [])
+
+
+def published_match_pages(log: dict, now: datetime) -> dict[str, dict]:
+    """match_id -> ottelusivu, jonka main() kirjoittaa samasta lokista hetkella `now`.
+
+    Arvo: {"path": "/predictions/<liiga>/<tiedosto>", "file": "<liiga>/<tiedosto>.html",
+    "competition", "date", "home_team", "away_team"} (nimet nayttonimina).
+
+    LOYDETTAVYYS-2 (3.11): /predictions-sivun track record -rivit linkittavat
+    tasta. Sama `load_feed` + `page_rows` + `match_page_path` kuin sivujen
+    kirjoitus, joten slugia ei lasketa toista kertaa. Tunniste on lokirivin
+    `match_id`, ei pari: samalla parilla voi olla monta ottelua eri kausina,
+    ja vain myohempi saa paivasuffiksin (`_assign_filenames`). Rivi ilman
+    `match_id`:ta ei saa linkkia (fail-closed).
+
+    Loki kopioidaan: `load_feed` kirjoittaa `_file`-kentan riveille, eika
+    kutsujan lista saa muuttua."""
+    feed = load_feed({"predictions": [dict(e) for e in log.get("predictions") or []]},
+                     now)
+    out: dict[str, dict] = {}
+    for comp in LEAGUES:
+        for e in page_rows(feed, comp):
+            mid = e.get("match_id")
+            if not mid:
+                continue
+            out[mid] = {
+                "path": match_page_path(comp, e),
+                "file": f"{LEAGUES[comp]['slug']}/{_match_filename(e)}",
+                "competition": comp,
+                "date": e.get("date"),
+                "home_team": e["home_team"],
+                "away_team": e["away_team"],
+            }
+    return out
 
 
 def _void_by_comp(log: dict) -> dict[str, list[dict]]:
@@ -792,8 +846,13 @@ def _void_by_comp(log: dict) -> dict[str, list[dict]]:
     return out
 
 
+def match_page_path(comp: str, e: dict) -> str:
+    """Sivuston sisainen polku ottelusivulle (ilman .html:aa, kuten hubin rivit)."""
+    return f"/predictions/{LEAGUES[comp]['slug']}/{_match_filename(e)[:-5]}"
+
+
 def match_page_url(comp: str, e: dict) -> str:
-    return f"{BASE}/predictions/{LEAGUES[comp]['slug']}/{_match_filename(e)[:-5]}"
+    return f"{BASE}{match_page_path(comp, e)}"
 
 
 def _side_roles(call: dict) -> tuple[str, str]:
@@ -1179,6 +1238,56 @@ def _result_html(e: dict, state: str) -> str:
     )
 
 
+def match_page_meta(comp: str, e: dict, state: str, call: dict) -> tuple[str, str]:
+    """(otsikko, kuvaus) ottelusivulle. LOYDETTAVYYS-5 (3.11.2026).
+
+    Ehdokkaat pisimmasta lyhimpaan (scripts/seo_meta.fit). Pohjana 2.11
+    julkaisutarkistajan hyvaksyma teksti (fp #86). Sen suosikkiversio ei
+    mahtunut 160:een yhdellakaan 3 221 sivusta (3.11), joten liiga (joka on
+    jo otsikossa) on pudotettu jo ensimmaisesta ehdokkaasta; sen jalkeen
+    pudotetaan sanoja, ei vaitteita. Varaus "updated until kick-off ...
+    graded" on jokaisessa ehdokkaassa, eika mikaan ehdokas lisaa vaitetta.
+    Tasaisen ottelun ensimmainen ehdokas on hyvaksytty teksti sellaisenaan.
+
+    Otsikko pudottaa kokonaisia loppupaloja: brandi, liiga, "and Result".
+    Lyhin otsikko on "<koti> vs <vieras> Prediction"; jos sekin ylittaa
+    rajan, nimea ei katkaista (perusteltu poikkeus "joukkuenimet")."""
+    home, away = e["home_team"], e["away_team"]
+    league = LEAGUES[comp]["name"]
+    core = f"{home} vs {away} Prediction"
+    res = " and Result" if state == "final" else ""
+    title = seo_meta.fit([
+        f"{core}{res}: {league} | GoalIQ",
+        f"{core}{res}: {league}",
+        f"{core}{res}",
+        core,
+    ], seo_meta.TITLE_MAX, poikkeus="joukkuenimet")
+    fav, fav_pct = _favourite_label(e, call)
+    if fav:
+        when = e.get("date")
+        claim = f"the GoalIQ model gives {fav} a {fav_pct} chance to win"
+        long_q = ("Updated until kick-off, and the last version is graded in "
+                  "our public track record.")
+        short_q = "Updated until kick-off, then graded in our public track record."
+        desc = seo_meta.fit([
+            f"{home} vs {away} ({when}): {claim}. {long_q}",
+            f"{home} vs {away} ({when}): {claim}. {short_q}",
+            f"{home} vs {away}: {claim}. {short_q}",
+            f"{home} vs {away}: {claim}, updated until kick-off and graded after.",
+            f"{home} vs {away}: our model gives {fav} a {fav_pct} chance to win, "
+            "updated until kick-off and graded after.",
+        ], seo_meta.DESC_MAX, poikkeus="joukkuenimet")
+    else:
+        # Portti 10.9: "too close" ensin, SERP katkaisee ~155 merkkiin.
+        probs = (f"{_fmt_pct(e['p_home'])} home, {_fmt_pct(e['p_draw'])} draw, "
+                 f"{_fmt_pct(e['p_away'])} away, updated until kick-off and graded after.")
+        desc = seo_meta.fit([
+            f"{home} vs {away}: too close for the GoalIQ model to name a favourite. {probs}",
+            f"{home} vs {away}: too close to call for our model. {probs}",
+        ], seo_meta.DESC_MAX, poikkeus="joukkuenimet")
+    return title, desc
+
+
 def render_match_page(comp: str, e: dict, now: datetime | None = None,
                       history: list[dict] | tuple = ()) -> str:
     """Ottelusivu. `history` = saman kilpailun lokirivit (form-nauha); ilman
@@ -1196,11 +1305,8 @@ def render_match_page(comp: str, e: dict, now: datetime | None = None,
     # Pelatulla sivulla palkki ei korosta suosikkia (sama syy kuin
     # _prob_sentence: tamanhetkinen marginaali ei ole ottelua edeltava).
     shown_call = {**call, "favourite": None} if played else call
-    fav, fav_pct = _favourite_label(e, call)
-    url = f"{BASE}/predictions/{cfg['slug']}/{_match_filename(e)[:-5]}"
-    title = f"{home} vs {away} Prediction: {cfg['name']} | GoalIQ"
-    if state == "final":
-        title = f"{home} vs {away} Prediction and Result: {cfg['name']} | GoalIQ"
+    url = match_page_url(comp, e)
+    title, desc = match_page_meta(comp, e, state, call)
     # 2.8.2026 PREMIUM-VUOTO KIINNI: raaka xG on premium-dataa (PredictScreen
     # #92: "siita johtaa total goals + BTTS + scoreline", XgStat locked=
     # !isPremium), mutta se julkaistiin 1 930 indeksoidulla sivulla ilmaiseksi.
@@ -1212,20 +1318,8 @@ def render_match_page(comp: str, e: dict, now: datetime | None = None,
     # (accuracy_pipeline._refreshable), joten sivun luku ennen ottelua EI ole
     # valttamatta se joka gradataan. Meta ja alateksti sanovat: paivittyy
     # aloitukseen asti, viimeinen versio gradataan. Portti:
-    # tests/test_record_ei_vaita_lukittua.py.
-    if fav:
-        desc = (
-            f"{home} vs {away} ({cfg['name']}, {e.get('date')}): the GoalIQ model "
-            f"gives {fav} a {fav_pct} chance to win. Updated until kick-off, and the "
-            f"last version is graded in our public track record."
-        )
-    else:
-        # Portti 10.9: "too close" ensin, SERP katkaisee ~155 merkkiin.
-        desc = (
-            f"{home} vs {away}: too close for the GoalIQ model to name a favourite. "
-            f"{_fmt_pct(ph)} home, {_fmt_pct(pd_)} draw, {_fmt_pct(pa)} away, "
-            f"updated until kick-off and graded after."
-        )
+    # tests/test_record_ei_vaita_lukittua.py. Otsikko ja kuvaus:
+    # match_page_meta (LOYDETTAVYYS-5).
     # 1.11.2026 (WP11, mobiili ensin): paikallinen aika + kirjausleima,
     # gradatulla sivulla tuomio heti, sitten kolme isoa lukua ja yksi lause,
     # ylin tulos + lukko, form, jako. Vaiheet: upcoming / pending / final.
@@ -1360,10 +1454,12 @@ def render_league_hub(comp: str, rows: list[dict], now: datetime,
     cfg = LEAGUES[comp]
     url = f"{BASE}/predictions/{cfg['slug']}/"
     title = f"{cfg['name']} Predictions and Win Probability | GoalIQ"
+    # LOYDETTAVYYS-5 (3.11): 188-193 -> alle 160 (pisin liiganimi 157).
+    # Sama vaite yhtena lauseena.
     desc = (
-        f"Model win probabilities for upcoming {cfg['name']} matches. Every "
-        f"prediction is logged before kickoff in GoalIQ's public track record "
-        f"and graded after the match, hits and misses included."
+        f"Model win probabilities for upcoming {cfg['name']} matches, logged "
+        f"before kickoff and graded in GoalIQ's public track record, hits and "
+        f"misses included."
     )
     near, later = hub_split(rows, now)
     window_all_later = bool(near) and all(
@@ -1628,8 +1724,10 @@ def _deploy_file_count() -> int:
     return sum(1 for p in site_output.site_paths(paths) if (ROOT / p).is_file())
 
 
-def main() -> int:
-    now = datetime.now(timezone.utc)
+def main(now: datetime | None = None) -> int:
+    # `now` testeille: sama hetki kuin record-taulun linkeilla
+    # (tests/test_record_links_match_pages.py).
+    now = now or datetime.now(timezone.utc)
     log = acc.load_log()
     feed = load_feed(log, now)
     by_comp, played_by_comp = feed.upcoming, feed.played
@@ -1662,6 +1760,8 @@ def main() -> int:
     for comp, cfg in LEAGUES.items():
         rows = by_comp.get(comp) or []
         done = played_by_comp.get(comp) or []
+        # Sama joukko kuin published_match_pages (record-taulun linkit).
+        pages = page_rows(feed, comp)
         out_dir = OUT_ROOT / cfg["slug"]
         if not rows and not done:
             # Ei dataa lainkaan → ei sivuja; siivoa mahdolliset vanhat sivut
@@ -1676,12 +1776,12 @@ def main() -> int:
         # tata tarkistusta jalkimmainen kirjoittaa edellisen yli ja sivumaara
         # putoaa HILJAA. Saman parin myohempi ottelu saa paivasuffiksin
         # (_assign_filenames); vasta suffiksinkin jalkeen tormays on virhe.
-        clashes = _assign_filenames(rows + done)
+        clashes = _assign_filenames(pages)
         if clashes:
             print(f"VIRHE {comp}: slug-tormays -> {sorted(set(clashes))}",
                   file=sys.stderr)
             return 1
-        names = [_match_filename(e) for e in rows + done]
+        names = [_match_filename(e) for e in pages]
         # Siivoa vain sivut joita lokissa ei ole (pariutus muuttui). Pelattu
         # ottelu EI ole vanhentunut: sivu jaa paikalleen.
         keep = {"index.html"} | set(names)
@@ -1699,7 +1799,7 @@ def main() -> int:
             )
         elif (out_dir / "index.html").exists():
             (out_dir / "index.html").unlink()
-        for e in rows + done:
+        for e in pages:
             (out_dir / _match_filename(e)).write_text(
                 render_match_page(comp, e, now,
                                   history=done + (feed.voided.get(comp) or [])),

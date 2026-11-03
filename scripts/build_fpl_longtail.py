@@ -68,6 +68,7 @@ from scripts.mobile_css import MOBILE_COLS_JS, MOBILE_CSS
 from src.site_nav import SITE_NAV_CSS, site_nav_html  # noqa: E402
 from src.local_time import time_tag, with_local_time_script  # WP2  # noqa: E402
 from scripts.site_output import public_data_url  # "Source:"-linkit, yksi lukija
+from scripts import seo_meta  # LOYDETTAVYYS-5: otsikko <= 60, kuvaus <= 160
 from src.models.fpl_why_drivers import PAGE_LEGEND, fact_context, fact_text_ctx  # todiste: yksi lukija
 from scripts.share_card_js import SHARE_CARD_JS
 from scripts.table_tools import TABLE_TOOLS_JS  # noqa: E402
@@ -560,9 +561,14 @@ def _og_image(canonical: str) -> str:
     return f"{BASE}/{rel}?v={tiiviste}"
 
 def _page(title: str, desc: str, canonical: str, hero: str, body: str,
-          jsonld: list[dict]) -> str:
+          jsonld: list[dict], share_title: str | None = None) -> str:
     """Longtail-sivun runko uudessa ilmeessä: magenta-bar + tumma header/hero
-    (h1 + lede) + cream-content. Sama head-järjestys kuin fpl.html:ssä."""
+    (h1 + lede) + cream-content. Sama head-järjestys kuin fpl.html:ssä.
+
+    `share_title`: og:/twitter:title kun jakokortin otsikko saa olla pidempi
+    kuin hakutuloksen (muistiot: koko otsikko jaetaan, <title> lyhenee)."""
+    # LOYDETTAVYYS-5 (3.11): yli rajan menevaa otsikkoa/kuvausta ei kirjoiteta.
+    seo_meta.check(title, desc, canonical)
     ld = "".join(
         '<script type="application/ld+json">\n'
         + json.dumps(b, ensure_ascii=False, indent=1)
@@ -581,7 +587,7 @@ def _page(title: str, desc: str, canonical: str, hero: str, body: str,
         # 29.7 (#225-SEO): OG/Twitter myös longtail-sivuille — kuusi
         # fpl-alasivua jaettiin paljaana linkkinä vaikka fpl.html emittoi
         # nämä. Sama kuva-asset, arvot _page()-parametreista.
-        f"{_social_meta(title, desc, canonical, _og_image(canonical))}"
+        f"{_social_meta(share_title or title, desc, canonical, _og_image(canonical))}"
         # 27.7: koko ikonisetti myös alasivuille. Pelkkä .ico jätti selaimet
         # käyttämään matalaresoluutioista varianttia ja iOS:n kotinäytön ilman
         # ikonia — 187 alasivua näytti eri merkkiä kuin neljä pääsivua.
@@ -865,19 +871,28 @@ def render_differentials(diff: dict, now: datetime) -> str | None:
         gw_txt = "the coming gameweeks"
     top = players[0]
     url = f"{BASE}/fpl/differentials"
-    title = f"Best FPL Differentials {gw_txt}: Low-Owned Model Picks | GoalIQ"
+    title = seo_meta.fit([
+        f"Best FPL Differentials {gw_txt}: Low-Owned Model Picks | GoalIQ",
+        f"Best FPL Differentials {gw_txt}: Low-Owned Model Picks",
+        f"Best FPL Differentials {gw_txt}",
+    ], seo_meta.TITLE_MAX)
     # 3.8.2026 kirjattu rajoite (xP ei saa nakya, koska DifferentialsSection
     # oli appissa premium) RAUKESI 4.9.2026: Villen paatos teki differentialsin
     # ilmaiseksi kaikilla pinnoilla, ja appin gate poistettiin samassa
     # muutoksessa. Nyt sivu nayttaa koko listan xP-lukuineen — ja se on myos
     # ainoa tapa tehda ilmaislupauksesta tosi tallä sivulla (julkaisuportti
     # 4.9 N1/N3: "the full list" oli vaite jota sivu ei kattanut).
-    desc = (
-        f"GoalIQ's model differentials for {gw_txt}: {len(players)} low-owned "
-        f"players (under {int(meta.get('max_ownership') or 10)}% ownership) the "
-        f"model still rates, led by {top['web_name']} ({top['team_short']}) on "
-        f"{top['owned_pct']}% ownership. Free, no sign-in."
-    )
+    # LOYDETTAVYYS-5 (3.11): 168 -> alle 160. Toisto pois ("model ... the
+    # model", "low-owned" + "under 10% ownership"); karki pudotetaan
+    # kokonaisena jos nimi tai ikkuna on pitka.
+    _diff_base = (f"GoalIQ's differentials for {gw_txt}: {len(players)} players "
+                  f"under {int(meta.get('max_ownership') or 10)}% ownership the "
+                  f"model still rates")
+    desc = seo_meta.fit([
+        f"{_diff_base}, led by {top['web_name']} ({top['team_short']}) on "
+        f"{top['owned_pct']}% ownership. Free, no sign-in.",
+        f"{_diff_base}. Free, no sign-in.",
+    ], seo_meta.DESC_MAX)
     hero = (
         f"<h1>Best FPL differentials, {escape(gw_txt)}</h1>"
         f'<p class="lede">A differential is a low-owned player (under 10% '
@@ -1333,14 +1348,15 @@ def render_model_xi(xp: dict, now: datetime) -> str | None:
     title = ("The GoalIQ Model XI: best 100.0m FPL squad on xP | GoalIQ"
              if _proven else
              "FPL Model XI: Strongest 100.0m Squad We Found | GoalIQ")
-    _desc_claim = ("The highest-scoring XI inside the 100.0m budget"
+    # LOYDETTAVYYS-5 (3.11): 186 -> alle 160. "({window_n})" toisti ikkunan,
+    # "the ... budget" ja "actually" pois; vaitteet samat.
+    _desc_claim = ("The highest-scoring XI inside 100.0m"
                    if _proven else
-                   "The strongest XI our search found inside the 100.0m "
-                   "budget")
-    desc = (f"{_desc_claim}: {shape}, "
-            f"{total_xp:.1f} projected points over {window} ({window_n}), "
-            f"with a bench that actually plays. Free, no sign-in, rebuilt "
-            f"daily.")
+                   "The strongest XI our search found inside 100.0m")
+    _xi_base = (f"{_desc_claim}: {shape}, {total_xp:.1f} projected points over "
+                f"{window}, with a bench that plays. Free, no sign-in")
+    desc = seo_meta.fit([f"{_xi_base}, rebuilt daily.", f"{_xi_base}."],
+                        seo_meta.DESC_MAX)
     claim = ("The strongest XI the GoalIQ model found inside the standard "
              "100.0m budget")
     # 28.7 (Villen havainto): budjetti kattaa 15 pelaajaa, ei 11. Aiempi
@@ -1786,19 +1802,32 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
                       f"{_ikkuna_k}")
     else:
         xg_tuoreus = "see the basis line below"
+    # LOYDETTAVYYS-5 (3.11): kuvaukselle lyhyt muoto SAMASTA haarasta (sivun
+    # oma lause ylla pysyy ennallaan). Kausivaraus on jokaisessa ehdokkaassa.
+    if _sekakausi:
+        _tu_meta = (f"Rolling windows mix seasons; the Season view is "
+                    f"{_target_k} totals so far.")
+    elif _ikkuna_k and _target_k and _ikkuna_k != _target_k:
+        _tu_meta = (f"Rolling windows are {_ikkuna_k} matches; the Season view "
+                    f"is {_target_k} totals so far.")
+    elif _ikkuna_k:
+        _tu_meta = f"Rolling windows and the Season view are both {_ikkuna_k}."
+    else:
+        _tu_meta = "See the basis line on the page."
 
     url = f"{BASE}/fpl/xg-leaders"
     title = "Top xG Performers: FPL Expected Goals Leaders | GoalIQ"
     # JULKAISUPORTTI 27.8: "last 5 games" oli epatosi 11 rivilla 100:sta
     # (yhden ottelun 26/27-rivit), ja meta nimesi Emersonnin ilman otoskokoa.
     # "Up to 5" + otoskoko luvun vieressa - sama sana kaikkialla sivulla.
+    # LOYDETTAVYYS-5: karki otoskokoineen pudotetaan kokonaisena, jos se ei mahdu.
     _g0 = int(rows[0].get("games") or 0)
-    desc = (
-        f"The top FPL expected-goals (xG) performers from up to 5 games "
-        f"each: {rows[0]['web_name']} leads at {rows[0]['xg_per_game']:.2f} "
-        f"xG per game from {_g0} game{'' if _g0 == 1 else 's'}. From "
-        f"official FPL match data: {xg_tuoreus}."
-    )
+    _xg_base = "FPL xG per game, up to 5 games each, from official FPL match data"
+    desc = seo_meta.fit([
+        f"{_xg_base}: {rows[0]['web_name']} leads at {rows[0]['xg_per_game']:.2f} "
+        f"from {_g0} game{'' if _g0 == 1 else 's'}. {_tu_meta}",
+        f"{_xg_base}. {_tu_meta}",
+    ], seo_meta.DESC_MAX)
     top3 = "".join(
         '<div class="stat">'
         f'<b>{escape(r["web_name"])}</b>'
@@ -2008,13 +2037,21 @@ def render_defcon(leaders: dict, now: datetime) -> str | None:
     if basis.startswith("Based on "):
         basis = "Numbers are from the " + basis[len("Based on "):] + " season"
     url = f"{BASE}/fpl/defcon"
-    title = "Best DefCon Players: FPL Defensive Contribution Leaders | GoalIQ"
-    desc = (
-        f"The most reliable FPL defensive contribution (DefCon) point scorers: "
-        f"{rows[0]['web_name']} hits the threshold in "
-        f"{rows[0]['hit_rate_pct']:.0f}% of his {per}. Defenders need 10 CBIT, "
-        f"midfielders and forwards 12 CBIRT, for 2 points."
-    )
+    # LOYDETTAVYYS-5 (3.11): 64/191 -> brandi pois otsikosta; kuvauksesta
+    # "defensive contribution (...)" pois, koska otsikko sanoo sen.
+    title = seo_meta.fit([
+        "Best DefCon Players: FPL Defensive Contribution Leaders | GoalIQ",
+        "Best DefCon Players: FPL Defensive Contribution Leaders",
+    ], seo_meta.TITLE_MAX)
+    _dc_rule = ("Defenders need 10 CBIT, midfielders and forwards 12 CBIRT, "
+                "for 2 points.")
+    _dc_hit = (f"{rows[0]['web_name']} hits the threshold in "
+               f"{rows[0]['hit_rate_pct']:.0f}% of his {per}.")
+    desc = seo_meta.fit([
+        f"Most reliable FPL DefCon scorers: {_dc_hit} {_dc_rule}",
+        f"{rows[0]['web_name']} hits the FPL DefCon threshold in "
+        f"{rows[0]['hit_rate_pct']:.0f}% of his {per}. {_dc_rule}",
+    ], seo_meta.DESC_MAX)
     top3 = "".join(
         '<div class="stat">'
         f'<b>{escape(r["web_name"])}</b>'
@@ -2558,12 +2595,16 @@ def render_stats(stats: dict, now: datetime) -> str | None:
     idx = {c: i for i, c in enumerate(cols)}
     basis = meta.get("basis_label") or ""
     url = f"{BASE}/fpl/stats"
-    title = "Free FPL Player Stats: Shots, xG and Filterable Raw Numbers | GoalIQ"
+    # LOYDETTAVYYS-5 (3.11): 68/217 -> brandi pois otsikosta; kuvauksen
+    # sarakelista lyhennetty (taulukko itse nayttaa kaikki sarakkeet).
+    title = seo_meta.fit([
+        "Free FPL Player Stats: Shots, xG and Filterable Raw Numbers | GoalIQ",
+        "Free FPL Player Stats: Shots, xG and Filterable Raw Numbers",
+    ], seo_meta.TITLE_MAX)
     desc = (
-        f"Every Premier League player's numbers in one filterable table: "
-        f"shots, shots in the box, key passes, xG, xA, xGI, tackles, "
-        f"recoveries and set-piece order. {len(rows)} players, per 90 or per "
-        f"start, CSV export. Free, no sign-in."
+        "Every Premier League player's shots, xG, xA, key passes, tackles and "
+        "set-piece order, per 90 or per start, in a filterable table. CSV "
+        "export. Free, no sign-in."
     )
     keys = STATS_GROUPS[0][2]
     trows = "".join(
@@ -2757,11 +2798,16 @@ def render_defence(defence: dict, now: datetime) -> str | None:
         return None
     season = meta.get("season", "")
     url = f"{BASE}/fpl/defence"
-    title = "Premier League Defence Profiles: What Each Defence Concedes | GoalIQ"
+    # LOYDETTAVYYS-5 (3.11): 68/201 -> brandi pois otsikosta; kuvauksesta
+    # "not how many ... but what kind" -rakenne pois, vaite sama.
+    title = seo_meta.fit([
+        "Premier League Defence Profiles: What Each Defence Concedes | GoalIQ",
+        "Premier League Defence Profiles: What Each Defence Concedes",
+    ], seo_meta.TITLE_MAX)
     desc = (
-        f"Not how many chances each Premier League defence concedes but what "
-        f"kind: shots in the six-yard box, central box, wide box, edge of box "
-        f"and long range, plus headers and set-piece xG. {season} data, free."
+        f"The kind of shots each Premier League defence concedes: six-yard box, "
+        f"central, wide, edge of box, long range, headers and set-piece xG. "
+        f"{season} data, free."
     )
     best = rows[0]
     most_headers = max(rows, key=lambda r: r["head_pm"])
@@ -3124,12 +3170,16 @@ def render_club_best(xp: dict, now: datetime) -> str | None:
     if not sections:
         return None
 
-    title = (f"Best FPL Player at Every Club by Position "
-             f"({window}) | GoalIQ")
+    title = seo_meta.fit([
+        f"Best FPL Player at Every Club by Position ({window}) | GoalIQ",
+        f"Best FPL Player at Every Club by Position ({window})",
+        "Best FPL Player at Every Club by Position",
+    ], seo_meta.TITLE_MAX)
+    # LOYDETTAVYYS-5 (3.11): 171 -> alle 160 ("projected points" -> "xP").
     desc = (
         f"Every Premier League club's best goalkeeper, defender, midfielder "
-        f"and forward by projected points for {window}, with the gap to that "
-        f"club's second option. Free, no sign-in."
+        f"and forward by xP for {window}, with the gap to the next option. "
+        f"Free, no sign-in."
     )
     lead_txt = ""
     if lead:
@@ -3408,16 +3458,19 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
     n_out, n_doubt = len(out_rows), len(doubt_rows)
     title = (f"FPL Team News {status}: Injuries and Suspensions | GoalIQ" if status
              else "FPL Team News: Injuries and Suspensions | GoalIQ")
-    desc = (
-        # 29.9 julkaisutarkistaja (B): malli EI projisoi poissaolevaa, sen
-        # rivilla on seuran paras korvaaja. "what the model projects them to
-        # score" oli epatosi 75 pelaajalle 104:sta.
-        f"Every Premier League player the official FPL status lists as ruled out "
-        f"or doubtful{f' for {status}' if status else ''}, sorted by ownership. "
-        f"Doubtful players carry the model's {window} projection, ruled-out ones "
-        f"show the club's best available cover. "
-        f"{n_out} out, {n_doubt} doubtful. Free, no sign-in."
-    )
+    # 29.9 julkaisutarkistaja (B): malli EI projisoi poissaolevaa, sen
+    # rivilla on seuran paras korvaaja. "what the model projects them to
+    # score" oli epatosi 75 pelaajalle 104:sta. Lause "ruled-out ones show the
+    # club's best available cover" pysyy sanatarkasti jokaisessa ehdokkaassa.
+    # LOYDETTAVYYS-5 (3.11): 260 -> alle 160. Pois jarjestys, lukumaarat ja
+    # "Free, no sign-in" (sivu kertoo ne); varaus jaa.
+    _tn_for = f" for {status}" if status else ""
+    _tn_rest = (f" in the official FPL status. Doubtful ones show our xP for "
+                f"{window}, ruled-out ones show the club's best available cover.")
+    desc = seo_meta.fit([
+        f"Players ruled out or doubtful{_tn_for}{_tn_rest}",
+        f"Ruled out or doubtful{_tn_for}{_tn_rest}",
+    ], seo_meta.DESC_MAX)
     hero = (
         f"<h1>{TEAM_NEWS_H1}</h1>"
         '<p class="lede">Official FPL status for every ruled-out and doubtful '
@@ -3591,12 +3644,16 @@ def render_notes(notes_doc: dict, now: datetime) -> str | None:
     # "every figure is our own model output" lakkasivat pitamasta, kun
     # kierrosrecap (build_fpl_recap_note) alkoi syntya joka kierros FPL:n
     # pisteista. Julkaisutarkistajan 21.10 korvaava teksti.
-    desc = (
+    # LOYDETTAVYYS-5 (3.11): 208 -> alle 160. Julkaisutarkistajan teksti
+    # sanatarkasti; "Latest: <otsikko>" pudotetaan kokonaisena kun ei mahdu.
+    _notes_base = (
         "Short FPL gameweek notes, with an automatic recap of our calls and "
         "projection error after each gameweek. Every figure is on a free page "
-        "you can open. Latest: "
-        + str(latest.get("title") or "")
-    )
+        "you can open.")
+    desc = seo_meta.fit([
+        f"{_notes_base} Latest: {latest.get('title') or ''}",
+        _notes_base,
+    ], seo_meta.DESC_MAX)
     hero = (
         "<h1>Notes from the model</h1>"
         '<p class="lede">Short gameweek notes. From gameweek 7 on, a recap is '
@@ -3776,10 +3833,14 @@ def render_minutes_accuracy(doc: dict | None, now: datetime) -> str | None:
     kausi_to = f'{doc["season_to"][:2]}/{doc["season_to"][2:]}'
     url = f"{BASE}/fpl/minutes-accuracy"
     otsikko = "How wrong our expected minutes are"
-    desc = (f"We tested the model's own minutes prior across three summer "
-            f"breaks. Mean absolute error is about {doc['live']['mae']:.0f} "
-            f"minutes per player per game, and almost all of the bias comes "
-            f"from players who never appeared.")
+    # LOYDETTAVYYS-5 (3.11): 194 -> alle 160, samat kolme vaitetta.
+    _mae = (f"mean absolute error about {doc['live']['mae']:.0f} minutes per "
+            f"player per game, almost all the bias from players who never "
+            f"appeared.")
+    desc = seo_meta.fit([
+        f"Our minutes prior, tested on three summer breaks: {_mae}",
+        f"Our minutes prior over three summer breaks: {_mae}",
+    ], seo_meta.DESC_MAX)
 
     body = (
         f"<p>Every expected points total we publish rests on a guess about how "
@@ -3916,7 +3977,9 @@ def render_note_page(n: dict, now: datetime) -> str | None:
 
     url = f"{BASE}/fpl/note/{slug}"
     tekstit = [x for x in (n.get("paragraphs") or []) if isinstance(x, str)]
-    desc = _note_meta_desc(tekstit[0] if tekstit else otsikko)
+    # LOYDETTAVYYS-5 (3.11): raja 300 -> 160 (9/12 muistion kuvaus oli yli).
+    # Sama katkaisusaanto: viimeinen kokonainen lause rajan sisalla.
+    desc = _note_meta_desc(tekstit[0] if tekstit else otsikko, seo_meta.DESC_MAX)
     check = str(n.get("check_url") or f"{BASE}/fpl/stats")
     cta = escape(str(n.get("cta") or "Check the numbers"))
 
@@ -3938,8 +4001,25 @@ def render_note_page(n: dict, now: datetime) -> str | None:
         "isPartOf": {"@id": f"{BASE}/#organization"},
         "mainEntityOfPage": {"@type": "WebPage", "@id": url},
     }]
-    return _page(f"{otsikko} | GoalIQ", desc, url,
-                 f"<h1>{escape(otsikko)}</h1>", body, jsonld)
+    # Jakokortti pitaa koko otsikon kuten ennen 3.11 (X/Bluesky-jaot).
+    return _page(note_title(otsikko), desc, url,
+                 f"<h1>{escape(otsikko)}</h1>", body, jsonld,
+                 share_title=f"{otsikko} | GoalIQ")
+
+
+def note_title(otsikko: str) -> str:
+    """Muistion <title>. LOYDETTAVYYS-5 (3.11): 6/12 oli yli 60 merkkia.
+
+    Pudotetaan kokonaisia loppupaloja: ensin brandi, sitten otsikon
+    jalkimmaiset lauseet. Lausetta ei katkaista kesken eika uutta otsikkoa
+    kirjoiteta koneellisesti; jos ensimmainen lause yksin ylittaa rajan,
+    se jaa sellaisenaan (perusteltu poikkeus "artikkelin-otsikko").
+    H1, jakokortin og:title ja JSON-LD headline pysyvat koko otsikkona."""
+    lauseet = re.split(r"(?<=[.?!])\s+", otsikko.strip())
+    ehdokkaat = [f"{otsikko} | GoalIQ", otsikko]
+    for i in range(len(lauseet) - 1, 0, -1):
+        ehdokkaat.append(" ".join(lauseet[:i]))
+    return seo_meta.fit(ehdokkaat, seo_meta.TITLE_MAX, poikkeus="artikkelin-otsikko")
 
 
 CLUB_DIR = OUT_DIR / "club"
@@ -4391,14 +4471,21 @@ def render_club_page(short: str, players: list[dict], meta: dict,
     # 22.9 (web-audit C6): 70-83 merkkia, katkesi hakutuloksessa. Pisin seura
     # (Nottingham Forest, Manchester United) mahtuu nyt 60:een. `_page`
     # escapoi otsikon, joten `&` kirjoitetaan raakana.
-    title = f"{nimi} FPL {window}: Picks & Predicted XI | GoalIQ"
+    title = seo_meta.fit([
+        f"{nimi} FPL {window}: Picks & Predicted XI | GoalIQ",
+        f"{nimi} FPL {window}: Picks & Predicted XI",
+        f"{nimi} FPL: Picks & Predicted XI",
+    ], seo_meta.TITLE_MAX)
     lead = karki[0]
-    desc = (
-        f"{nimi}'s best FPL picks for {window} by projected points, who takes "
-        f"their penalties and corners, and our predicted XI with start "
-        f"probabilities. {lead['web_name']} leads on "
-        f"{float(lead.get('xp_horizon_total') or 0):.1f} xP. Free, no sign-in."
-    )
+    # LOYDETTAVYYS-5 (3.11): 185-201 -> alle 160. Ikkuna on otsikossa, joten
+    # se ei toistu kuvauksessa; karki pudotetaan kokonaisena jos ei mahdu.
+    _club_base = (f"{nimi} FPL picks by xP, penalty and corner takers, and our "
+                  f"predicted XI with start chances.")
+    desc = seo_meta.fit([
+        f"{_club_base} {lead['web_name']} leads on "
+        f"{float(lead.get('xp_horizon_total') or 0):.1f} xP. Free, no sign-in.",
+        f"{_club_base} Free, no sign-in.",
+    ], seo_meta.DESC_MAX)
     hero = (
         f"<h1>{escape(nimi)}: best players, set pieces and a predicted XI</h1>"
         f'<p class="lede">Everything on this page comes from our own match '
@@ -4482,11 +4569,12 @@ def render_predicted_lineups(xp: dict, now: datetime) -> str | None:
 
     url = f"{BASE}/fpl/predicted-lineups"
     title = "Model Predicted XI for every Premier League club | GoalIQ"
+    # LOYDETTAVYYS-5 (3.11): 213 -> alle 160. Varaus (ei vuoto, ei
+    # lehdistotilaisuudet, minuuttihistoria) jaa.
     desc = (
-        "The eleven our model expects to start for all 20 Premier League "
-        "clubs, with each player's chance of starting. Not a lineup leak: "
-        "these are projections from minutes history, not press conferences. "
-        "Free, no sign-in."
+        "Projected XI for all 20 Premier League clubs, with each player's "
+        "chance of starting. From minutes history, not leaks or press "
+        "conferences. Free, no sign-in."
     )
     hero = (
         "<h1>Model Predicted XI</h1>"
@@ -4788,16 +4876,22 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
     # 21.8 (portti): "every player ranked" saa esiintya vain top-100-
     # rajauksen kanssa samassa lauseessa — ilmaissivu nayttaa tasan 100
     # rivia koko projektiosta, ei jokaista pelaajaa.
-    title = (f"FPL Expected Points: Top 100 Players by xP "
-             f"({window}) | GoalIQ")
+    title = seo_meta.fit([
+        f"FPL Expected Points: Top 100 Players by xP ({window}) | GoalIQ",
+        f"FPL Expected Points: Top 100 Players by xP ({window})",
+        "FPL Expected Points: Top 100 Players by xP",
+    ], seo_meta.TITLE_MAX)
     lead = rows[0]
-    desc = (
-        f"Every FPL player ranked by expected points over {window}; "
-        f"the top 100 of the full projection shown free, no "
-        f"sign-in. {lead['web_name']} leads on "
-        f"{lead['xp_horizon_total']:.1f} xP. Scoring rate and minutes shown "
-        f"separately."
-    )
+    # LOYDETTAVYYS-5 (3.11): 184 -> alle 160. Top-100-rajaus pysyy samassa
+    # lauseessa kuin "ranked" (portti 21.8); karki pudotetaan kokonaisena.
+    _xp_rank = (f"All FPL players ranked by expected points over {window}, "
+                f"the top 100 shown free, no sign-in.")
+    _xp_tail = "Scoring rate and minutes shown separately."
+    desc = seo_meta.fit([
+        f"{_xp_rank} {lead['web_name']} leads on "
+        f"{lead['xp_horizon_total']:.1f} xP. {_xp_tail}",
+        f"{_xp_rank} {_xp_tail}",
+    ], seo_meta.DESC_MAX)
 
     top3 = "".join(
         '<div class="stat">'
@@ -5314,6 +5408,27 @@ def _gw_nauha(nyt_gw: int | None, *, archive: bool,
             + '</nav>')
 
 
+def points_meta(gw: int, archive: bool) -> tuple[str, str]:
+    """(otsikko, kuvaus) /fpl/points- ja /fpl/points/gwN-sivulle.
+
+    LOYDETTAVYYS-5 (3.11): arkiston otsikko oli 65 merkkia; brandi
+    pudotetaan kun ei mahdu. Kuvaus oli tasan 160 kierroksilla 1-9 ja 161
+    kierroksesta 10 alkaen ("Gameweek {gw}"); "GW{gw}" mahtuu kierrokseen 38
+    asti (155). Portti ajaa kaikki kierrokset 1-38
+    (tests/test_seo_meta_lengths.py)."""
+    base = (f"FPL Gameweek {gw} Points: Projected vs Actual, Every Player"
+            if archive else
+            f"FPL Points GW{gw}: Projected vs Actual, Every Player")
+    title = seo_meta.fit([f"{base} | GoalIQ", base], seo_meta.TITLE_MAX)
+    # 22.9 (web-audit C6): 279 merkkia -> alle 160.
+    desc = (
+        f"Every player's actual GW{gw} FPL points next to the xP our "
+        f"model published before the deadline, with goals, assists, DefCon, "
+        f"bonus and xG. Free, no sign-in."
+    )
+    return title, desc
+
+
 def render_points(player_gw: dict, now: datetime, gw: int | None = None,
                   *, archive: bool = False) -> str | None:
     """Kierroksen toteutuneet pisteet vs deadlinella JAADYTETTY xP.
@@ -5555,15 +5670,7 @@ def render_points(player_gw: dict, now: datetime, gw: int | None = None,
              + "</tbody></table></div>")
 
     url = f"{BASE}/fpl/points/gw{gw}" if archive else f"{BASE}/fpl/points"
-    title = (f"FPL Gameweek {gw} Points: Projected vs Actual, Every Player | GoalIQ"
-             if archive else
-             f"FPL Points GW{gw}: Projected vs Actual, Every Player | GoalIQ")
-    # 22.9 (web-audit C6): 279 merkkia -> alle 160.
-    desc = (
-        f"Every player's actual Gameweek {gw} FPL points next to the xP our "
-        f"model published before the deadline, with goals, assists, DefCon, "
-        f"bonus and xG. Free, no sign-in."
-    )
+    title, desc = points_meta(gw, archive)
     frozen_at = fmeta.get("frozen_at") or ""
     deadline = fmeta.get("deadline") or ""
     hero = (

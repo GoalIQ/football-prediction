@@ -61,6 +61,7 @@ from scripts.mobile_css import (  # noqa: E402
     MOBILE_GW_COLS,
 )
 from scripts.public_text import assert_public_copy  # artefaktikentat sivulle
+from scripts import seo_meta  # LOYDETTAVYYS-5: otsikko <= 60, kuvaus <= 160
 from scripts.ranking import ranked  # deterministinen tasapelin katkaisu
 from scripts.slugs import slug as _slug  # noqa: E402
 from scripts.build_fpl_phase0 import map_name  # noqa: E402
@@ -1181,12 +1182,44 @@ def call_margin_html(doc: dict | None) -> str:
     )
 
 
-def record_table_html(preds: list[dict], c: dict) -> str:
+def _record_match_links(preds: list[dict], now: _dt.datetime) -> dict[str, dict]:
+    """match_id -> ottelusivu, jonka build_prediction_pages kirjoittaa samasta
+    lokista. Ks. `published_match_pages`: sama lukija kuin sivujen kirjoitus.
+
+    Laiska import kuten `display_pair`:ssa: build_prediction_pages importoi
+    tasta moduulista, joten moduulitason import olisi kehassa."""
+    from scripts.build_prediction_pages import published_match_pages
+    return published_match_pages({"predictions": preds}, now)
+
+
+def _record_match_cell(e: dict, links: dict[str, dict]) -> str:
+    """Ottelusolu. Linkki vain kun TAMAN ottelun sivu on olemassa.
+
+    LOYDETTAVYYS-2 (3.11.2026): 3 286 rivin taulu ei linkittanyt yhteenkaan
+    3 221 ottelusivusta. Avain on lokirivin `match_id`; lisaksi kilpailun,
+    paivan ja nayttonimien on tasmattava, joten rivi ei voi saada saman parin
+    toisen kauden ottelun sivua. Vaara linkki on pahempi kuin ei linkkia.
+    Vain yksi <a> soluun (DOM oli jo 33 146 elementtia)."""
+    home, away = display_pair(e)
+    text = escape(" v ".join((home, away)))
+    page = links.get(e.get("match_id") or "")
+    if (page and page.get("competition") == e.get("competition")
+            and page.get("date") == e.get("date")
+            and (page.get("home_team"), page.get("away_team")) == (home, away)):
+        return f'<td class="team"><a href="{escape(page["path"])}">{text}</a></td>'
+    return f'<td class="team">{text}</td>'
+
+
+def record_table_html(preds: list[dict], c: dict,
+                      now: _dt.datetime | None = None) -> str:
     """#117: koko per-ottelu-record näkyväksi tauluksi. Vain gradatut rivit
     (result != null) — pending-ennusteet ovat lukittuja mutta pelaamattomia,
     ne mainitaan lukumääränä. Uusin ensin; seed-rivit (WC-lohkovaihe, ei
     päivämäärää) pohjalle. Gradaus = 90 min -tulos (Villen 20.7-normi:
-    ET/pilkut = tasapeli): duration != REGULAR merkitään tähdellä."""
+    ET/pilkut = tasapeli): duration != REGULAR merkitään tähdellä.
+
+    `now` = hetki jolla ottelusivujen joukko lasketaan (linkit); oletus nyt."""
+    links = _record_match_links(preds, now or _dt.datetime.now(_dt.timezone.utc))
     graded = [e for e in preds if acc_counts_in_record(e)]
     # 25.9: gradatut mutta void (MM-hubin seed-rivit ilman aikaleimaa) eivat
     # ole taulukossa eivatka luvussa; lukija nakee montako ja miksi.
@@ -1246,8 +1279,8 @@ def record_table_html(preds: list[dict], c: dict) -> str:
             # puhelimen leveys; Date yksin oli 102px.
             f'<td class="num m-hide">{escape(date_txt)}</td>'
             f'<td class="m-hide">{escape(COMP_NAMES.get(code, code))}</td>'
-            f'<td class="team">{escape(" v ".join(display_pair(e)))}</td>'
-            f'<td><strong>{pick_sym}</strong> {escape(pick_name)}'
+            + _record_match_cell(e, links)
+            + f'<td><strong>{pick_sym}</strong> {escape(pick_name)}'
             f'<span class="rec-pct">{_pick_pct(e)}</span></td>'
             f'<td class="num">{escape(score)}{star}</td>'
             f'<td class="num">{hit_cell}</td>'
@@ -1297,8 +1330,8 @@ def record_table_html(preds: list[dict], c: dict) -> str:
             f'<tr data-comp="{escape(code)}">'
             f'<td class="num">{escape(ko_txt)}</td>'
             f'<td class="m-hide">{escape(COMP_NAMES.get(code, code))}</td>'
-            f'<td class="team">{escape(" v ".join(display_pair(e)))}</td>'
-            f'<td><strong>{pick_sym}</strong> {escape(pick_name)}'
+            + _record_match_cell(e, links)
+            + f'<td><strong>{pick_sym}</strong> {escape(pick_name)}'
             f'<span class="rec-pct">{_pick_pct(e)}</span></td>'
             # "Logged" on todiste ennen kickoffia, mutta kick-off-sarake
             # kertoo saman asian rivilta; kapealla naytolla toinen riittaa.
@@ -1413,6 +1446,10 @@ def record_table_html(preds: list[dict], c: dict) -> str:
         ".rec-scroll th{position:sticky;top:0;background:var(--rec-thead-bg,#EAE9E9);font-size:12px;"
         "font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--rec-thead-fg,#54506B);}"
         ".rec-scroll td.team{font-weight:600;white-space:nowrap;}"
+        # LOYDETTAVYYS-2: ottelulinkki solun omalla varilla, alleviivaus
+        # kertoo etta rivi aukeaa.
+        ".rec-scroll td.team a{color:inherit;text-decoration:underline;"
+        "text-decoration-color:rgba(128,128,128,.55);text-underline-offset:2px;}"
         ".rec-scroll .num{white-space:nowrap;font-variant-numeric:tabular-nums;}"
         ".rec-hit{color:var(--rec-hit,#007A6C);font-weight:800;}"
         ".rec-miss{color:var(--rec-miss,#C4441A);font-weight:800;}"
@@ -2600,13 +2637,21 @@ def render_page(c: dict, xp: dict | None = None) -> str:
     # 17.10.2026: julkaisutarkistaja palautti alkuperaisen otsikon (tarkistus
     # cos-reports/cc-reports/2026-10-17). og- ja twitter-otsikko lukevat
     # saman muuttujan.
-    title = "Free FPL Tools: Rate My Team, Captain Pick, Clean Sheets | GoalIQ"
+    # LOYDETTAVYYS-5 (3.11): otsikko 65 merkkia -> brandi pudotetaan
+    # kokonaisena palana, sanat ennallaan.
+    title = seo_meta.fit([
+        "Free FPL Tools: Rate My Team, Captain Pick, Clean Sheets | GoalIQ",
+        "Free FPL Tools: Rate My Team, Captain Pick, Clean Sheets",
+    ], seo_meta.TITLE_MAX)
     # 5.9 SEO: 358 merkkia katkesi hakutuloksessa; nyt alle 160.
+    # 3.11: se oli 172; "and a" -> ", a" ja "adds the analysis of" ->
+    # "analyses", vaitteet samat.
     meta_desc = (
         "Free FPL tools, no sign-in: clean sheet probability, fixture "
-        "difficulty, player stats, xG leaders, price watch and a squad rating. "
-        "Premium adds the analysis of your own team."
+        "difficulty, player stats, xG leaders, price watch, a squad rating. "
+        "Premium analyses your own team."
     )
+    seo_meta.check(title, meta_desc, CANONICAL)
 
     faq_html = "".join(
         f"<dt>{escape(q)}</dt><dd>{escape(a)}</dd>" for q, a in faq
