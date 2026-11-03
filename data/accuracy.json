@@ -1,37 +1,37 @@
 {
-  "updated_at": "2026-11-03T03:20:55+00:00",
+  "updated_at": "2026-11-03T06:20:24+00:00",
   "logged_total": 3334,
   "logged_with_timestamp": 3286,
-  "pending": 2258,
+  "pending": 2257,
   "voided": 57,
   "all_time": {
-    "n": 1019,
-    "correct_1x2": 541,
-    "pct_1x2": 0.5309,
+    "n": 1020,
+    "correct_1x2": 542,
+    "pct_1x2": 0.5314,
     "draw_n": 244,
-    "pct_draw": 0.2395,
-    "decisive_n": 775,
-    "decisive_correct": 541,
-    "pct_decisive": 0.6981,
-    "exact_n": 1019,
+    "pct_draw": 0.2392,
+    "decisive_n": 776,
+    "decisive_correct": 542,
+    "pct_decisive": 0.6985,
+    "exact_n": 1020,
     "exact_correct": 116,
-    "pct_exact": 0.1138,
-    "brier": 0.5824,
-    "brier_n": 1019
+    "pct_exact": 0.1137,
+    "brier": 0.5823,
+    "brier_n": 1020
   },
   "rolling": {
     "n": 100,
-    "correct_1x2": 66,
-    "pct_1x2": 0.66,
+    "correct_1x2": 67,
+    "pct_1x2": 0.67,
     "draw_n": 11,
     "pct_draw": 0.11,
     "decisive_n": 89,
-    "decisive_correct": 66,
-    "pct_decisive": 0.7416,
+    "decisive_correct": 67,
+    "pct_decisive": 0.7528,
     "exact_n": 100,
     "exact_correct": 6,
     "pct_exact": 0.06,
-    "brier": 0.5226,
+    "brier": 0.5194,
     "brier_n": 100,
     "window": 100
   },
@@ -52,19 +52,19 @@
       "brier_n": 72
     },
     "BSA": {
-      "n": 147,
-      "correct_1x2": 71,
-      "pct_1x2": 0.483,
+      "n": 148,
+      "correct_1x2": 72,
+      "pct_1x2": 0.4865,
       "draw_n": 43,
-      "pct_draw": 0.2925,
-      "decisive_n": 104,
-      "decisive_correct": 71,
-      "pct_decisive": 0.6827,
-      "exact_n": 147,
+      "pct_draw": 0.2905,
+      "decisive_n": 105,
+      "decisive_correct": 72,
+      "pct_decisive": 0.6857,
+      "exact_n": 148,
       "exact_correct": 21,
-      "pct_exact": 0.1429,
-      "brier": 0.5938,
-      "brier_n": 147
+      "pct_exact": 0.1419,
+      "brier": 0.5932,
+      "brier_n": 148
     },
     "CL": {
       "n": 45,
@@ -204,19 +204,19 @@
   },
   "by_model": {
     "club": {
-      "n": 963,
-      "correct_1x2": 506,
-      "pct_1x2": 0.5254,
+      "n": 964,
+      "correct_1x2": 507,
+      "pct_1x2": 0.5259,
       "draw_n": 229,
-      "pct_draw": 0.2378,
-      "decisive_n": 734,
-      "decisive_correct": 506,
-      "pct_decisive": 0.6894,
-      "exact_n": 963,
+      "pct_draw": 0.2376,
+      "decisive_n": 735,
+      "decisive_correct": 507,
+      "pct_decisive": 0.6898,
+      "exact_n": 964,
       "exact_correct": 105,
-      "pct_exact": 0.109,
-      "brier": 0.5877,
-      "brier_n": 963,
+      "pct_exact": 0.1089,
+      "brier": 0.5876,
+      "brier_n": 964,
       "logged_with_timestamp": 3230
     },
     "national": {
@@ -239,19 +239,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 881,
-      "correct_1x2": 480,
-      "pct_1x2": 0.5448,
+      "n": 882,
+      "correct_1x2": 481,
+      "pct_1x2": 0.5454,
       "draw_n": 194,
-      "pct_draw": 0.2202,
-      "decisive_n": 687,
-      "decisive_correct": 480,
-      "pct_decisive": 0.6987,
-      "exact_n": 881,
+      "pct_draw": 0.22,
+      "decisive_n": 688,
+      "decisive_correct": 481,
+      "pct_decisive": 0.6991,
+      "exact_n": 882,
       "exact_correct": 95,
-      "pct_exact": 0.1078,
-      "brier": 0.5776,
-      "brier_n": 881
+      "pct_exact": 0.1077,
+      "brier": 0.5775,
+      "brier_n": 882
     },
     "stale": {
       "n": 138,
@@ -301,20 +301,20 @@
     {
       "bin_mid": 0.2536,
       "predicted": 0.2536,
-      "actual": 0.2557,
-      "n": 1146
+      "actual": 0.2554,
+      "n": 1147
     },
     {
-      "bin_mid": 0.3419,
-      "predicted": 0.3419,
-      "actual": 0.3211,
-      "n": 570
+      "bin_mid": 0.3418,
+      "predicted": 0.3418,
+      "actual": 0.3205,
+      "n": 571
     },
     {
       "bin_mid": 0.4467,
       "predicted": 0.4467,
-      "actual": 0.4599,
-      "n": 374
+      "actual": 0.4613,
+      "n": 375
     },
     {
       "bin_mid": 0.5466,
@@ -348,6 +348,21 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-11-02",
+      "home_team": "Bragantino",
+      "away_team": "Santos",
+      "predicted_winner": "home",
+      "p_winner": 0.4219,
+      "lead_h": 1.3,
+      "most_likely_score": "1-1",
+      "actual_score": "2-1",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-11-02",
       "home_team": "Gil Vicente",
@@ -630,21 +645,6 @@
       "actual_outcome": "home",
       "hit_1x2": true,
       "exact_hit": true,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-11-01",
-      "home_team": "Groningen",
-      "away_team": "Sparta Rotterdam",
-      "predicted_winner": "home",
-      "p_winner": 0.5959,
-      "lead_h": 2.6,
-      "most_likely_score": "1-1",
-      "actual_score": "2-3",
-      "actual_outcome": "away",
-      "hit_1x2": false,
-      "exact_hit": false,
       "duration": null,
       "regular_score": null
     }
