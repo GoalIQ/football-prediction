@@ -1,37 +1,37 @@
 {
-  "updated_at": "2026-11-02T20:06:31+00:00",
+  "updated_at": "2026-11-03T00:08:38+00:00",
   "logged_total": 3334,
   "logged_with_timestamp": 3286,
-  "pending": 2265,
+  "pending": 2264,
   "voided": 57,
   "all_time": {
-    "n": 1012,
+    "n": 1013,
     "correct_1x2": 539,
-    "pct_1x2": 0.5326,
+    "pct_1x2": 0.5321,
     "draw_n": 243,
-    "pct_draw": 0.2401,
-    "decisive_n": 769,
+    "pct_draw": 0.2399,
+    "decisive_n": 770,
     "decisive_correct": 539,
-    "pct_decisive": 0.7009,
-    "exact_n": 1012,
+    "pct_decisive": 0.7,
+    "exact_n": 1013,
     "exact_correct": 116,
-    "pct_exact": 0.1146,
-    "brier": 0.5816,
-    "brier_n": 1012
+    "pct_exact": 0.1145,
+    "brier": 0.5818,
+    "brier_n": 1013
   },
   "rolling": {
     "n": 100,
-    "correct_1x2": 68,
-    "pct_1x2": 0.68,
+    "correct_1x2": 67,
+    "pct_1x2": 0.67,
     "draw_n": 10,
     "pct_draw": 0.1,
     "decisive_n": 90,
-    "decisive_correct": 68,
-    "pct_decisive": 0.7556,
+    "decisive_correct": 67,
+    "pct_decisive": 0.7444,
     "exact_n": 100,
     "exact_correct": 7,
     "pct_exact": 0.07,
-    "brier": 0.5159,
+    "brier": 0.5205,
     "brier_n": 100,
     "window": 100
   },
@@ -172,19 +172,19 @@
       "brier_n": 77
     },
     "SA": {
-      "n": 98,
+      "n": 99,
       "correct_1x2": 63,
-      "pct_1x2": 0.6429,
+      "pct_1x2": 0.6364,
       "draw_n": 16,
-      "pct_draw": 0.1633,
-      "decisive_n": 82,
+      "pct_draw": 0.1616,
+      "decisive_n": 83,
       "decisive_correct": 63,
-      "pct_decisive": 0.7683,
-      "exact_n": 98,
+      "pct_decisive": 0.759,
+      "exact_n": 99,
       "exact_correct": 10,
-      "pct_exact": 0.102,
-      "brier": 0.5067,
-      "brier_n": 98
+      "pct_exact": 0.101,
+      "brier": 0.509,
+      "brier_n": 99
     },
     "WC": {
       "n": 56,
@@ -204,19 +204,19 @@
   },
   "by_model": {
     "club": {
-      "n": 956,
+      "n": 957,
       "correct_1x2": 504,
-      "pct_1x2": 0.5272,
+      "pct_1x2": 0.5266,
       "draw_n": 228,
-      "pct_draw": 0.2385,
-      "decisive_n": 728,
+      "pct_draw": 0.2382,
+      "decisive_n": 729,
       "decisive_correct": 504,
-      "pct_decisive": 0.6923,
-      "exact_n": 956,
+      "pct_decisive": 0.6914,
+      "exact_n": 957,
       "exact_correct": 105,
-      "pct_exact": 0.1098,
-      "brier": 0.5869,
-      "brier_n": 956,
+      "pct_exact": 0.1097,
+      "brier": 0.587,
+      "brier_n": 957,
       "logged_with_timestamp": 3230
     },
     "national": {
@@ -239,19 +239,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 874,
+      "n": 875,
       "correct_1x2": 478,
-      "pct_1x2": 0.5469,
+      "pct_1x2": 0.5463,
       "draw_n": 193,
-      "pct_draw": 0.2208,
-      "decisive_n": 681,
+      "pct_draw": 0.2206,
+      "decisive_n": 682,
       "decisive_correct": 478,
-      "pct_decisive": 0.7019,
-      "exact_n": 874,
+      "pct_decisive": 0.7009,
+      "exact_n": 875,
       "exact_correct": 95,
-      "pct_exact": 0.1087,
-      "brier": 0.5766,
-      "brier_n": 874
+      "pct_exact": 0.1086,
+      "brier": 0.5768,
+      "brier_n": 875
     },
     "stale": {
       "n": 138,
@@ -301,20 +301,20 @@
     {
       "bin_mid": 0.2536,
       "predicted": 0.2536,
-      "actual": 0.2559,
-      "n": 1137
+      "actual": 0.2557,
+      "n": 1138
     },
     {
       "bin_mid": 0.3419,
       "predicted": 0.3419,
-      "actual": 0.3199,
-      "n": 569
+      "actual": 0.3211,
+      "n": 570
     },
     {
-      "bin_mid": 0.4464,
-      "predicted": 0.4464,
-      "actual": 0.4622,
-      "n": 370
+      "bin_mid": 0.4465,
+      "predicted": 0.4465,
+      "actual": 0.4609,
+      "n": 371
     },
     {
       "bin_mid": 0.5465,
@@ -348,6 +348,21 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-11-02",
+      "home_team": "US Sassuolo Calcio",
+      "away_team": "ACF Fiorentina",
+      "predicted_winner": "home",
+      "p_winner": 0.4671,
+      "lead_h": 1.5,
+      "most_likely_score": "1-1",
+      "actual_score": "2-4",
+      "actual_outcome": "away",
+      "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-11-01",
       "home_team": "Sp Braga",
@@ -628,21 +643,6 @@
       "most_likely_score": "1-1",
       "actual_score": "0-9",
       "actual_outcome": "away",
-      "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-11-01",
-      "home_team": "Telstar",
-      "away_team": "Utrecht",
-      "predicted_winner": "home",
-      "p_winner": 0.4424,
-      "lead_h": 0.4,
-      "most_likely_score": "1-1",
-      "actual_score": "4-2",
-      "actual_outcome": "home",
       "hit_1x2": true,
       "exact_hit": false,
       "duration": null,
