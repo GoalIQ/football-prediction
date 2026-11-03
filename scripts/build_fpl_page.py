@@ -2644,7 +2644,7 @@ def render_page(c: dict, xp: dict | None = None) -> str:
         "Free FPL Tools: Rate My Team, Captain Pick, Clean Sheets",
     ], seo_meta.TITLE_MAX)
     # 5.9 SEO: 358 merkkia katkesi hakutuloksessa; nyt alle 160.
-    # 3.11: se oli 172; "and a" -> ", a" ja "adds the analysis of" ->
+    # 3.11: mitattuna se oli 174; "and a" -> ", a" ja "adds the analysis of" ->
     # "analyses", vaitteet samat.
     meta_desc = (
         "Free FPL tools, no sign-in: clean sheet probability, fixture "
