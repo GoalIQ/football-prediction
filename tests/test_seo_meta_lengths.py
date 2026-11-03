@@ -243,7 +243,7 @@ def test_longtail_oikealla_datalla(longtail_sandbox, recorded):
     assert bfl.main() == 0
     files = _longtail_files(out)
     poikkeukset = _assert_all_written_pages_checked(files, recorded)
-    # Poikkeus vain muistioiden toimituksellisille otsikoille (3.11: 2/12).
+    # Poikkeus vain muistioiden toimituksellisille otsikoille (3.11: 5/12).
     assert set(poikkeukset) <= {"artikkelin-otsikko"}, poikkeukset
     print(f"longtail-sivuja {len(files)}, poikkeukset {poikkeukset}")
 
@@ -285,7 +285,9 @@ def test_muistion_otsikko_pudottaa_kokonaisia_paloja():
     assert note_title("Short headline") == "Short headline | GoalIQ"
     two = ("Everyone's buying the Arsenal defence. "
            "Read the minutes column first.")
-    assert note_title(two) == "Everyone's buying the Arsenal defence."
+    # Julkaisutarkistaja 3.11: loppulauseen pudotus kaansi kannan.
+    t2 = note_title(two)
+    assert isinstance(t2, seo_meta.Poikkeus) and t2 == two
     one = "A" * 40 + " " + "b" * 40
     t = note_title(one)
     assert isinstance(t, seo_meta.Poikkeus) and t == one

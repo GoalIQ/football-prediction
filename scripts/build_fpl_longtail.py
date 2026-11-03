@@ -2800,12 +2800,14 @@ def render_defence(defence: dict, now: datetime) -> str | None:
     url = f"{BASE}/fpl/defence"
     # LOYDETTAVYYS-5 (3.11): 68/201 -> brandi pois otsikosta; kuvauksesta
     # "not how many ... but what kind" -rakenne pois, vaite sama.
+    # Julkaisutarkistaja 3.11: "each" vaitti enemman kuin data (17 seuraa,
+    # Coventry/Hull/Ipswich ilman dataa) -> maara rivien pituudesta.
     title = seo_meta.fit([
-        "Premier League Defence Profiles: What Each Defence Concedes | GoalIQ",
-        "Premier League Defence Profiles: What Each Defence Concedes",
+        "Premier League Defence Profiles: What Defences Concede | GoalIQ",
+        "Premier League Defence Profiles: What Defences Concede",
     ], seo_meta.TITLE_MAX)
     desc = (
-        f"The kind of shots each Premier League defence concedes: six-yard box, "
+        f"The kind of shots {len(rows)} Premier League defences concede: six-yard box, "
         f"central, wide, edge of box, long range, headers and set-piece xG. "
         f"{season} data, free."
     )
@@ -4010,15 +4012,13 @@ def render_note_page(n: dict, now: datetime) -> str | None:
 def note_title(otsikko: str) -> str:
     """Muistion <title>. LOYDETTAVYYS-5 (3.11): 6/12 oli yli 60 merkkia.
 
-    Pudotetaan kokonaisia loppupaloja: ensin brandi, sitten otsikon
-    jalkimmaiset lauseet. Lausetta ei katkaista kesken eika uutta otsikkoa
-    kirjoiteta koneellisesti; jos ensimmainen lause yksin ylittaa rajan,
-    se jaa sellaisenaan (perusteltu poikkeus "artikkelin-otsikko").
-    H1, jakokortin og:title ja JSON-LD headline pysyvat koko otsikkona."""
-    lauseet = re.split(r"(?<=[.?!])\s+", otsikko.strip())
+    Vain brandi pudotetaan. Lauseita ei pudoteta eika katkaista: otsikon
+    loppulause on usein muistion kanta tai myonnetty virhe, ja sen
+    pudottaminen kaansi arsenal-defence-price-muistion kannan
+    (julkaisutarkistaja 3.11). Yli rajan jaava otsikko on perusteltu
+    poikkeus "artikkelin-otsikko". H1, jakokortin og:title ja JSON-LD
+    headline pysyvat koko otsikkona."""
     ehdokkaat = [f"{otsikko} | GoalIQ", otsikko]
-    for i in range(len(lauseet) - 1, 0, -1):
-        ehdokkaat.append(" ".join(lauseet[:i]))
     return seo_meta.fit(ehdokkaat, seo_meta.TITLE_MAX, poikkeus="artikkelin-otsikko")
 
 

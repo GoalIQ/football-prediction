@@ -45,9 +45,11 @@ POIKKEUKSET: dict[str, str] = {
     ),
     "artikkelin-otsikko": (
         "Muistion otsikko on toimituksellinen ja julkaisutarkistajan "
-        "hyvaksyma. Brandi ja loppulauseet pudotetaan, mutta yksittaista "
-        "lausetta ei katkaista kesken eika kirjoiteta uutta otsikkoa "
-        "koneellisesti."
+        "hyvaksyma. Brandi pudotetaan, lauseita ei pudoteta eika katkaista: "
+        "julkaisutarkistaja 3.11 blokkasi lauseiden pudotuksen, koska se "
+        "kaansi kannan (arsenal-defence-price: 'Everyone's buying the Arsenal "
+        "defence.' ilman 'Read the minutes column first.') ja poisti "
+        "myonnetyn tappion (fpl-ep-next)."
     ),
 }
 
