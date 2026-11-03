@@ -284,6 +284,9 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   kirjoittaa `squad-signals-<pvm>.md`:n yli vertailulla saman päivän aamukuvaan. 3.11 aamun 29 erikoistilannemuutosta ja
   3 saatavuusmuutosta katosivat raportista (jäivät lokiin ja git-historiaan), tilalle jäi 1 rivi. Toisen ajon pitäisi
   lisätä osio eikä korvata tiedostoa.
+- 2026-11: Mobiilisovelluksen Fixtures-rivi ei saa todennäköisyyspalkkia otteluille, joissa on Académico de Viseu FC
+  (3.11: 116/117 seuraavan 7 päivän riviä sai palkin). Loki tuntee joukkueen nimellä "Academico Viseu", mutta
+  goaliq-appin `lib/fixtureNames.ts` jättää nimen tarkoituksella mappaamatta (rivin 186 kommentti), ja peruste on vanhentunut.
 
 ## Avoimet
 
