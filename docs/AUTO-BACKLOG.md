@@ -280,6 +280,10 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   `tests/test_record_ei_vaita_lukittua.py` laajennetaan näihin muotoiluihin samassa PR:ssä.
 - 2026-11: Kolme Mestarien liigan joukkuetta (Shaktar, Sporting CP, Sl. Bratislava) ei esitäytä Predictiä Fixturesista, koska
   otteluohjelman ja mallin nimet eroavat (`web/pro-spa/src/lib/teamMatch.ts`, sama vika oli Forestilla ennen #85:tä).
+- 2026-11: Squad-signals-vahti (`scripts/squad_signals_watch.py`) ajetaan kahdesti päivässä, ja päivän toinen ajo
+  kirjoittaa `squad-signals-<pvm>.md`:n yli vertailulla saman päivän aamukuvaan. 3.11 aamun 29 erikoistilannemuutosta ja
+  3 saatavuusmuutosta katosivat raportista (jäivät lokiin ja git-historiaan), tilalle jäi 1 rivi. Toisen ajon pitäisi
+  lisätä osio eikä korvata tiedostoa.
 
 ## Avoimet
 
