@@ -53,6 +53,9 @@ TILAUSSANAT = [
         # creators.html (Villen paatos 4.11): passilla ei ole uusiutumista.
         r"(?:every|each) renewal",
         r"survives renewals",
+        # Julkaisutarkistaja k2 4.11: nama menivat portin ohi creators.html:ssa.
+        r"stay subscribed",
+        r"your own subscription",
     )
 ]
 
