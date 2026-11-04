@@ -2,10 +2,10 @@
  "meta": {
   "product": "GoalIQ Fantasy - price watch",
   "available": true,
-  "generated_at": "2026-11-04T12:59:23Z",
-  "total_players": 11235388,
+  "generated_at": "2026-11-04T19:00:03Z",
+  "total_players": 11237056,
   "n_players_scanned": 670,
-  "n_with_transfer_activity": 663,
+  "n_with_transfer_activity": 661,
   "source": "FPL official price projection",
   "official_projection": true,
   "disclaimer": "The percentages are FPL's own price projection, refreshed here every three hours. The day is their projection too, so a late rush of transfers still moves it.",
@@ -13,14 +13,27 @@
  },
  "risers": [
   {
+   "id": 60,
+   "web_name": "Hill",
+   "team": 3,
+   "now_cost": 5.5,
+   "status": "rising_soon",
+   "confidence": 0.97,
+   "progress_pct": 97.4,
+   "net_event": 30268,
+   "already_changed_today": false,
+   "eta_days": 1,
+   "eta_at": "2026-11-06T00:00:00Z"
+  },
+  {
    "id": 53,
    "web_name": "Manzambi",
    "team": 2,
    "now_cost": 6.1,
-   "status": "rising_watch",
-   "confidence": 0.88,
-   "progress_pct": 88.4,
-   "net_event": 100722,
+   "status": "rising_soon",
+   "confidence": 0.91,
+   "progress_pct": 90.8,
+   "net_event": 104852,
    "already_changed_today": false,
    "eta_days": 1,
    "eta_at": "2026-11-06T00:00:00Z"
@@ -31,23 +44,12 @@
    "team": 3,
    "now_cost": 6.4,
    "status": "rising_watch",
-   "confidence": 0.72,
-   "progress_pct": 72.1,
-   "net_event": 428306,
+   "confidence": 0.75,
+   "progress_pct": 75.2,
+   "net_event": 441163,
    "already_changed_today": true,
    "eta_days": 2,
    "eta_at": "2026-11-07T00:00:00Z"
-  },
-  {
-   "id": 60,
-   "web_name": "Hill",
-   "team": 3,
-   "now_cost": 5.5,
-   "status": "rising_soon",
-   "confidence": 0.97,
-   "progress_pct": 97.0,
-   "net_event": 29480,
-   "already_changed_today": false
   },
   {
    "id": 579,
@@ -56,8 +58,8 @@
    "now_cost": 5.4,
    "status": "rising_soon",
    "confidence": 0.94,
-   "progress_pct": 93.9,
-   "net_event": 19723,
+   "progress_pct": 94.2,
+   "net_event": 20245,
    "already_changed_today": false
   },
   {
@@ -66,9 +68,9 @@
    "team": 2,
    "now_cost": 5.0,
    "status": "rising_watch",
-   "confidence": 0.89,
-   "progress_pct": 88.5,
-   "net_event": 3748,
+   "confidence": 0.88,
+   "progress_pct": 88.4,
+   "net_event": 3731,
    "already_changed_today": false
   },
   {
@@ -78,8 +80,8 @@
    "now_cost": 7.0,
    "status": "rising_watch",
    "confidence": 0.83,
-   "progress_pct": 83.3,
-   "net_event": -3579,
+   "progress_pct": 83.1,
+   "net_event": -3787,
    "already_changed_today": false
   },
   {
@@ -89,8 +91,8 @@
    "now_cost": 7.5,
    "status": "rising_watch",
    "confidence": 0.81,
-   "progress_pct": 81.4,
-   "net_event": 4975,
+   "progress_pct": 81.5,
+   "net_event": 5065,
    "already_changed_today": false
   },
   {
@@ -99,9 +101,9 @@
    "team": 5,
    "now_cost": 6.2,
    "status": "rising_watch",
-   "confidence": 0.77,
-   "progress_pct": 76.8,
-   "net_event": 35028,
+   "confidence": 0.78,
+   "progress_pct": 77.7,
+   "net_event": 36426,
    "already_changed_today": false
   },
   {
@@ -111,8 +113,8 @@
    "now_cost": 5.0,
    "status": "rising_watch",
    "confidence": 0.74,
-   "progress_pct": 73.8,
-   "net_event": -792,
+   "progress_pct": 73.7,
+   "net_event": -953,
    "already_changed_today": false
   },
   {
@@ -122,8 +124,8 @@
    "now_cost": 4.9,
    "status": "rising_watch",
    "confidence": 0.69,
-   "progress_pct": 69.4,
-   "net_event": -21154,
+   "progress_pct": 68.8,
+   "net_event": -21957,
    "already_changed_today": false
   },
   {
@@ -133,8 +135,8 @@
    "now_cost": 6.8,
    "status": "rising_watch",
    "confidence": 0.69,
-   "progress_pct": 69.1,
-   "net_event": -12685,
+   "progress_pct": 68.8,
+   "net_event": -13164,
    "already_changed_today": false
   },
   {
@@ -143,20 +145,9 @@
    "team": 5,
    "now_cost": 5.0,
    "status": "rising_watch",
-   "confidence": 0.66,
-   "progress_pct": 66.4,
-   "net_event": 1693,
-   "already_changed_today": false
-  },
-  {
-   "id": 87,
-   "web_name": "Ajer",
-   "team": 4,
-   "now_cost": 4.5,
-   "status": "rising_watch",
-   "confidence": 0.63,
-   "progress_pct": 63.3,
-   "net_event": -1737,
+   "confidence": 0.67,
+   "progress_pct": 66.5,
+   "net_event": 1799,
    "already_changed_today": false
   },
   {
@@ -165,9 +156,31 @@
    "team": 5,
    "now_cost": 5.4,
    "status": "rising_watch",
-   "confidence": 0.62,
-   "progress_pct": 62.3,
-   "net_event": 65398,
+   "confidence": 0.64,
+   "progress_pct": 63.7,
+   "net_event": 67703,
+   "already_changed_today": false
+  },
+  {
+   "id": 166,
+   "web_name": "N.Jackson",
+   "team": 2,
+   "now_cost": 7.0,
+   "status": "rising_watch",
+   "confidence": 0.63,
+   "progress_pct": 63.1,
+   "net_event": 352626,
+   "already_changed_today": true
+  },
+  {
+   "id": 87,
+   "web_name": "Ajer",
+   "team": 4,
+   "now_cost": 4.5,
+   "status": "rising_watch",
+   "confidence": 0.63,
+   "progress_pct": 63.1,
+   "net_event": -1962,
    "already_changed_today": false
   },
   {
@@ -177,20 +190,9 @@
    "now_cost": 5.4,
    "status": "rising_watch",
    "confidence": 0.61,
-   "progress_pct": 61.4,
-   "net_event": -6089,
+   "progress_pct": 61.2,
+   "net_event": -6450,
    "already_changed_today": false
-  },
-  {
-   "id": 166,
-   "web_name": "N.Jackson",
-   "team": 2,
-   "now_cost": 7.0,
-   "status": "rising_watch",
-   "confidence": 0.61,
-   "progress_pct": 60.8,
-   "net_event": 342759,
-   "already_changed_today": true
   },
   {
    "id": 332,
@@ -198,9 +200,9 @@
    "team": 13,
    "now_cost": 4.5,
    "status": "rising_watch",
-   "confidence": 0.61,
-   "progress_pct": 60.6,
-   "net_event": -759,
+   "confidence": 0.6,
+   "progress_pct": 60.5,
+   "net_event": -732,
    "already_changed_today": false
   },
   {
@@ -210,8 +212,8 @@
    "now_cost": 4.0,
    "status": "rising_watch",
    "confidence": 0.6,
-   "progress_pct": 60.0,
-   "net_event": -10443,
+   "progress_pct": 59.8,
+   "net_event": -10743,
    "already_changed_today": false
   },
   {
@@ -221,19 +223,19 @@
    "now_cost": 5.5,
    "status": "rising_watch",
    "confidence": 0.56,
-   "progress_pct": 55.6,
-   "net_event": -4465,
+   "progress_pct": 55.5,
+   "net_event": -4687,
    "already_changed_today": false
   },
   {
-   "id": 305,
-   "web_name": "Davis",
-   "team": 12,
-   "now_cost": 4.0,
+   "id": 4,
+   "web_name": "Gabriel",
+   "team": 1,
+   "now_cost": 8.0,
    "status": "rising_watch",
    "confidence": 0.55,
-   "progress_pct": 55.4,
-   "net_event": -17470,
+   "progress_pct": 55.2,
+   "net_event": 81419,
    "already_changed_today": false
   }
  ],
@@ -245,8 +247,21 @@
    "now_cost": 4.3,
    "status": "falling_soon",
    "confidence": 1.0,
-   "progress_pct": 99.9,
-   "net_event": -1101,
+   "progress_pct": 100.0,
+   "net_event": -1159,
+   "already_changed_today": false,
+   "eta_days": 0,
+   "eta_at": "2026-11-05T00:00:00Z"
+  },
+  {
+   "id": 668,
+   "web_name": "Tutierov",
+   "team": 20,
+   "now_cost": 5.0,
+   "status": "falling_soon",
+   "confidence": 1.0,
+   "progress_pct": 100.0,
+   "net_event": -16,
    "already_changed_today": false,
    "eta_days": 0,
    "eta_at": "2026-11-05T00:00:00Z"
@@ -257,12 +272,12 @@
    "team": 16,
    "now_cost": 4.7,
    "status": "falling_soon",
-   "confidence": 0.98,
-   "progress_pct": 97.9,
-   "net_event": -26454,
+   "confidence": 0.99,
+   "progress_pct": 99.3,
+   "net_event": -27559,
    "already_changed_today": false,
-   "eta_days": 1,
-   "eta_at": "2026-11-06T00:00:00Z"
+   "eta_days": 0,
+   "eta_at": "2026-11-05T00:00:00Z"
   },
   {
    "id": 480,
@@ -270,49 +285,64 @@
    "team": 18,
    "now_cost": 7.9,
    "status": "falling_soon",
+   "confidence": 0.96,
+   "progress_pct": 96.5,
+   "net_event": -78728,
+   "already_changed_today": false,
+   "eta_days": 1,
+   "eta_at": "2026-11-06T00:00:00Z"
+  },
+  {
+   "id": 647,
+   "web_name": "Osorio",
+   "team": 8,
+   "now_cost": 5.4,
+   "status": "falling_watch",
+   "confidence": 0.74,
+   "progress_pct": 74.0,
+   "net_event": -8,
+   "already_changed_today": false,
+   "eta_days": 1,
+   "eta_at": "2026-11-06T00:00:00Z"
+  },
+  {
+   "id": 544,
+   "web_name": "Xhaka",
+   "team": 20,
+   "now_cost": 5.4,
+   "status": "falling_soon",
    "confidence": 0.93,
-   "progress_pct": 93.2,
-   "net_event": -74193,
-   "already_changed_today": false,
-   "eta_days": 1,
-   "eta_at": "2026-11-06T00:00:00Z"
-  },
-  {
-   "id": 325,
-   "web_name": "Darlow",
-   "team": 16,
-   "now_cost": 4.5,
-   "status": "falling_watch",
-   "confidence": 0.78,
-   "progress_pct": 78.3,
-   "net_event": -51,
-   "already_changed_today": false,
-   "eta_days": 1,
-   "eta_at": "2026-11-06T00:00:00Z"
-  },
-  {
-   "id": 620,
-   "web_name": "Diouf",
-   "team": 4,
-   "now_cost": 4.5,
-   "status": "falling_watch",
-   "confidence": 0.84,
-   "progress_pct": 83.7,
-   "net_event": -275,
+   "progress_pct": 92.8,
+   "net_event": -9339,
    "already_changed_today": false,
    "eta_days": 2,
    "eta_at": "2026-11-07T00:00:00Z"
   },
   {
-   "id": 668,
-   "web_name": "Tutierov",
-   "team": 20,
-   "now_cost": 5.0,
-   "status": "falling_soon",
-   "confidence": 0.97,
-   "progress_pct": 96.7,
-   "net_event": -14,
-   "already_changed_today": false
+   "id": 424,
+   "web_name": "Amass",
+   "team": 16,
+   "now_cost": 4.0,
+   "status": "falling_watch",
+   "confidence": 0.89,
+   "progress_pct": 88.7,
+   "net_event": -171,
+   "already_changed_today": false,
+   "eta_days": 2,
+   "eta_at": "2026-11-07T00:00:00Z"
+  },
+  {
+   "id": 218,
+   "web_name": "Doucouré",
+   "team": 8,
+   "now_cost": 4.8,
+   "status": "falling_watch",
+   "confidence": 0.8,
+   "progress_pct": 80.1,
+   "net_event": -63,
+   "already_changed_today": false,
+   "eta_days": 2,
+   "eta_at": "2026-11-07T00:00:00Z"
   },
   {
    "id": 442,
@@ -321,8 +351,8 @@
    "now_cost": 4.9,
    "status": "falling_soon",
    "confidence": 0.94,
-   "progress_pct": 93.9,
-   "net_event": -658,
+   "progress_pct": 94.1,
+   "net_event": -682,
    "already_changed_today": false
   },
   {
@@ -331,9 +361,9 @@
    "team": 4,
    "now_cost": 5.4,
    "status": "falling_soon",
-   "confidence": 0.93,
-   "progress_pct": 93.0,
-   "net_event": -479,
+   "confidence": 0.94,
+   "progress_pct": 93.8,
+   "net_event": -508,
    "already_changed_today": false
   },
   {
@@ -343,7 +373,7 @@
    "now_cost": 4.5,
    "status": "falling_soon",
    "confidence": 0.93,
-   "progress_pct": 92.7,
+   "progress_pct": 92.5,
    "net_event": -101,
    "already_changed_today": false
   },
@@ -354,30 +384,8 @@
    "now_cost": 4.5,
    "status": "falling_soon",
    "confidence": 0.92,
-   "progress_pct": 92.4,
-   "net_event": -76,
-   "already_changed_today": false
-  },
-  {
-   "id": 544,
-   "web_name": "Xhaka",
-   "team": 20,
-   "now_cost": 5.4,
-   "status": "falling_soon",
-   "confidence": 0.92,
-   "progress_pct": 91.8,
-   "net_event": -8925,
-   "already_changed_today": false
-  },
-  {
-   "id": 434,
-   "web_name": "J.Fletcher",
-   "team": 16,
-   "now_cost": 4.9,
-   "status": "falling_soon",
-   "confidence": 0.91,
-   "progress_pct": 91.1,
-   "net_event": -10,
+   "progress_pct": 92.3,
+   "net_event": -75,
    "already_changed_today": false
   },
   {
@@ -392,6 +400,17 @@
    "already_changed_today": false
   },
   {
+   "id": 434,
+   "web_name": "J.Fletcher",
+   "team": 16,
+   "now_cost": 4.9,
+   "status": "falling_soon",
+   "confidence": 0.91,
+   "progress_pct": 90.9,
+   "net_event": -10,
+   "already_changed_today": false
+  },
+  {
    "id": 462,
    "web_name": "Steur",
    "team": 17,
@@ -403,25 +422,25 @@
    "already_changed_today": false
   },
   {
-   "id": 585,
-   "web_name": "Herrington",
-   "team": 11,
-   "now_cost": 4.0,
-   "status": "falling_watch",
-   "confidence": 0.9,
-   "progress_pct": 89.7,
-   "net_event": -897,
-   "already_changed_today": false
-  },
-  {
    "id": 43,
    "web_name": "Tielemans",
    "team": 16,
    "now_cost": 5.7,
-   "status": "falling_watch",
+   "status": "falling_soon",
    "confidence": 0.9,
-   "progress_pct": 89.5,
-   "net_event": -5706,
+   "progress_pct": 90.4,
+   "net_event": -5865,
+   "already_changed_today": false
+  },
+  {
+   "id": 585,
+   "web_name": "Herrington",
+   "team": 11,
+   "now_cost": 4.0,
+   "status": "falling_soon",
+   "confidence": 0.9,
+   "progress_pct": 90.1,
+   "net_event": -929,
    "already_changed_today": false
   },
   {
@@ -431,8 +450,8 @@
    "now_cost": 5.0,
    "status": "falling_watch",
    "confidence": 0.89,
-   "progress_pct": 89.4,
-   "net_event": -96,
+   "progress_pct": 89.3,
+   "net_event": -98,
    "already_changed_today": false
   },
   {
@@ -441,31 +460,20 @@
    "team": 9,
    "now_cost": 4.6,
    "status": "falling_watch",
-   "confidence": 0.89,
-   "progress_pct": 88.9,
-   "net_event": 230,
+   "confidence": 0.88,
+   "progress_pct": 88.3,
+   "net_event": 405,
    "already_changed_today": false
   },
   {
-   "id": 424,
-   "web_name": "Amass",
-   "team": 16,
-   "now_cost": 4.0,
+   "id": 392,
+   "web_name": "Aït-Nouri",
+   "team": 15,
+   "now_cost": 5.2,
    "status": "falling_watch",
    "confidence": 0.88,
    "progress_pct": 88.3,
-   "net_event": -161,
-   "already_changed_today": false
-  },
-  {
-   "id": 648,
-   "web_name": "Bahoya",
-   "team": 13,
-   "now_cost": 4.9,
-   "status": "falling_watch",
-   "confidence": 0.88,
-   "progress_pct": 88.1,
-   "net_event": -34,
+   "net_event": -487,
    "already_changed_today": false
   }
  ],
