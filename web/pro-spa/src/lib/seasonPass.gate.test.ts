@@ -143,7 +143,9 @@ describe('seasonPass: kutsupaikat (yksikaan pinta ei kirjoita ehtoja kasin)', ()
 		'Cancel anytime from the Account menu',
 		"a year'",
 		'a year`',
-		'/year'
+		'/year',
+		// Julkaisutarkistaja 4.11 loysi taman PremiumPreview'n app-CTA:sta.
+		'Same subscription'
 	];
 
 	it('tilauslauseet asuvat vain lukijassa', () => {

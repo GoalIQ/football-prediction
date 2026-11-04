@@ -74,15 +74,17 @@ export function seasonPeriodSuffix(pass: boolean): string {
 
 /** Vuosinapin vihje. */
 export function seasonHint(end: string | null): string {
+	// Julkaisutarkistaja 4.11: kattavuus ja paiva ovat jo ehtolauseessa ja
+	// napissa, joten vihje sanoo vain sen mita ne eivat sano.
 	return end
-		? 'One payment, nothing renews. Covers web, iOS and Android.'
+		? 'One payment, nothing renews.'
 		: 'One subscription covers web, iOS and Android. Cancel anytime from the Account menu.';
 }
 
 /** Ehtolause ostonappien alle: Paywall, PremiumPreview, ProductIntro, /checkout. */
 export function planTerms(end: string | null): string {
 	return end
-		? `The season pass is one payment and runs until ${end}, so there is nothing to cancel. ` +
+		? `The season pass ends on ${end} and there's nothing to cancel. ` +
 				'The monthly plan renews until you cancel it from the Account menu. ' +
 				'Either plan covers web, iOS and Android.'
 		: 'Cancel anytime from the Account menu. One subscription covers web, iOS and Android.';

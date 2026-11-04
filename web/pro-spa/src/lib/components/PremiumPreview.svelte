@@ -184,7 +184,7 @@
 			{appCtaLabel(appStore)}
 		</a>
 		<p class="muted app-cta-note">
-			Same subscription either way. On your phone the store already has your
+			Same Premium either way. On your phone the store already has your
 			payment details, so it takes a few seconds.
 		</p>
 		{/if}
