@@ -432,6 +432,28 @@ def match_goals_for(index: dict[tuple, tuple], team: str, team_fixture: dict) ->
                      (None, None, None, None))
 
 
+def _from_gameweek(team: dict, gw: int) -> dict:
+    """Joukkueen lahirivit kierroksesta `gw` alkaen + rivin yhteenveto NIISTA.
+
+    Artefaktin next_n / next_avg_cs_pct / next_avg_fdr on laskettu koko
+    lahihorisontista. Kun alku rajataan, ne on laskettava uudelleen
+    naytetyista otteluista, muuten Games-sarake laskee ottelun jota ruudukossa
+    ei ole (fdr_rows_from_teamsin vahti). Kaava on build_fpl_phase0:n oma
+    (round(mean, 1) ja round(mean, 2)), joten rajaamaton rivi pysyy samana.
+    """
+    import numpy as np
+    fx = [f for f in team.get("fixtures", []) if f.get("gw", 0) >= gw]
+    cs = [float(f["cs_pct"]) for f in fx]
+    fdr = [float(f["fdr"]) for f in fx]
+    return {
+        **team,
+        "fixtures": fx,
+        "next_n": len(fx),
+        "next_avg_cs_pct": round(float(np.mean(cs)), 1) if cs else 0.0,
+        "next_avg_fdr": round(float(np.mean(fdr)), 2) if fdr else 0.0,
+    }
+
+
 def build_context(fpl: dict, acc: dict, now: _dt.datetime | None = None) -> dict:
     meta = fpl["meta"]
     # 27.7 HORISONTTILAAJENNUS: teams[].fixtures sisältää nyt KOKO KAUDEN, ja
@@ -471,6 +493,12 @@ def build_context(fpl: dict, acc: dict, now: _dt.datetime | None = None) -> dict
     # played"). Jakokortti ja kortin todiste lukevat saman funktion.
     from src.models.fpl_gameweek import clean_sheet_table_gameweek
     cs_gw = clean_sheet_table_gameweek(meta, fixtures, now) or next_gw
+    # 4.11.2026: ruudukko ("next six gameweeks") alkaa SAMASTA kierroksesta
+    # kuin taulukko. Ennen se otti artefaktin kaikki near-kierrokset, joten
+    # kesken kierroksen ensimmainen sarake oli kierros johon ei voinut enaa
+    # vaikuttaa, ja Understat-katkossa (payload 1.11) se oli jo pelattu GW9
+    # (ARS @ LIV 38 %). Sama alaraja kuin /api/fantasyssa (#82).
+    teams = [_from_gameweek(t, cs_gw) for t in teams]
 
     # 10.9 FPL-SIVU-OTTELUIDEN-XG: projisoidut maalit per ottelu SAMASTA
     # fixtures-lohkosta jota CS-% kayttaa. Kortti (gen_share_card gw_outlook)
@@ -1670,7 +1698,7 @@ def cs_table_html(c: dict) -> str:
         "<thead><tr>"
         '<th scope="col">Team</th><th scope="col" class="num">Clean sheet %</th>'
         '<th scope="col">Next opponent</th><th scope="col" class="num">FDR</th>'
-        '<th scope="col" class="num">Next 6 CS%</th>'
+        f'<th scope="col" class="num">Next {len(c["gws"])} CS%</th>'
         '<th scope="col" class="num m-hide">Squad turnover</th>'
         "</tr></thead><tbody>"
         + "".join(rows)
@@ -2627,6 +2655,12 @@ def render_page(c: dict, xp: dict | None = None) -> str:
     xp_accuracy = xp_accuracy_html(_load_json(XP_GW_ACC_PATH))
     fdr_grid = fdr_grid_html(c)
     far_grid = far_grid_html(c)
+    # 4.11: ruudukon otsikko ja viittauslause lukevat ruudukon oman
+    # sarakemaaran (build_contextin alaraja voi jattaa niita 5).
+    grid_n = len(c["gws"])
+    grid_n_word = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five",
+                   6: "six"}.get(grid_n, str(grid_n))
+    grid_span = "gameweek" if grid_n == 1 else f"{grid_n_word} gameweeks"
     # 26.7 CLASSIC: legenda seuraa solujen kaavaa (kolme luokkaa, ei
     # jatkuvaa skaalaa) — legenda ja solu eivät saa kertoa eri tarinaa.
     cs_legend = " ".join(
@@ -2779,18 +2813,18 @@ GoalIQ Premium, free: one prize, decided by the mini-league table when the seaso
 <h2 id="clean-sheets">Gameweek {c["cs_gw"]} clean sheet probabilities</h2>
 <p>Model clean sheet probability for the {len(c["cs_rows"])} Premier League teams
 with a fixture in Gameweek {c["cs_gw"]} ({c["cs_gw_label"]}). FDR is GoalIQ's model
-fixture difficulty for that match, 1 easiest to 5 hardest. Next 6 CS% averages the
+fixture difficulty for that match, 1 easiest to 5 hardest. Next {grid_n} CS% averages the
 same probability over the run in the grid below, so one good fixture and a good
 run are not the same column.</p>
 {cs_table}
 <p class="note">{_strength_basis_note(c)}</p>
 <p class="inline-up">This is Gameweek {c["cs_gw"]} alone. The grid below runs the
-same probability over the next six gameweeks, and the free
+same probability over the next {grid_span}, and the free
 <a href="https://pro.goaliq.app/players/clean-sheets?src=fpl-cs&amp;srcp=fpl" data-cta="inline-cs">clean
 sheet tool</a> averages it over the gameweeks you pick, so you can see whether a
 defender is worth buying for one weekend or for the run.</p>
 
-<h2 id="fixture-difficulty">Fixture difficulty for the next six gameweeks</h2>
+<h2 id="fixture-difficulty">Fixture difficulty for the next {grid_span}</h2>
 <p>Each cell is the opponent, venue and the model's clean sheet probability
 for that match. Model FDR (1 easiest, 5 hardest) is in the cell tooltip on desktop.
 Model-derived, not the official FPL difficulty.</p>

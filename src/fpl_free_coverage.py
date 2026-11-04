@@ -71,9 +71,6 @@ CARD_SURFACES = (
     "scripts/render_standouts_card.py",
 )
 
-_NUMEROT = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six"}
-
-
 def fpl_free_claim(*, projected_goals: bool) -> str:
     """Mita goaliq.app/fpl kattaa, sanoina jotka ovat tosia juuri tasta kortista.
 
@@ -81,10 +78,17 @@ def fpl_free_claim(*, projected_goals: bool) -> str:
     Niilla on eri horisontti (nollapeli kuusi kierrosta, maalit seuraava
     ottelu), joten yksi horisonttisana olisi epatosi toisesta. Silloin
     sanotaan mika on ilmaista, ei kuinka pitkalle se yltaa.
+
+    🔴 4.11.2026: EI LUKUMAARAA. Ruudukko alkaa kierroksesta jonka deadline
+    on edessa (fp #93), joten sen leveys vaihtelee: kuusi kun payload on
+    tuore ja kierros pelaamatta, viisi kesken kierroksen, nelja jos payload
+    on jaassa deadlinen yli. Pysyva kuva ei seuraa sita, joten "next six
+    gameweeks" olisi epatosi sita sivua vasten jolle kortti lahettaa lukijan
+    (julkaisutarkistaja 4.11). CLEAN_SHEET_GAMEWEEKS jaa YLARAJAKSI.
     """
     if projected_goals:
         return "both numbers"
-    return f"next {_NUMEROT[CLEAN_SHEET_GAMEWEEKS]} gameweeks"
+    return "the next few gameweeks"
 
 
 #: Poikkeuslista: "polku::sanamuoto" -> PERUSTELU (saanto 6a kohta 2).

@@ -195,3 +195,24 @@ def test_display_vanha_payload_ei_kaadu():
     """Kentta puuttuu -> entinen kaytos, ei poikkeusta."""
     assert display_gameweek({"next_gameweek": 1, "deadline_gameweek": 2}) == 2
     assert display_gameweek({"next_gameweek": 1}) == 1
+
+
+def test_display_vanhentunut_completed_lista_ei_pida_pelatussa_kierroksessa():
+    """🔴 4.11.2026: Understat-katkossa payload jai 1.11:n tilaan
+    (completed [1..8], next 9), ja /fpl sanoi "Gameweek 9 is being played"
+    kolme vuorokautta sen jalkeen kun GW9:n jokainen ottelu oli alkanut.
+    Lista on rakennushetken tila eli voi vain laahata: kun fixtures ovat
+    kaytettavissa, "ei viela ohi" tarkistetaan kickoff-ajoista."""
+    now = _nyt_ms()
+    meta = {"next_gameweek": 9, "deadline_gameweek": 10,
+            "completed_gameweeks": list(range(1, 9))}
+    alkaneet = [_f(9, now - 3 * 86400000)] * 10
+    assert display_gameweek(meta, alkaneet) == 10
+    # kesken: yksikin alkamaton ottelu pitaa sivun kierroksessa (all, ei any)
+    kesken = [_f(9, now - 3600000)] * 9 + [_f(9, now + 3600000)]
+    assert display_gameweek(meta, kesken) == 9
+    # ilman fixtureita lista on ainoa lahde, kuten ennen
+    assert display_gameweek(meta) == 9
+    # listan "ohi" kelpaa vaikka fixtures sanoisi muuta (ei voi edeta liian aikaisin)
+    ohi = {**meta, "completed_gameweeks": list(range(1, 10))}
+    assert display_gameweek(ohi, kesken) == 10

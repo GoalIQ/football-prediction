@@ -230,3 +230,74 @@ def test_fpl_page_cs_table_call_site_in_every_phase(phase):
         assert any(f["opponent"] == r["opponent"] for f in by_team[r["team"]]), (phase, r["team"])
     # ja deadline-rivi puhuu samasta kierroksesta
     assert f"Next deadline: Gameweek {want}," in b._deadline_row(c)
+
+
+# ---------------------------------------------------------------------------
+# 4.11.2026: /fpl:n FDR-ruudukko ("Fixture difficulty for the next six
+# gameweeks") otti artefaktin KAIKKI lahikierrokset, joten Understat-katkon
+# aikana (payload 1.11) sen ensimmainen sarake oli jo pelattu GW9 ja rivin
+# yhteenveto laski senkin. Ruudukko alkaa nyt samasta kierroksesta kuin
+# nollapelitaulukko, ja Games / Avg CS% / Avg FDR lasketaan naytetyista
+# soluista. Sama kutsupaikka ja samat vaiheet kuin ylla.
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize("phase", ["before", "live-stale", "after"])
+def test_fpl_page_fdr_grid_never_shows_a_closed_gameweek(phase):
+    import copy
+    from scripts import build_fpl_page as b
+    fpl = copy.deepcopy(_real_phase0())
+    meta = fpl["meta"]
+    dls = sorted(((int(d["gw"]), _dt.datetime.fromisoformat(d["utc"])) for d in meta.get("deadlines") or []),
+                 key=lambda x: x[1])
+    near = {f["gw"] for t in fpl["teams"] for f in t.get("fixtures") or []
+            if (f.get("tier") or "near") == "near" and f.get("cs_pct") is not None}
+    if len(dls) < 2 or dls[1][0] not in near:
+        pytest.skip("kauden loppu: ei kahta deadlinea lahihorisontissa")
+    (g0, d0), (g1, _d1) = dls[0], dls[1]
+    if phase == "before":
+        now = d0 - _dt.timedelta(hours=1)
+        meta["deadline_gameweek"] = g0
+    elif phase == "live-stale":
+        now = d0 + _dt.timedelta(hours=1)
+        meta["deadline_gameweek"] = g0
+    else:
+        now = d0 + _dt.timedelta(hours=1)
+        meta["deadline_gameweek"] = g1
+        meta["deadlines"] = [d for d in meta["deadlines"] if int(d["gw"]) != g0]
+    want = g0 if phase == "before" else g1
+    c = b.build_context(fpl, {"all_time": {}, "logged_with_timestamp": 0, "pending": 0,
+                              "updated_at": "2026-11-01T00:00:00+00:00"}, now=now)
+    assert c["gws"] and min(c["gws"]) == want == c["cs_gw"], (phase, c["gws"], want)
+    if phase != "before":
+        # Negatiivinen kontrolli datasta: suljettu kierros OLI artefaktissa,
+        # eli testi ei mene lapi vain siksi etta sita ei ollut.
+        assert g0 in near and g0 not in c["gws"], (phase, sorted(near), c["gws"])
+    # Sivun luvut ruudukon leveydesta: CS-taulukon "Next N CS%" (otsikko +
+    # johdanto), H2 ja viittauslause sanovat saman N:n kuin sarakkeita on
+    # (julkaisutarkistaja 4.11: "Next 6 CS%" jai viiden ottelun keskiarvon paalle).
+    import re
+    html = b.render_page(c, None)
+    n = len(c["gws"])
+    assert set(re.findall(r"Next (\d+) CS%", html)) == {str(n)}, (phase, n, re.findall(r"Next (\d+) CS%", html))
+    sanat = {4: "four", 5: "five", 6: "six"}
+    if n in sanat:
+        assert f"Fixture difficulty for the next {sanat[n]} gameweeks</h2>" in html, (phase, n)
+    for r in c["fdr_rows"]:
+        shown = [f for cell in r["cells"] for f in cell]
+        assert r["n"] == len(shown), (phase, r["team"], r["n"], len(shown))
+        if shown:
+            import numpy as np
+            assert r["avg_cs"] == round(float(np.mean([float(f["cs_pct"]) for f in shown])), 1), (phase, r["team"])
+
+
+def test_fdr_grid_rows_unchanged_when_nothing_is_cut():
+    """Rajaamaton rivi = artefaktin oma yhteenveto (sama kaava kuin
+    build_fpl_phase0), eli korjaus ei muuta sivua tavallisena paivana."""
+    from scripts import build_fpl_page as b
+    fpl = _real_phase0()
+    first = min(f["gw"] for t in fpl["teams"] for f in t["fixtures"])
+    for t in fpl["teams"]:
+        near = {**t, "fixtures": [f for f in t["fixtures"]
+                                  if (f.get("tier") or "near") == "near" and f.get("cs_pct") is not None]}
+        r = b._from_gameweek(near, first)
+        assert (r["next_n"], r["next_avg_cs_pct"], r["next_avg_fdr"]) == (
+            t["next_n"], t["next_avg_cs_pct"], t["next_avg_fdr"]), t["name"]

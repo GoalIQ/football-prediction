@@ -306,7 +306,7 @@ def test_blank_gameweek_row_has_no_goals_and_caption_does_not_promise_them(monke
             row("Everton", "Fulham", "H", (None, None, None, None))]
     monkeypatch.setattr(bfp, "_turnover_by_model_team",
                         lambda: {bfp.map_name("Arsenal"): {"minutes_churn_pct": 5.0}})
-    c = {"cs_rows": rows, "next_gw": 4, "cs_gw": 4, "season": "2026/27"}
+    c = {"cs_rows": rows, "next_gw": 4, "cs_gw": 4, "season": "2026/27", "gws": [4, 5, 6, 7, 8, 9]}
     html = bfp.cs_table_html(c)
     assert "projected goals<br>ARS 1.64 v SUN 0.67" in html
     assert html.count("projected goals") == 1
