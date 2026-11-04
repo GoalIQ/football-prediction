@@ -298,9 +298,10 @@ def hero_cta_closed_html() -> str:
     veivat suoraan kassaan. Nappi vie nyt SAMAAN osoitteeseen kuin paneelin
     "Get the season pass" (`season_checkout_url`), teksti ja hinta ennallaan.
     """
+    # WP6 (4.11.2026): vuosipaketti on kertamaksu -> src.price_copy.season_cta.
     return (f'<a class="btn btn-primary" href="{season_checkout_url()}" '
-            f'data-cta="hero-premium">Get Premium &middot; &euro;{PC.SEASON} '
-            'a year &#9656;</a>')
+            f'data-cta="hero-premium">Get Premium &middot; '
+            f'{PC.season_cta("&euro;")} &#9656;</a>')
 
 
 def hero_cta_html(now: _dt.datetime | None = None) -> str:
@@ -318,7 +319,8 @@ def hero_price_note_open_html() -> str:
 def hero_price_note_closed_html() -> str:
     return (f'<p class="cta-note">&euro;{PC.MONTHLY} a month, or '
             f'<a href="{PRO_URL}checkout?plan=season" data-cta="hero">'
-            f'&euro;{PC.SEASON} a year</a>.</p>')
+            f'{PC.season_cta("&euro;")}</a>, one payment until '
+            f'{PC.pass_end()}.</p>')
 
 
 def hero_price_note_html(now: _dt.datetime | None = None) -> str:
@@ -346,8 +348,9 @@ def price_tag_open_html() -> str:
 
 
 def price_tag_closed_html() -> str:
-    return ('<h3><span class="price-tag">&euro;3.99 / month</span> '
-            '<span class="price-alt">or &euro;25 / year</span></h3>')
+    # WP6 (4.11.2026): passi ei ole "/ year". Luvut src.price_copy:sta.
+    return (f'<h3><span class="price-tag">&euro;{PC.MONTHLY} / month</span> '
+            f'<span class="price-alt">or &euro;{PC.SEASON} / season</span></h3>')
 
 
 def price_tag_html(now: _dt.datetime | None = None) -> str:
@@ -374,7 +377,8 @@ def predictions_price_open_html() -> str:
 def predictions_price_closed_html() -> str:
     return (
         f'<div class="price">€{PC.MONTHLY} / month</div>\n'
-        f'      <p style="color:var(--muted);">Or €{PC.SEASON} a year.\n'
+        f'      <p style="color:var(--muted);">Or {PC.season_cta()}, one payment '
+        f'until {PC.pass_end()}.\n'
         '        Go deeper on every prediction.</p>')
 
 
