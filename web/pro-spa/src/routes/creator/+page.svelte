@@ -184,7 +184,7 @@
 				{#if report.signups === null}
 					<b class="unknown">not available</b>
 					<span class="muted">
-						We couldn't read this just now. It isn't zero, we just didn't get an answer.
+						We couldn't read this just now. That doesn't mean zero, we just didn't get an answer.
 						Reload in a minute.
 					</span>
 				{:else}
@@ -203,7 +203,7 @@
 				{#if report.stamped === null}
 					<b class="unknown">not available</b>
 					<span class="muted">
-						We couldn't read this just now. It isn't zero, we just didn't get an answer.
+						We couldn't read this just now. That doesn't mean zero, we just didn't get an answer.
 						Reload in a minute.
 					</span>
 				{:else}
@@ -217,24 +217,28 @@
 				{/if}
 			</div>
 			<!-- WP6 (4.11.2026, Villen paatos): kausipassi on kertamaksu eika
-			     tilaus, joten se ei nay ylla. Kortti vain kun passeja on tai
-			     lukua ei saatu (null); vanha API (undefined) ja 0 ennen myyntia
-			     eivat nayta korttia. -->
-			{#if report.passes === null || (typeof report.passes === 'number' && report.passes > 0)}
+			     tilaus, joten se ei nay ylla. Kortti aina kun API kertoo luvun
+			     (myos 0: creators.html lupaa passiluvun talle sivulle); vain
+			     vanha API (undefined) piilottaa sen. Luku on NETTO: hyvitetty
+			     passi ei ole provisiota (julkaisutarkistaja k2 4.11). -->
+			{#if report.passes !== undefined}
 				<div class="card num">
 					<span class="label">Season passes credited to you</span>
 					{#if report.passes === null}
 						<b class="unknown">not available</b>
 						<span class="muted">
-							We couldn't read this just now. It isn't zero, we just didn't get an answer.
+							We couldn't read this just now. That doesn't mean zero, we just didn't get an answer.
 							Reload in a minute.
 						</span>
 					{:else}
-						<b>{report.passes}</b>
+						<b>{report.passes - (report.passes_refunded ?? 0)}</b>
 						<span class="muted">
 							Season passes bought with your code or after arriving through your link. The pass
-							is one payment, so your 30 percent is paid once per pass.{#if report.passes_refunded}
-								{report.passes_refunded} of them were refunded and don't count.{/if}
+							is one payment, so your 30 percent is paid once per pass. {#if report.passes_refunded === 1}
+								One more was refunded and doesn't count.
+							{:else if report.passes_refunded}
+								{report.passes_refunded} more were refunded and don't count.
+							{/if}
 						</span>
 					{/if}
 				</div>
