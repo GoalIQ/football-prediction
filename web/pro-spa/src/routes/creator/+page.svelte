@@ -216,6 +216,29 @@
 					</span>
 				{/if}
 			</div>
+			<!-- WP6 (4.11.2026, Villen paatos): kausipassi on kertamaksu eika
+			     tilaus, joten se ei nay ylla. Kortti vain kun passeja on tai
+			     lukua ei saatu (null); vanha API (undefined) ja 0 ennen myyntia
+			     eivat nayta korttia. -->
+			{#if report.passes === null || (typeof report.passes === 'number' && report.passes > 0)}
+				<div class="card num">
+					<span class="label">Season passes credited to you</span>
+					{#if report.passes === null}
+						<b class="unknown">not available</b>
+						<span class="muted">
+							We couldn't read this just now. It isn't zero, we just didn't get an answer.
+							Reload in a minute.
+						</span>
+					{:else}
+						<b>{report.passes}</b>
+						<span class="muted">
+							Season passes bought with your code or after arriving through your link. The pass
+							is one payment, so your 30 percent is paid once per pass.{#if report.passes_refunded}
+								{report.passes_refunded} of them were refunded and don't count.{/if}
+						</span>
+					{/if}
+				</div>
+			{/if}
 		</div>
 
 		{#if report.statuses && Object.keys(report.statuses).length > 0}

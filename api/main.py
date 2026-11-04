@@ -3444,12 +3444,41 @@ def _affiliate_tally(only: Optional[str] = None, fresh: bool = False) -> dict:
     except Exception as e:
         print(f"[affiliate-report] Stripe-haku epaonnistui: {e}")
 
+    # 3) Kausipassin kertamaksut (WP6, Villen paatos 4.11: provisio 30 %
+    #    myos passista). Passi ei ole tilaus, joten kohta 2 ei nae sita:
+    #    webhook leimaa koodin PaymentIntentin metadataan
+    #    (`_stamp_affiliate_payment`), ja checkout kirjoittaa samaan
+    #    metadataan `plan=season_pass_2026_27`. Hyvitetty maksu (koko summa)
+    #    lasketaan erikseen, koska provisio ei koske sita.
+    #    Oma lahdelippu: passien lukuvirhe ei saa nollata tilauslukua.
+    passes_ok = False
+    try:
+        pis = stripe.PaymentIntent.search(
+            query=(f"metadata['plan']:'{season_pass.SEASON_PASS_ID}' "
+                   "AND status:'succeeded'"),
+            limit=100, expand=["data.latest_charge"])
+        for pi in pis.auto_paging_iter():
+            meta = _stripe_field(pi, "metadata")
+            code = _clean_affiliate_ref(_stripe_field(meta, "affiliate"))
+            bucket = _bucket(code) if code else None
+            if bucket is None:
+                continue
+            bucket["passes"] = bucket.get("passes", 0) + 1
+            charge = _stripe_field(pi, "latest_charge")
+            if charge is not None and not isinstance(charge, str) \
+                    and _stripe_field(charge, "refunded"):
+                bucket["passes_refunded"] = bucket.get("passes_refunded", 0) + 1
+        passes_ok = True
+    except Exception as e:
+        print(f"[affiliate-report] passihaku (PaymentIntent) epaonnistui: {e}")
+
     result = {
         "codes": out,
         "total_accounts_scanned": total_users,
-        "sources_ok": {"supabase": supa_ok, "stripe": stripe_ok},
+        "sources_ok": {"supabase": supa_ok, "stripe": stripe_ok,
+                       "stripe_passes": passes_ok},
     }
-    if supa_ok and stripe_ok:
+    if supa_ok and stripe_ok and passes_ok:
         with _AFFILIATE_TALLY_LOCK:
             _AFFILIATE_TALLY_CACHE[key] = (now, result)
     return result
@@ -3476,6 +3505,10 @@ def affiliate_report(request: Request):
                  ainoa luku joka liikkuu, koska kukaan ei maksa.
       stamped  = Stripe-tilaukset joilla metadata.affiliate == koodi. Tama on
                  se luku josta provisio lasketaan.
+      passes   = kausipassin kertamaksut (PaymentIntent, metadata.plan ==
+                 season_pass_2026_27 ja metadata.affiliate == koodi), 4.11.2026
+                 alkaen; passes_refunded = niista kokonaan hyvitetyt (ei
+                 provisiota). Oma lahdelippu sources_ok.stripe_passes.
 
     🔴 signups on SYSTEMAATTISESTI ALAKANTTIIN eika sita saa esittaa
     "linkin klikkauksina". Ref luetaan selaimen localStoragesta
@@ -4013,6 +4046,7 @@ def creator_report(request: Request):
     counts = tally["codes"].get(code) or {}
     supa_ok = tally["sources_ok"]["supabase"]
     stripe_ok = tally["sources_ok"]["stripe"]
+    passes_ok = tally["sources_ok"].get("stripe_passes", False)
 
     return {
         "code": code,
@@ -4020,6 +4054,10 @@ def creator_report(request: Request):
         "signups": (counts.get("signups", 0) if supa_ok else None),
         "stamped": (counts.get("stamped", 0) if stripe_ok else None),
         "statuses": (counts.get("statuses") or {}) if stripe_ok else None,
+        # WP6 (4.11.2026, Villen paatos: provisio 30 % myos passista):
+        # kausipassit erikseen, koska passi ei ole tilaus eika nay `stamped`issa.
+        "passes": (counts.get("passes", 0) if passes_ok else None),
+        "passes_refunded": (counts.get("passes_refunded", 0) if passes_ok else None),
         "sources_ok": tally["sources_ok"],
         "commission_pct": 30,
         # Ikkunan aikana kukaan ei maksa, eli `stamped` EI VOI liikkua ennen
@@ -5107,7 +5145,7 @@ def _get_profile_premium_state(user_id: str) -> Optional[dict]:
 def _stamp_affiliate_payment(payment_intent_id: str, code: str, source: str) -> bool:
     """Affiliate-leima kertamaksulle (PaymentIntentin metadata), tilauksen
     `_stamp_affiliate`in pari. Fail-soft: leima ei saa estaa oikeutta.
-    HUOM: /api/admin/affiliate-report lukee viela vain tilauksia."""
+    Raportti (`_affiliate_tally` kohta 3) lukee taman leiman 4.11.2026 alkaen."""
     try:
         stripe.PaymentIntent.modify(
             payment_intent_id,
