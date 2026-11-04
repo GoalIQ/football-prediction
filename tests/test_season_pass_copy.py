@@ -50,15 +50,18 @@ TILAUSSANAT = [
         r"\bone subscription\b",
         r"premium subscription covers",
         r"season \(yearly\)",
+        # creators.html (Villen paatos 4.11): passilla ei ole uusiutumista.
+        r"(?:every|each) renewal",
+        r"survives renewals",
     )
 ]
 
 #: Kasin kirjoitetut julkiset sivut joilla vuosipaketista puhutaan
 #: (julkaisutarkistaja 4.11 lisasi llms.txt:n, career.html:n ja privacy.html:n).
-KASIN = ("index.html", "faq.html", "predictions.html", "llms.txt",
+KASIN = ("index.html", "faq.html", "predictions.html", "llms.txt", "creators.html",
          "career.html", "privacy.html")
 #: Naista sivuista passin loppupaiva on kirjoitettu kasin.
-KASIN_PAIVA = ("index.html", "faq.html", "predictions.html", "llms.txt")
+KASIN_PAIVA = ("index.html", "faq.html", "predictions.html", "llms.txt", "creators.html")
 
 
 def _ilman_kommentteja(html: str) -> str:
