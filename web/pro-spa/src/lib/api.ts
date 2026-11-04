@@ -1146,7 +1146,11 @@ export interface CreatorReport {
 	signups: number | null;
 	stamped: number | null;
 	statuses: Record<string, number> | null;
-	sources_ok: { supabase: boolean; stripe: boolean };
+	/** WP6 (4.11.2026): kausipassin kertamaksut koodilla. Passi ei ole tilaus,
+	 *  joten se ei nay `stamped`issa. Puuttuu vanhalta API:lta (undefined). */
+	passes?: number | null;
+	passes_refunded?: number | null;
+	sources_ok: { supabase: boolean; stripe: boolean; stripe_passes?: boolean };
 	commission_pct: number;
 	free_window: { active: boolean; ends_utc: string };
 	caveat: string;

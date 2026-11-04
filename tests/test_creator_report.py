@@ -63,8 +63,18 @@ def _isolate(monkeypatch):
     m._AFFILIATE_TALLY_CACHE.clear()
 
 
+def _pi(code, refunded=False, plan="season_pass_2026_27"):
+    """Kausipassin PaymentIntent (WP6): leima metadatassa, hyvitys charge-oliossa."""
+    meta = {"plan": plan}
+    if code:
+        meta["affiliate"] = code
+    return {"metadata": meta, "status": "succeeded",
+            "latest_charge": {"refunded": refunded}}
+
+
 def _wire(monkeypatch, *, users, tokens, subs=(), supabase_fails=False,
-          supabase_status=200, stripe_fails=False):
+          supabase_status=200, stripe_fails=False, pis=(), passes_fails=False,
+          queries=None):
     """Yksi valefiksaus koko polulle: token-verify, tilihaku ja listaus.
 
     Testit ajavat oikean koodipolun (`_verify_supabase_token` ->
@@ -101,8 +111,18 @@ def _wire(monkeypatch, *, users, tokens, subs=(), supabase_fails=False,
                 raise RuntimeError("stripe down")
             return _Subs(list(subs))
 
+    class _PaymentIntents:
+        @staticmethod
+        def search(**kw):
+            if queries is not None:
+                queries.append(kw)
+            if passes_fails:
+                raise RuntimeError("stripe search down")
+            return _Subs(list(pis))
+
     monkeypatch.setattr(m.requests, "get", fake_get)
     monkeypatch.setattr(m.stripe, "Subscription", _Stripe)
+    monkeypatch.setattr(m.stripe, "PaymentIntent", _PaymentIntents)
     return TestClient(m.app)
 
 
@@ -367,3 +387,69 @@ def test_empty_code_detaches(monkeypatch):
     assert r.status_code == 200
     _, body = sink[0]
     assert "creator_code" not in body["user_metadata"]
+
+
+# ---------------------------------------------------------------------------
+# Kausipassi (WP6, Villen paatos 4.11.2026: provisio 30 % myos passista)
+# ---------------------------------------------------------------------------
+# Passi on kertamaksu eika tilaus, joten Subscription-lista ei nae sita.
+# Webhook leimaa koodin PaymentIntentin metadataan. Ennen 4.11 raportti ei
+# lukenut sita lainkaan: luoja olisi nahnyt "0" vaikka hanen lukijansa
+# ostivat passin, ja provisio olisi jaanyt maksamatta.
+
+def test_pass_with_code_is_credited_to_that_creator(monkeypatch):
+    c = _wire(monkeypatch, users=ALL_USERS, tokens=TOKENS,
+              pis=[_pi("WOLFY"), _pi("WOLFY"), _pi("DAZ")])
+    d = _get(c, "tok-wolfy").json()
+    assert d["passes"] == 2
+    assert d["passes_refunded"] == 0
+    # Tilausluku ei muutu passeista.
+    assert d["stamped"] == 0
+
+
+def test_pass_numbers_do_not_leak_between_creators(monkeypatch):
+    _wire(monkeypatch, users=ALL_USERS, tokens=TOKENS, pis=[_pi("DAZ")])
+    t = m._affiliate_tally(only="WOLFY")
+    assert set(t["codes"]) == {"WOLFY"}
+    assert t["codes"]["WOLFY"].get("passes", 0) == 0
+
+
+def test_refunded_pass_is_counted_separately(monkeypatch):
+    c = _wire(monkeypatch, users=ALL_USERS, tokens=TOKENS,
+              pis=[_pi("DAZ"), _pi("DAZ", refunded=True)])
+    d = _get(c, "tok-daz").json()
+    assert d["passes"] == 2
+    assert d["passes_refunded"] == 1
+
+
+def test_pass_without_code_is_not_credited(monkeypatch):
+    c = _wire(monkeypatch, users=ALL_USERS, tokens=TOKENS, pis=[_pi(None)])
+    assert _get(c, "tok-wolfy").json()["passes"] == 0
+
+
+def test_search_asks_only_for_succeeded_pass_payments(monkeypatch):
+    q: list = []
+    c = _wire(monkeypatch, users=ALL_USERS, tokens=TOKENS, queries=q)
+    _get(c, "tok-wolfy")
+    assert len(q) == 1
+    assert f"metadata['plan']:'{m.season_pass.SEASON_PASS_ID}'" in q[0]["query"]
+    assert "status:'succeeded'" in q[0]["query"]
+    # Hyvitystieto tarvitsee charge-olion.
+    assert "data.latest_charge" in q[0].get("expand", [])
+
+
+def test_pass_read_failure_is_null_and_keeps_subscription_numbers(monkeypatch):
+    c = _wire(monkeypatch, users=ALL_USERS, tokens=TOKENS,
+              subs=[_sub("WOLFY")], passes_fails=True)
+    d = _get(c, "tok-wolfy").json()
+    assert d["passes"] is None
+    assert d["passes_refunded"] is None
+    assert d["stamped"] == 1
+    assert d["sources_ok"]["stripe_passes"] is False
+
+
+def test_failed_pass_read_is_not_cached(monkeypatch):
+    c = _wire(monkeypatch, users=ALL_USERS, tokens=TOKENS, passes_fails=True)
+    assert _get(c, "tok-wolfy").json()["passes"] is None
+    c2 = _wire(monkeypatch, users=ALL_USERS, tokens=TOKENS, pis=[_pi("WOLFY")])
+    assert _get(c2, "tok-wolfy").json()["passes"] == 1
