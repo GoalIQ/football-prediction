@@ -91,12 +91,18 @@ def display_gameweek(meta: dict, fixtures: list[dict] | None = None) -> int | No
         return cur if cur is not None else act
     # 25.8: builderit emitoivat `completed_gameweeks`:n payloadiin, joten
     # kuluttaja jolla EI ole kickoff-aikoja (esim. rate_team) voi silti
-    # vastata oikein. Tama on ensisijainen lahde; `fixtures` on fallback.
+    # vastata oikein.
+    # 🔴 4.11.2026: lista on RAKENNUSHETKEN tila, joten se voi vain LAAHATA.
+    # Understat-katkossa payload jai 1.11:n tilaan (completed [1..8]), ja
+    # /fpl sanoi "Gameweek 9 is being played" kolme vuorokautta sen jalkeen
+    # kun GW9:n jokainen ottelu oli alkanut. Listan "on ohi" kelpaa aina
+    # (kickoff ei voi siirtya takaisin tulevaisuuteen), mutta "ei viela ohi"
+    # tarkistetaan kickoff-ajoista aina kun ne ovat kaytettavissa.
     done = (meta or {}).get("completed_gameweeks")
-    if isinstance(done, list):
-        return act if cur in done else cur
-    if fixtures is None:
+    if isinstance(done, list) and cur in done:
         return act
+    if fixtures is None:
+        return cur if isinstance(done, list) else act
     fx = [f for f in fixtures
           if f.get("gameweek") == cur and f.get("kickoff_ms")]
     if not fx:
