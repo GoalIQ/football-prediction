@@ -26,7 +26,8 @@
 	import { actionableGameweek } from '$lib/gameweek';
 	import { capture } from '$lib/analytics';
 	import { planApprox } from '$lib/billing';
-	import { loadPricing, webCheckoutBlocked } from '$lib/pricing.svelte';
+	import { loadPricing, seasonPassEnd, webCheckoutBlocked } from '$lib/pricing.svelte';
+	import { planTerms } from '$lib/seasonPass';
 	import StoreOnlyNotice from './StoreOnlyNotice.svelte';
 
 	let { onUpgrade }: { onUpgrade: () => void } = $props();
@@ -89,7 +90,7 @@
 	 * kadonnut nakyvista kokonaan.
 	 */
 	const approxMonthly = $derived(planApprox('monthly'));
-	const approxSeason = $derived(planApprox('season'));
+	const approxSeason = $derived(planApprox('season', seasonPassEnd() !== null));
 </script>
 
 <section class="intro" aria-labelledby="intro-h">
@@ -198,8 +199,7 @@
 			<button type="button" class="primary" onclick={onUpgrade}>See plans</button>
 			<p class="act-note muted">
 				€3.99 a month or €25 for the season{#if approxMonthly}
-					({approxMonthly}, {approxSeason}){/if}. Cancel anytime from the Account menu. One subscription covers
-				web, iOS and Android.
+					({approxMonthly}, {approxSeason}){/if}. {planTerms(seasonPassEnd())}
 			</p>
 		{/if}
 		<p class="act-proof muted">

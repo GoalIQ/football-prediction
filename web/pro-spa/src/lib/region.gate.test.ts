@@ -109,11 +109,13 @@ describe('region: etusivun ProductIntro', () => {
 	// joten UK-haaraa seuraa suoraan FI/US-haara.
 	const ikkuna = markup.indexOf('{:else}', alku);
 	const muu = ikkuna;
-	const loppu = markup.indexOf('{/if}', markup.indexOf('One subscription covers', muu));
+	const loppu = markup.indexOf('{/if}', markup.indexOf('planTerms(seasonPassEnd())', muu));
 
 	it('hakee saman maatiedon kuin muut ostopinnat', () => {
 		expect(src).toContain('void loadPricing()');
-		expect(src).toMatch(/import \{ loadPricing, webCheckoutBlocked \} from '\$lib\/pricing\.svelte'/);
+		expect(src).toMatch(
+			/import \{ loadPricing, seasonPassEnd, webCheckoutBlocked \} from '\$lib\/pricing\.svelte'/
+		);
 	});
 
 	it('UK-haara on ensimmainen ja siina ei ole verkkohintaa eika See plans -nappia', () => {
@@ -135,10 +137,7 @@ describe('region: etusivun ProductIntro', () => {
 			'<button type="button" class="primary" onclick={onUpgrade}>See plans</button>'
 		);
 		expect(perus).toContain('€3.99 a month or €25 for the season{#if approxMonthly}');
-		expect(perus).toContain(
-			'({approxMonthly}, {approxSeason}){/if}. Cancel anytime from the Account menu.'
-		);
-		expect(perus).toContain('One subscription covers');
+		expect(perus).toContain('({approxMonthly}, {approxSeason}){/if}. {planTerms(seasonPassEnd())}');
 	});
 });
 

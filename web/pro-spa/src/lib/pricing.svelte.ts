@@ -14,8 +14,9 @@
 import { API_BASE } from './config';
 import { PLANS, startCheckout, type PlanKey } from './billing';
 import { REGION_STORE_ONLY, pricingBlocksWebCheckout } from './region';
+import { passEnd, seasonHint, seasonLabel, type PassFields } from './seasonPass';
 
-interface Hinta {
+interface Hinta extends PassFields {
 	amount: number;
 	currency: string;
 	tier: string;
@@ -77,11 +78,23 @@ export function planTier(key: PlanKey): string {
 	return live[key]?.tier ?? 'default';
 }
 
+/** WP6 (4.11.2026): passin loppupaiva palvelimen hintavastauksesta, tai null
+ *  = vuosipaketti on tilaus (entinen teksti). Sama vastaus kuin hinnalla,
+ *  joten teksti ja veloitus eivat voi olla eri mielta ($lib/seasonPass). */
+export function seasonPassEnd(): string | null {
+	return passEnd(live.season);
+}
+
 /** Napin teksti. Sama muoto kuin `PLANS`issa, mutta luku palvelimelta. */
 export function planLabel(key: PlanKey): string {
 	const h = live[key];
 	if (!h) return PLANS[key].label;
-	return key === 'season' ? `Season pass: ${raha(h)} a year` : `Monthly: ${raha(h)}/mo`;
+	return key === 'season' ? seasonLabel(raha(h), seasonPassEnd()) : `Monthly: ${raha(h)}/mo`;
+}
+
+/** Napin vihje. Passitilassa vuosinapin vihje ei saa sanoa "Cancel anytime". */
+export function planHint(key: PlanKey): string {
+	return key === 'season' ? seasonHint(seasonPassEnd()) : PLANS[key].hint;
 }
 
 /** Naytetaanko UK/US-valuuttalikiarvo.
