@@ -57,7 +57,7 @@ def test_cs_table_turnover_reaches_narrow_screen(monkeypatch):
                                     "minutes_churn_pct": None},
     })
     html = bp.cs_table_html({
-        "next_gw": 1, "cs_gw": 1, "season": "2026/27", "cs_rows": [
+        "next_gw": 1, "cs_gw": 1, "season": "2026/27", "gws": [1, 2, 3, 4, 5, 6], "cs_rows": [
             _cs_row("Brighton & Hove Albion", 34.0, "Aston Villa", "H", 2),
             _cs_row("Coventry City", 6.4, "Arsenal", "A", 5),
             _cs_row("Tuntematon FC", 20.0, "Arsenal", "H", 4),
@@ -97,7 +97,7 @@ def test_cs_table_seuraa_fitin_tilaa_eika_kovakoodaa_baselinea(monkeypatch):
                                         "basis": basis, "own_matches": n},
         })
         return bp.cs_table_html({
-            "next_gw": 2, "cs_gw": 2, "season": "2026/27",
+            "next_gw": 2, "cs_gw": 2, "season": "2026/27", "gws": [2, 3, 4, 5, 6, 7],
             "cs_rows": [_cs_row("Coventry City", 36.3, "Hull", "H", 2)]})
 
     oma = _aja("own_thin_fit", 1)

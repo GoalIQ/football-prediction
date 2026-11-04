@@ -271,6 +271,16 @@ def test_fpl_page_fdr_grid_never_shows_a_closed_gameweek(phase):
         # Negatiivinen kontrolli datasta: suljettu kierros OLI artefaktissa,
         # eli testi ei mene lapi vain siksi etta sita ei ollut.
         assert g0 in near and g0 not in c["gws"], (phase, sorted(near), c["gws"])
+    # Sivun luvut ruudukon leveydesta: CS-taulukon "Next N CS%" (otsikko +
+    # johdanto), H2 ja viittauslause sanovat saman N:n kuin sarakkeita on
+    # (julkaisutarkistaja 4.11: "Next 6 CS%" jai viiden ottelun keskiarvon paalle).
+    import re
+    html = b.render_page(c, None)
+    n = len(c["gws"])
+    assert set(re.findall(r"Next (\d+) CS%", html)) == {str(n)}, (phase, n, re.findall(r"Next (\d+) CS%", html))
+    sanat = {4: "four", 5: "five", 6: "six"}
+    if n in sanat:
+        assert f"Fixture difficulty for the next {sanat[n]} gameweeks</h2>" in html, (phase, n)
     for r in c["fdr_rows"]:
         shown = [f for cell in r["cells"] for f in cell]
         assert r["n"] == len(shown), (phase, r["team"], r["n"], len(shown))

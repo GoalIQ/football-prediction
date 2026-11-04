@@ -1698,7 +1698,7 @@ def cs_table_html(c: dict) -> str:
         "<thead><tr>"
         '<th scope="col">Team</th><th scope="col" class="num">Clean sheet %</th>'
         '<th scope="col">Next opponent</th><th scope="col" class="num">FDR</th>'
-        '<th scope="col" class="num">Next 6 CS%</th>'
+        f'<th scope="col" class="num">Next {len(c["gws"])} CS%</th>'
         '<th scope="col" class="num m-hide">Squad turnover</th>'
         "</tr></thead><tbody>"
         + "".join(rows)
@@ -2813,7 +2813,7 @@ GoalIQ Premium, free: one prize, decided by the mini-league table when the seaso
 <h2 id="clean-sheets">Gameweek {c["cs_gw"]} clean sheet probabilities</h2>
 <p>Model clean sheet probability for the {len(c["cs_rows"])} Premier League teams
 with a fixture in Gameweek {c["cs_gw"]} ({c["cs_gw_label"]}). FDR is GoalIQ's model
-fixture difficulty for that match, 1 easiest to 5 hardest. Next 6 CS% averages the
+fixture difficulty for that match, 1 easiest to 5 hardest. Next {grid_n} CS% averages the
 same probability over the run in the grid below, so one good fixture and a good
 run are not the same column.</p>
 {cs_table}

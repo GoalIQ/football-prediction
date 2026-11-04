@@ -94,7 +94,12 @@ def test_vaite_seuraa_kortin_sisaltoa() -> None:
     molemmat = fpl_free_claim(projected_goals=True)
     assert vain_cs != molemmat, (
         "sama vaite molemmille sisalloille -> toinen niista on epatosi")
-    assert "six gameweeks" in vain_cs, vain_cs
+    # 4.11.2026: ei lukumaaraa. /fpl:n ruudukko alkaa avoimesta kierroksesta
+    # ja on 4-6 saraketta levea; pysyva kuva ei seuraa sita (fp #93).
+    assert "gameweeks" in vain_cs, vain_cs
+    for luku in ("one", "two", "three", "four", "five", "six", "seven",
+                 "eight", "nine", "ten", "1", "2", "3", "4", "5", "6"):
+        assert luku not in vain_cs.split(), (vain_cs, luku)
     for sana in HORIZON_OVERCLAIMS:
         assert sana not in molemmat.lower(), (
             f"{molemmat!r} vaittaa horisonttia, mutta kortissa on kaksi lukua "
