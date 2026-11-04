@@ -60,12 +60,11 @@ SALLITTU_FAIL_FAST: dict[str, str] = {
         "Ilman riippuvuuksia yksikaan builderi ei aja.",
     "Unpack frozen 2025/26 FPL archive":
         "Jaadytetty kausiarkisto on kaikkien buildereiden syote.",
-    "Build Phase 0 projections (CS% + FDR)":
-        "Ydinartefakti jonka jokainen alavirran lukija lukee. Kaatuminen voi "
-        "osua kesken kirjoituksen, ja osittainen artefakti EI saa paatya "
-        "committiin (muisti: osittainen data myrkyttaa cachen).",
-    "Build Phase 1 xP projections":
-        "Sama kuin Phase 0: ydinartefakti, osittaista ei saa committoida.",
+    "Restore core artefacts whose builder failed":
+        "Ydinbuilderit (phase0, xP) ovat continue-on-error, joten osittainen "
+        "artefakti voisi muuten paatya committiin (muisti: osittainen data "
+        "myrkyttaa cachen). Jos palautus itse kaatuu, levylla voi olla juuri "
+        "se osittainen tiedosto: silloin pato ON korjaus.",
     "Gate - xP headline gameweek is actionable":
         "Portti ajetaan builderin JALKEEN, eli virheellinen artefakti on jo "
         "levylla. Ainoa asia joka estaa sen julkaisun on juuri se, etta tama "
@@ -185,6 +184,108 @@ def test_poikkeuslistalla_ei_ole_kuolleita_riveja():
                       - nimet)
     assert not kuolleet, (
         "Poikkeuslistalla on nimia joita workflow'ssa ei ole: %s" % (kuolleet,))
+
+
+def _fail_fast_listan_valheet(steps: list[dict]) -> list[str]:
+    nimi_askel = {s.get("name"): s for s in steps}
+    return sorted(n for n in SALLITTU_FAIL_FAST
+                  if n in nimi_askel
+                  and nimi_askel[n].get("continue-on-error") is True)
+
+
+def test_fail_fast_poikkeus_on_oikeasti_fail_fast():
+    """4.11: listalla oli 'Build Phase 0' perusteluineen kaksi kuukautta sen
+    jalkeen kun askel oli muutettu continue-on-erroriksi (6.9), ja xP-rivin
+    perustelu oli 'sama kuin Phase 0'. Vanhentunut perustelu piti xP-askeleen
+    patona, joka jaadytti koko putken Understat-katkossa 1.11-4.11."""
+    valheet = _fail_fast_listan_valheet(_steps(_lataa()))
+    assert not valheet, (
+        "SALLITTU_FAIL_FAST perustelee fail-fastia askeleille jotka ovat "
+        "continue-on-error. Poista rivi: %s" % (valheet,))
+
+
+def test_negatiivinen_kontrolli_vanhentunut_fail_fast_poikkeus_kaataa():
+    steps = copy.deepcopy(_steps(_lataa()))
+    kohde = next(s for s in steps if s.get("name") in SALLITTU_FAIL_FAST
+                 and s.get("continue-on-error") is not True)
+    kohde["continue-on-error"] = True
+    assert kohde["name"] in _fail_fast_listan_valheet(steps)
+
+
+# --- 3. invariantti: kaatunut ydinbuilderi ei jata osittaista artefaktia ----
+# 4.11: phase0 ja xP ovat continue-on-error. Fail-closed-lupaus ("edellinen
+# artefakti jaa voimaan") pitaa silti: palautusaskel vie kaatuneen builderin
+# tiedoston HEADin versioon ennen kuin mikaan muu askel lukee sita.
+
+RESTORE_STEP = "Restore core artefacts whose builder failed"
+YDINBUILDERIT = {
+    "build_phase0": "data/fpl_projections_phase0.json",
+    "build_xp": "data/fpl_xp_projections.json",
+}
+XP_GATE = "Gate - xP headline gameweek is actionable"
+
+
+def _palautuksen_aukot(steps: list[dict]) -> list[str]:
+    nimet = [s.get("name") for s in steps]
+    if RESTORE_STEP not in nimet:
+        return ["palautusaskel puuttuu"]
+    i_restore = nimet.index(RESTORE_STEP)
+    restore = steps[i_restore]
+    ehto = restore.get("if") or ""
+    run = restore.get("run") or ""
+    aukot = []
+    id_paikka = {s.get("id"): i for i, s in enumerate(steps) if s.get("id")}
+    for sid, polku in YDINBUILDERIT.items():
+        if sid not in id_paikka:
+            aukot.append("%s: builderin id puuttuu" % sid)
+            continue
+        if id_paikka[sid] > i_restore:
+            aukot.append("%s: builderi ajetaan palautuksen JALKEEN" % sid)
+        if ("steps.%s.outcome == 'failure'" % sid) not in ehto:
+            aukot.append("%s: palautuksen if-ehto ei kata sita" % sid)
+        if ("steps.%s.outcome" % sid) not in run or polku not in run:
+            aukot.append("%s: palautus ei vie %s:ta HEADiin" % (sid, polku))
+    # Palautuksen on oltava heti builderien jalkeen: yksikaan muu askel ei saa
+    # lukea osittaista tiedostoa sita ennen.
+    viimeinen_builderi = max(id_paikka.get(sid, -1) for sid in YDINBUILDERIT)
+    valissa = [s.get("name") for s in steps[viimeinen_builderi + 1:i_restore]]
+    if valissa:
+        aukot.append("builderin ja palautuksen valissa ajetaan: %s" % valissa)
+    return aukot
+
+
+def test_kaatuneen_ydinbuilderin_artefakti_palautetaan():
+    aukot = _palautuksen_aukot(_steps(_lataa()))
+    assert not aukot, aukot
+
+
+def test_negatiivinen_kontrolli_palautuksen_poisto_kaataa():
+    steps = [s for s in copy.deepcopy(_steps(_lataa()))
+             if s.get("name") != RESTORE_STEP]
+    assert _palautuksen_aukot(steps) == ["palautusaskel puuttuu"]
+
+
+def test_negatiivinen_kontrolli_palautus_ei_kata_xp_ta():
+    steps = copy.deepcopy(_steps(_lataa()))
+    for s in steps:
+        if s.get("name") == RESTORE_STEP:
+            s["run"] = s["run"].replace("data/fpl_xp_projections.json", "data/x.json")
+    assert any("build_xp" in a for a in _palautuksen_aukot(steps))
+
+
+def test_negatiivinen_kontrolli_askel_builderin_ja_palautuksen_valissa():
+    steps = copy.deepcopy(_steps(_lataa()))
+    i = [s.get("name") for s in steps].index(RESTORE_STEP)
+    steps.insert(i, {"name": "Lukija valissa", "run": "true"})
+    assert any("valissa" in a for a in _palautuksen_aukot(steps))
+
+
+def test_xp_portti_ajetaan_vain_tuoretta_tuotosta_vasten():
+    """Kaatuneen builderin jalkeen levylla on HEADin artefakti. Sen
+    otsikkokierros vanhenee deadlinessa, ja fail-fast-portti sita vasten olisi
+    pysyvasti punainen pato (sama vika toisesta ovesta)."""
+    gate = next(s for s in _steps(_lataa()) if s.get("name") == XP_GATE)
+    assert "steps.build_xp.outcome == 'success'" in (gate.get("if") or ""), gate
 
 
 def test_jokaisella_poikkeuksella_on_perustelu():

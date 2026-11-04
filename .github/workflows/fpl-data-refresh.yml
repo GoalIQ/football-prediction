@@ -215,9 +215,34 @@ jobs:
         continue-on-error: true
         run: python -m scripts.build_fpl_phase0
 
+      # 4.11 (PATO, kuudes kerta): understat.com palautti huoltosivun 1.11
+      # ~22:00 UTC alkaen, vaadi_understat kaatoi taman builderin (oikein:
+      # football-data-fallbackia ei julkaista xG-mallina), ja koska askel oli
+      # fail-fast, KAIKKI sen jalkeiset askeleet skipattiin yli 31 h:
+      # GW9-gradaus, GW10-kutsujen kirjaus, freezet, hintavahti, sivujen
+      # paistot, pushit ja commit. /fpl sanoi yha "Gameweek 9 is being played".
+      # Builder saa edelleen kieltaytya kirjoittamasta (fail-closed
+      # artefaktille), mutta se ei ole muiden askelten riippuvuus. Osittainen
+      # artefakti ei voi paatya committiin: seuraava askel palauttaa kaatuneen
+      # builderin tiedoston HEADin versioon ennen kuin mikaan lukee sita.
       - name: Build Phase 1 xP projections
+        id: build_xp
         if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
         run: python -m scripts.build_fpl_xp
+
+      - name: Restore core artefacts whose builder failed
+        if: steps.guard.outputs.proceed == 'true' && (steps.build_phase0.outcome == 'failure' || steps.build_xp.outcome == 'failure')
+        run: |
+          set -e
+          if [ "${{ steps.build_phase0.outcome }}" = "failure" ]; then
+            git checkout HEAD -- data/fpl_projections_phase0.json
+            echo "build_fpl_phase0 kaatui: data/fpl_projections_phase0.json palautettu HEADin versioon"
+          fi
+          if [ "${{ steps.build_xp.outcome }}" = "failure" ]; then
+            git checkout HEAD -- data/fpl_xp_projections.json
+            echo "build_fpl_xp kaatui: data/fpl_xp_projections.json palautettu HEADin versioon"
+          fi
 
       # PORTTI (31.8): otsikkokierros on se johon voi VIELA vaikuttaa.
       # Mitattu livena 31.8: deadline_gameweek 3, xp_dist.gw 2 kaikilla 519
@@ -225,8 +250,12 @@ jobs:
       # tuoretta tuotosta - vanhaa artefaktia vasten se olisi pysyvasti
       # punainen, ja pysyvasti punainen portti tulee ohitetuksi
       # (muisti: pysyvasti-punainen-putki-nielee-regression).
+      # 4.11: siksi portti ajetaan VAIN kun builder onnistui. Kaatuneen
+      # builderin jalkeen levylla on HEADin artefakti, jonka otsikkokierros
+      # vanhenee deadlinessa; sita vasten portti olisi juuri se pysyvasti
+      # punainen pato. Lukijat suojaa load_xp_actionable().
       - name: Gate - xP headline gameweek is actionable
-        if: steps.guard.outputs.proceed == 'true'
+        if: steps.guard.outputs.proceed == 'true' && steps.build_xp.outcome == 'success'
         run: python -m scripts.check_xp_headline_gw
 
       # 14.8: NAMA KAKSI PUUTTUIVAT CRONISTA JA JAIVAT 25.7:N TILAAN.
@@ -726,6 +755,7 @@ jobs:
         run: |
           fail=0
           [ "${{ steps.build_phase0.outcome }}" = "failure" ] && { echo "::error::build_fpl_phase0 FAILAA (sanity-gate; fpl_projections_phase0.json jaa vanhaksi, /fpl CS/FDR ei paivity) - PHASE0-SANITY-GATE-RHO"; fail=1; }
+          [ "${{ steps.build_xp.outcome }}" = "failure" ] && { echo "::error::build_fpl_xp FAILAA (fpl_xp_projections.json palautettu HEADin versioon ja jaa vanhaksi; muu data pushattu). Lue askeleen oma viesti: 'ei ole kokonaan Understatia' = understat.com ei vastaa, ei koodivika"; fail=1; }
           [ "${{ steps.build_cs_fdr.outcome }}" = "failure" ] && { echo "::error::build_fpl_cs_fdr FAILAA (sanity-gate tai kaatuminen; fpl_cs_fdr.json jaa vanhaksi, wildcard lukee sita)"; fail=1; }
           [ "${{ steps.build_stats.outcome }}" = "failure" ] && { echo "::error::build_fpl_stats FAILAA (stats-sivun taulukko jaa vanhaksi)"; fail=1; }
           [ "${{ steps.bake_player_gw.outcome }}" = "failure" ] && { echo "::error::build_fpl_player_gw FAILAA (stats-sivun GW-ikkuna jaa vanhaksi)"; fail=1; }
