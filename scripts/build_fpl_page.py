@@ -392,14 +392,17 @@ def free_window_block(now=None) -> str:
         f'which is under \u20ac{PC.season_monthly_cap()} a month, or '
         + hinta_loppu)
     # Ikkuna kiinni: ei ilmaislupausta, CTA takaisin ostoon, hinta preesensissa.
+    # WP6 (4.11.2026): vuosipaketti on kertamaksu. "under \u20ac2.10 a month"
+    # (25/12) olisi passille epatosi: marraskuusta 30.5.2027:aan se on noin
+    # 3,6 \u20ac/kk. Sanat src.price_copy-lukijasta.
     kiinni = (
         f'<div class="cta-row">\n'
         f'  <a class="cta" href="{PRO_TAB_URL}" data-cta="fpl-premium">'
         f'Get Premium</a>\n'
         f'</div>\n'
-        f'<p class="price-note">\u20ac{PC.SEASON} a year, which is under '
-        f'\u20ac{PC.season_monthly_cap()} a month, or '
-        + hinta_loppu)
+        f'<p class="price-note">{PC.season_cta()}, one payment until '
+        f'{PC.pass_end()}, or \u20ac{PC.MONTHLY} a month that you can cancel '
+        f'anytime. {PC.COVERAGE} 30-day money back on web purchases.</p>')
     return self_closing_block("FREE-UPSELL", kiinni, auki, now)
 
 
@@ -954,7 +957,7 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
                 "Yes. GoalIQ Premium at pro.goaliq.app adds expected points "
                 "(xP) per player for the coming gameweeks, a captain ranker and per-gameweek "
                 "breakdowns, from the same match model as this page. "
-                f"{PC.MONTHLY} EUR per month or {PC.SEASON} EUR per year, and "
+                f"{PC.MONTHLY} EUR per month, or {PC.season_once('EUR', before=False)}, and "
                 "one account unlocks premium on the web, iOS and Android."
             ),
         ),
@@ -1979,7 +1982,8 @@ def jsonld_blocks(c: dict, faq: list[tuple[str, str]]) -> str:
             {"@type": "Offer", "name": "GoalIQ Premium on the web, monthly",
              "price": PC.MONTHLY, "priceCurrency": "EUR",
              "url": f"{PRO_URL}/checkout?plan=monthly"},
-            {"@type": "Offer", "name": "GoalIQ Premium on the web, season (yearly)",
+            {"@type": "Offer", "name": "GoalIQ Premium on the web, season pass "
+                                       f"(one payment, until {PC.pass_end()})",
              "price": PC.SEASON, "priceCurrency": "EUR",
              "url": PRO_CHECKOUT_SEASON_URL},
         ],
@@ -2858,8 +2862,7 @@ log, match by match with every miss included, is on the
 points (xP) for every player in the projection, a captain ranker, transfer
 suggestions you can apply to your planned squad, a six-gameweek planner and
 the full DefCon leaderboard, from the same match model as this page.
-{PC.MONTHLY} EUR a month or {PC.SEASON} EUR a year, one subscription on web,
-iOS and Android. The rating for your squad, the model's captain pick and the
+The rating for your squad, the model's captain pick and the
 price watch list stay free.</p>
 {free_window_block()}
 </aside>

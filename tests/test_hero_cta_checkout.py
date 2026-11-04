@@ -36,8 +36,8 @@ def test_generaattori_kirjoittaa_kassaosoitteen_ja_saman_tekstin():
     nappi = FW.hero_cta_closed_html()
     assert f'href="{FW.season_checkout_url()}"' in nappi
     assert "tab=premium" not in nappi
-    # Nakyva teksti ja hinta ennallaan.
-    assert "Get Premium &middot; &euro;25 a year &#9656;</a>" in nappi
+    # WP6 (4.11.2026): vuosipaketti on kertamaksu -> src.price_copy.season_cta.
+    assert "Get Premium &middot; &euro;25 for the season &#9656;</a>" in nappi
     assert 'data-cta="hero-premium"' in nappi
 
 

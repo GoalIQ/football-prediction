@@ -428,8 +428,8 @@ FOOTER = (
     '<a href="https://play.google.com/store/apps/details?id=com.veikkoville.goaliq">'
     "Google Play</a> and the "
     '<a href="https://apps.apple.com/app/id6780047163">App Store</a>. '
-    f"Premium is {PC.MONTHLY} €/month or {PC.SEASON} €/year. "
-    "One subscription on web, iOS "
+    f"Premium is {PC.MONTHLY} €/month, or {PC.season_once(before=False)}. "
+    "One Premium account on web, iOS "
     "and Android.<br>" + DISCLAIMER + "</footer>\n"
 )
 
@@ -958,7 +958,7 @@ def _scoreline_lock(e: dict, played: bool = False) -> str:
             + "</div>"
         )
     button = (f'<a class="btn solid" href="{CHECKOUT_URL}" data-cta="match-page-premium">'
-              f"Start Premium, {PC.season()} a year</a>")
+              f"Start Premium, {PC.season_cta()}</a>")
     if played:
         return (
             _secbar("Scorelines", "teal")

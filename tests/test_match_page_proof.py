@@ -184,7 +184,9 @@ def test_lukon_nappi_vie_olemassa_olevaan_kassaan_ja_hinta_yhdesta_lahteesta():
     html = bpp.render_match_page("PL", _entry(2), NOW)
     napit = re.findall(r'<a class="btn solid" href="([^"]+)"', html)
     assert napit == ["https://pro.goaliq.app/checkout?plan=season"]
-    assert f"Start Premium, {PC.season()} a year" in html
+    # WP6 (4.11.2026): vuosipaketti on kertamaksu -> PC.season_cta().
+    assert f"Start Premium, {PC.season_cta()}" in html
+    assert "a year" not in html.split("Start Premium", 1)[1][:60]
 
 
 def test_sitemap_ja_sivut_eivat_kanna_premium_kenttia(tmp_path, monkeypatch):

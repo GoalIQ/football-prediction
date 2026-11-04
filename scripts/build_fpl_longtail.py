@@ -107,8 +107,8 @@ UPSELL = (
     'pre-match-logged track record. The full toolkit (captain ranker, '
     'transfer planner, chip timing) is <a '
     'href="https://pro.goaliq.app/?tab=premium">GoalIQ Premium</a>: '
-    f'{PC.MONTHLY} €/month or {PC.SEASON} €/year. '
-    'One subscription on web, iOS and Android.</div>'
+    f'{PC.MONTHLY} €/month, or {PC.season_once(before=False)}. '
+    'One Premium account on web, iOS and Android.</div>'
 )
 
 # 24.7 brand redesign: sama ilme kuin fpl.html (Space Grotesk, magenta-bar,
