@@ -1,23 +1,23 @@
 {
-  "updated_at": "2026-11-04T18:54:09+00:00",
+  "updated_at": "2026-11-04T21:16:47+00:00",
   "logged_total": 3334,
   "logged_with_timestamp": 3286,
-  "pending": 2237,
+  "pending": 2235,
   "voided": 57,
   "all_time": {
-    "n": 1040,
-    "correct_1x2": 557,
-    "pct_1x2": 0.5356,
+    "n": 1042,
+    "correct_1x2": 558,
+    "pct_1x2": 0.5355,
     "draw_n": 247,
-    "pct_draw": 0.2375,
-    "decisive_n": 793,
-    "decisive_correct": 557,
-    "pct_decisive": 0.7024,
-    "exact_n": 1040,
+    "pct_draw": 0.237,
+    "decisive_n": 795,
+    "decisive_correct": 558,
+    "pct_decisive": 0.7019,
+    "exact_n": 1042,
     "exact_correct": 117,
-    "pct_exact": 0.1125,
-    "brier": 0.5811,
-    "brier_n": 1040
+    "pct_exact": 0.1123,
+    "brier": 0.5813,
+    "brier_n": 1042
   },
   "rolling": {
     "n": 100,
@@ -31,7 +31,7 @@
     "exact_n": 100,
     "exact_correct": 7,
     "pct_exact": 0.07,
-    "brier": 0.5261,
+    "brier": 0.5278,
     "brier_n": 100,
     "window": 100
   },
@@ -67,19 +67,19 @@
       "brier_n": 150
     },
     "CL": {
-      "n": 54,
-      "correct_1x2": 37,
-      "pct_1x2": 0.6852,
+      "n": 56,
+      "correct_1x2": 38,
+      "pct_1x2": 0.6786,
       "draw_n": 6,
-      "pct_draw": 0.1111,
-      "decisive_n": 48,
-      "decisive_correct": 37,
-      "pct_decisive": 0.7708,
-      "exact_n": 54,
+      "pct_draw": 0.1071,
+      "decisive_n": 50,
+      "decisive_correct": 38,
+      "pct_decisive": 0.76,
+      "exact_n": 56,
       "exact_correct": 3,
-      "pct_exact": 0.0556,
-      "brier": 0.4881,
-      "brier_n": 54
+      "pct_exact": 0.0536,
+      "brier": 0.4947,
+      "brier_n": 56
     },
     "DED": {
       "n": 88,
@@ -204,19 +204,19 @@
   },
   "by_model": {
     "club": {
-      "n": 984,
-      "correct_1x2": 522,
-      "pct_1x2": 0.5305,
+      "n": 986,
+      "correct_1x2": 523,
+      "pct_1x2": 0.5304,
       "draw_n": 232,
-      "pct_draw": 0.2358,
-      "decisive_n": 752,
-      "decisive_correct": 522,
-      "pct_decisive": 0.6941,
-      "exact_n": 984,
+      "pct_draw": 0.2353,
+      "decisive_n": 754,
+      "decisive_correct": 523,
+      "pct_decisive": 0.6936,
+      "exact_n": 986,
       "exact_correct": 106,
-      "pct_exact": 0.1077,
-      "brier": 0.5862,
-      "brier_n": 984,
+      "pct_exact": 0.1075,
+      "brier": 0.5864,
+      "brier_n": 986,
       "logged_with_timestamp": 3230
     },
     "national": {
@@ -239,19 +239,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 902,
-      "correct_1x2": 496,
-      "pct_1x2": 0.5499,
+      "n": 904,
+      "correct_1x2": 497,
+      "pct_1x2": 0.5498,
       "draw_n": 197,
-      "pct_draw": 0.2184,
-      "decisive_n": 705,
-      "decisive_correct": 496,
-      "pct_decisive": 0.7035,
-      "exact_n": 902,
+      "pct_draw": 0.2179,
+      "decisive_n": 707,
+      "decisive_correct": 497,
+      "pct_decisive": 0.703,
+      "exact_n": 904,
       "exact_correct": 96,
-      "pct_exact": 0.1064,
-      "brier": 0.5762,
-      "brier_n": 902
+      "pct_exact": 0.1062,
+      "brier": 0.5764,
+      "brier_n": 904
     },
     "stale": {
       "n": 138,
@@ -293,10 +293,10 @@
       "n": 76
     },
     {
-      "bin_mid": 0.1616,
-      "predicted": 0.1616,
-      "actual": 0.1432,
-      "n": 426
+      "bin_mid": 0.1615,
+      "predicted": 0.1615,
+      "actual": 0.1442,
+      "n": 430
     },
     {
       "bin_mid": 0.2537,
@@ -323,10 +323,10 @@
       "n": 247
     },
     {
-      "bin_mid": 0.6476,
-      "predicted": 0.6476,
-      "actual": 0.7183,
-      "n": 142
+      "bin_mid": 0.6482,
+      "predicted": 0.6482,
+      "actual": 0.7153,
+      "n": 144
     },
     {
       "bin_mid": 0.7416,
@@ -348,6 +348,36 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-11-04",
+      "home_team": "Fenerbahçe SK",
+      "away_team": "Liverpool FC",
+      "predicted_winner": "away",
+      "p_winner": 0.6866,
+      "lead_h": 1.9,
+      "most_likely_score": "1-2",
+      "actual_score": "3-2",
+      "actual_outcome": "home",
+      "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-11-04",
+      "home_team": "PAE AEK",
+      "away_team": "Real Madrid CF",
+      "predicted_winner": "away",
+      "p_winner": 0.6965,
+      "lead_h": 1.9,
+      "most_likely_score": "1-2",
+      "actual_score": "2-3",
+      "actual_outcome": "away",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-11-04",
       "home_team": "Internacional",
@@ -612,36 +642,6 @@
       "lead_h": 0.3,
       "most_likely_score": "1-1",
       "actual_score": "0-4",
-      "actual_outcome": "away",
-      "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-11-03",
-      "home_team": "Galatasaray SK",
-      "away_team": "VfB Stuttgart",
-      "predicted_winner": "home",
-      "p_winner": 0.4598,
-      "lead_h": 0.7,
-      "most_likely_score": "2-1",
-      "actual_score": "2-0",
-      "actual_outcome": "home",
-      "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-11-03",
-      "home_team": "FK Shakhtar Donetsk",
-      "away_team": "Sporting Clube de Portugal",
-      "predicted_winner": "away",
-      "p_winner": 0.3705,
-      "lead_h": 0.7,
-      "most_likely_score": "1-1",
-      "actual_score": "0-1",
       "actual_outcome": "away",
       "hit_1x2": true,
       "exact_hit": false,
