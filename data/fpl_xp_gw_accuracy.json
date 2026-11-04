@@ -1145,6 +1145,174 @@
      "goaliq_minus_fpl": 0.477
     }
    }
+  },
+  {
+   "gw": 9,
+   "graded_at": "2026-11-04T06:29:59Z",
+   "frozen_at": "2026-10-30T07:00:51Z",
+   "n": 489,
+   "mae": 1.467,
+   "bias": -0.123,
+   "mae_by_pos": {
+    "DEF": 1.775,
+    "FWD": 1.674,
+    "GKP": 1.467,
+    "MID": 1.211
+   },
+   "by_class": {
+    "dnp": {
+     "n": 184,
+     "mae": 0.953,
+     "bias": -0.953
+    },
+    "blank": {
+     "n": 192,
+     "mae": 1.129,
+     "bias": -0.993
+    },
+    "ticker": {
+     "n": 106,
+     "mae": 2.525,
+     "bias": 2.343
+    },
+    "haul": {
+     "n": 7,
+     "mae": 8.217,
+     "bias": 8.217
+    }
+   },
+   "by_pos_stats": {
+    "DEF": {
+     "n": 154,
+     "mae": 1.775,
+     "bias": 0.104
+    },
+    "FWD": {
+     "n": 51,
+     "mae": 1.674,
+     "bias": -0.14
+    },
+    "GKP": {
+     "n": 57,
+     "mae": 1.467,
+     "bias": -0.491
+    },
+    "MID": {
+     "n": 227,
+     "mae": 1.211,
+     "bias": -0.181
+    }
+   },
+   "comparison": {
+    "n": 489,
+    "predictors": [
+     "goaliq",
+     "fpl_ep_next",
+     "form_baseline"
+    ],
+    "mae": {
+     "goaliq": 1.467,
+     "fpl_ep_next": 1.383,
+     "form_baseline": 1.421
+    },
+    "by_class": {
+     "dnp": {
+      "n": 184,
+      "mae": {
+       "goaliq": 0.953,
+       "fpl_ep_next": 0.511,
+       "form_baseline": 0.583
+      }
+     },
+     "blank": {
+      "n": 192,
+      "mae": {
+       "goaliq": 1.129,
+       "fpl_ep_next": 1.298,
+       "form_baseline": 1.337
+      }
+     },
+     "ticker": {
+      "n": 106,
+      "mae": {
+       "goaliq": 2.525,
+       "fpl_ep_next": 2.681,
+       "form_baseline": 2.659
+      }
+     },
+     "haul": {
+      "n": 7,
+      "mae": {
+       "goaliq": 8.217,
+       "fpl_ep_next": 6.986,
+       "form_baseline": 6.986
+      }
+     }
+    },
+    "by_pos": {
+     "DEF": {
+      "n": 154,
+      "mae": {
+       "goaliq": 1.775,
+       "fpl_ep_next": 1.681,
+       "form_baseline": 1.738
+      }
+     },
+     "FWD": {
+      "n": 51,
+      "mae": {
+       "goaliq": 1.674,
+       "fpl_ep_next": 1.596,
+       "form_baseline": 1.62
+      }
+     },
+     "GKP": {
+      "n": 57,
+      "mae": {
+       "goaliq": 1.467,
+       "fpl_ep_next": 0.919,
+       "form_baseline": 0.902
+      }
+     },
+     "MID": {
+      "n": 227,
+      "mae": {
+       "goaliq": 1.211,
+       "fpl_ep_next": 1.251,
+       "form_baseline": 1.292
+      }
+     }
+    }
+   },
+   "vs_fpl_ep_next": {
+    "method_code": "fpl_xp_gw_accuracy.vs_fpl_ep_next.v1",
+    "n_missing_ep_next": 0,
+    "n_missing_actual": 0,
+    "all": {
+     "n": 489,
+     "mae": {
+      "goaliq": 1.467,
+      "fpl_ep_next": 1.383
+     },
+     "goaliq_minus_fpl": 0.084
+    },
+    "played": {
+     "n": 305,
+     "mae": {
+      "goaliq": 1.777,
+      "fpl_ep_next": 1.91
+     },
+     "goaliq_minus_fpl": -0.132
+    },
+    "did_not_play": {
+     "n": 184,
+     "mae": {
+      "goaliq": 0.953,
+      "fpl_ep_next": 0.511
+     },
+     "goaliq_minus_fpl": 0.441
+    }
+   }
   }
  ]
 }
