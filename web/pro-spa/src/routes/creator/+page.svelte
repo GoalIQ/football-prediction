@@ -209,10 +209,10 @@
 				{:else}
 					<b>{report.stamped}</b>
 					<span class="muted">
-						Subscriptions carrying your code. Your commission is 30 percent of each payment
-						they make, so this isn't the euro figure, it's the number of subscriptions
-						behind it. A reader counts here whether they typed your code at checkout or
-						came through your link and paid full price later.
+						Subscriptions carrying your code. The commission on them is the rate we've agreed
+						with you, and if we haven't agreed one yet, we will before anything is paid. A
+						reader counts here whether they typed your code at checkout or came through your
+						link and paid full price later.
 					</span>
 				{/if}
 			</div>
