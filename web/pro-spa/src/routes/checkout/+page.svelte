@@ -1,7 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { PLANS, isAlreadyPremiumMessage, type PlanKey } from '$lib/billing';
-	import { openCheckout, webCheckoutBlocked } from '$lib/pricing.svelte';
+	import { isAlreadyPremiumMessage, type PlanKey } from '$lib/billing';
+	import {
+		loadPricing,
+		openCheckout,
+		planLabel,
+		seasonPassEnd,
+		webCheckoutBlocked
+	} from '$lib/pricing.svelte';
+	import { planTerms } from '$lib/seasonPass';
 	import Provenance from '$lib/components/Provenance.svelte';
 	import StoreOnlyNotice from '$lib/components/StoreOnlyNotice.svelte';
 
@@ -28,6 +35,9 @@
 
 	onMount(() => {
 		plan = resolvePlan();
+		// WP6 (4.11.2026): ehtolause ja napin teksti lukevat saman hintavastauksen
+		// kuin muut ostopinnat ($lib/seasonPass). Fail-soft: ilman vastausta tilausteksti.
+		void loadPricing();
 		void go('checkout_route');
 	});
 </script>
@@ -35,7 +45,7 @@
 <div class="shell">
 	<h2>GoalIQ Premium</h2>
 	{#if busy}
-		<p>Opening secure checkout ({PLANS[plan].label}) via Stripe…</p>
+		<p>Opening secure checkout ({planLabel(plan)}) via Stripe…</p>
 		<!-- #102: sama rehellinen muotoilu kuin PremiumPreview (ei em-dashia) -->
 		<p class="muted">
 			Skip the signup: pay with Stripe and we'll set up your account and email you a
@@ -55,8 +65,7 @@
 		{#if webCheckoutBlocked()}
 			<a href="/">Back to GoalIQ on the web</a>
 		{:else}
-			<a href="/">Back to GoalIQ Premium on the web</a> · Cancel anytime from the Account menu. One
-			subscription covers web, iOS and Android.
+			<a href="/">Back to GoalIQ Premium on the web</a> · {planTerms(seasonPassEnd())}
 		{/if}
 	</p>
 </div>

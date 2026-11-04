@@ -164,7 +164,8 @@ describe('LockedToolPreview: hinta ja ostonappi samassa laatikossa, kauppa toiss
 		const card = m.indexOf('<div class="lock-card">');
 		const table = m.indexOf('<table>');
 		const ghost = m.indexOf('<div class="ghost"');
-		const plans = m.indexOf('{#each Object.entries(PLANS)');
+		// WP6 (4.11.2026): silmukka kay avaimet, vihje tulee planHint-lukijasta.
+		const plans = m.indexOf('{#each Object.keys(PLANS)');
 		const store = m.indexOf('class="app-link"');
 		expect(card).toBeGreaterThan(-1);
 		expect(card < table && table < ghost && ghost < plans && plans < store).toBe(true);

@@ -13,6 +13,7 @@ import { API_BASE } from './config';
 import { accessToken } from './auth.svelte';
 import { capture, captureBeforeUnload } from './analytics';
 import { REGION_STORE_ONLY, isStoreOnlyBody } from './region';
+import { seasonHint, seasonLabel, seasonPeriodSuffix } from './seasonPass';
 
 /** Palvelimen esto (api/main.py SEASON_PASS_ALREADY_PREMIUM_CODE): passia ei
  *  myyda tilille jolla on jo Premium. Portti: billing.gate.test.ts. */
@@ -35,8 +36,11 @@ export function isAlreadyPremiumMessage(msg: string | null): boolean {
  *  aikaisempi, yleison oma kello, ja tosi joka aikavyohykkeella.
  *  `price` on ja pysyy LISTAhinta: se menee analytiikkaan (upgrade_tapped,
  *  checkout_opened) ja sen vaihtaminen katkaisisi vertailun vanhaan dataan. */
+// WP6 (4.11.2026): vuosipaketin teksti tulee $lib/seasonPass-lukijasta. Tama
+// on haun epaonnistumisen oletus, joten se on tilausteksti (end = null):
+// ilman palvelimen vastausta ei tiedeta myydaanko passia.
 export const PLANS = {
-	season: { label: 'Season pass: 25 € a year', price: 25.0, hint: 'One subscription covers web, iOS and Android. Cancel anytime from the Account menu.' },
+	season: { label: seasonLabel('25 €', null), price: 25.0, hint: seasonHint(null) },
 	monthly: { label: 'Monthly: 3.99 €/mo', price: 3.99, hint: 'Flexible, try it for a month' }
 } as const;
 
@@ -47,9 +51,14 @@ export type PlanKey = keyof typeof PLANS;
  * ("about" pitää ne rehellisinä, checkout näyttää aina tarkan summan).
  * Kurssit päivitetään käsin harvakseltaan — älä lisää FX-API-riippuvuutta. */
 const APPROX: Record<'GBP' | 'USD', Record<PlanKey, string>> = {
-	GBP: { season: 'about £21/year', monthly: 'about £3.40/mo' },
-	USD: { season: 'about $27/year', monthly: 'about $4.40/mo' }
+	GBP: { season: 'about £21', monthly: 'about £3.40' },
+	USD: { season: 'about $27', monthly: 'about $4.40' }
 };
+
+/** WP6 (4.11.2026): jakso on oma osansa, koska passi ei ole "/year". */
+function approxSuffix(plan: PlanKey, pass: boolean): string {
+	return plan === 'monthly' ? '/mo' : seasonPeriodSuffix(pass);
+}
 
 function localCurrency(): 'GBP' | 'USD' | null {
 	if (typeof navigator === 'undefined') return null;
@@ -64,10 +73,12 @@ function localCurrency(): 'GBP' | 'USD' | null {
 	return null;
 }
 
-/** Paikallinen likiarvo plan-riville, tai null (= pelkkä EUR riittää). */
-export function planApprox(plan: PlanKey): string | null {
+/** Paikallinen likiarvo plan-riville, tai null (= pelkkä EUR riittää).
+ *  `pass` = `seasonPassEnd() !== null` ($lib/pricing.svelte): passi on
+ *  kertamaksu, joten vuosinapin likiarvo ei saa sanoa "/year". */
+export function planApprox(plan: PlanKey, pass = false): string | null {
 	const c = localCurrency();
-	return c ? APPROX[c][plan] : null;
+	return c ? `${APPROX[c][plan]}${approxSuffix(plan, pass)}` : null;
 }
 
 /** Vie Stripe Checkoutiin. Kirjautunut → authed endpoint (osto linkittyy

@@ -25,7 +25,9 @@
 	import {
 		loadPricing,
 		openCheckout,
+		planHint,
 		planLabel,
+		seasonPassEnd,
 		showApprox,
 		webCheckoutBlocked
 	} from '$lib/pricing.svelte';
@@ -152,8 +154,8 @@
 				<StoreOnlyNotice source={`pro_web_lock_${tool.slug}`} />
 			{:else}
 			<div class="plans">
-				{#each Object.entries(PLANS) as [key, plan] (key)}
-					{@const approx = showApprox(key as PlanKey) ? planApprox(key as PlanKey) : null}
+				{#each Object.keys(PLANS) as key (key)}
+					{@const approx = showApprox(key as PlanKey) ? planApprox(key as PlanKey, seasonPassEnd() !== null) : null}
 					<!-- Nappi ennen vihjetta: mitattu 390x844, vihje napin ylapuolella
 					     vei ensimmaisen ostonapin ruudun alle Players-ryhmassa. -->
 					<div class="plan">
@@ -165,7 +167,7 @@
 						>
 							{busy === key ? 'Opening checkout…' : `Get Premium: ${planLabel(key as PlanKey)}`}
 						</button>
-						<span class="muted">{plan.hint}{approx ? ` · ${approx}` : ''}</span>
+						<span class="muted">{planHint(key as PlanKey)}{approx ? ` · ${approx}` : ''}</span>
 					</div>
 				{/each}
 			</div>
