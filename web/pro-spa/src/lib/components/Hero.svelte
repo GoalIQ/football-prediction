@@ -20,6 +20,7 @@
 	import { auth, sendPasswordReset, signOut } from '$lib/auth.svelte';
 	import { capture } from '$lib/analytics';
 	import { fetchFantasy, openCustomerPortal } from '$lib/api';
+	import { isPassPlan, passHolderNote } from '$lib/seasonPass';
 	import { actionableGameweek, checkedText, formatDeadline, parseGeneratedAt } from '$lib/gameweek';
 	import { activeNav, gameOf, navItems } from '$lib/tools';
 	import SetPassword from './SetPassword.svelte';
@@ -104,8 +105,15 @@
 	let menuOpen = $state(false);
 	let portalBusy = $state(false);
 	let portalNotice = $state<string | null>(null);
+	// WP6 (4.11.2026): passi on web-rivi mutta ei tilaus. Stripessa ei ole
+	// mitaan peruttavaa, joten "Manage subscription" -nappi ei kuulu sille.
+	const passHolder = $derived(isPassPlan(auth.sub?.plan));
 	const webSub = $derived(
-		!!auth.sub && auth.sub.plan !== 'gw1-3-free' && auth.sub.plan !== 'app' && auth.sub.plan !== 'comp'
+		!!auth.sub &&
+			auth.sub.plan !== 'gw1-3-free' &&
+			auth.sub.plan !== 'app' &&
+			auth.sub.plan !== 'comp' &&
+			!passHolder
 	);
 	async function manageSubscription() {
 		if (portalBusy) return;
@@ -242,6 +250,9 @@
 						</div>
 						{#if auth.sub?.plan === 'comp'}
 							<p class="menu-notice">Premium on this account was granted directly, so there is no subscription to cancel. Thank you for the support.</p>
+						{/if}
+						{#if passHolder}
+							<p class="menu-notice">{passHolderNote(auth.sub?.current_period_end)}</p>
 						{/if}
 						{#if webSub}
 							<button type="button" class="linklike" disabled={portalBusy} onclick={() => void manageSubscription()}>

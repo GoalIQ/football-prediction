@@ -5,12 +5,15 @@
 	import {
 		loadPricing,
 		openCheckout,
+		planHint,
 		planLabel,
+		seasonPassEnd,
 		showApprox,
 		webCheckoutBlocked
 	} from '$lib/pricing.svelte';
 	import StoreOnlyNotice from './StoreOnlyNotice.svelte';
 	import { PAYWALL_TOP } from '$lib/paywallBullets';
+	import { paywallTerms } from '$lib/seasonPass';
 	// 20.9: hinta palvelimelta, ks. pricing.svelte.ts. Haku on kertaluontoinen
 	// ja fail-soft: jos se ei onnistu, PLANS jaa voimaan.
 	$effect(() => { void loadPricing(); });
@@ -58,12 +61,12 @@
 	<StoreOnlyNotice source="pro_web_paywall" />
 {:else}
 <div class="plans">
-	{#each Object.entries(PLANS) as [key, plan] (key)}
-		{@const approx = showApprox(key as PlanKey) ? planApprox(key as PlanKey) : null}
+	{#each Object.keys(PLANS) as key (key)}
+		{@const approx = showApprox(key as PlanKey) ? planApprox(key as PlanKey, seasonPassEnd() !== null) : null}
 		<div class="plan">
 			<!-- 31.7: UK/US-kävijälle valuuttalikiarvo (Adaptive Pricing hoitaa
 			     checkoutin tarkan summan kävijän valuutassa) -->
-			<span class="muted">{plan.hint}{approx ? ` · ${approx}` : ''}</span>
+			<span class="muted">{planHint(key as PlanKey)}{approx ? ` · ${approx}` : ''}</span>
 			<button
 				class={key === 'season' ? 'primary' : 'secondary'}
 				disabled={busy !== null}
@@ -119,10 +122,8 @@
 <!-- 23.9: kauppailmoitus sanoo jo saman tilin ja app-oston asian; nama kaksi
      rivia koskevat verkko-ostoa. -->
 {#if !webCheckoutBlocked()}
-<p class="muted">
-	Both plans renew until you cancel, and you can cancel from the Account menu. One subscription
-	covers web, iOS and Android.
-</p>
+<!-- WP6 (4.11.2026): ehto $lib/seasonPass-lukijasta, sama hintavastaus kuin napeilla. -->
+<p class="muted">{paywallTerms(seasonPassEnd())}</p>
 <p class="muted">
 	Already subscribed in the GoalIQ app? Sign in with the same account and Premium is already
 	active here.

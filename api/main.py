@@ -407,6 +407,26 @@ def _affiliate_code_from_session(obj: dict) -> Optional[tuple[str, str]]:
         if code:
             return code, "promo"
 
+    # 2b. KERTAMAKSUN FALLBACK (WP6, julkaisutarkistaja 4.11). Passilla ei ole
+    #     tilausta, joten kohta 2 ei auta. Jos webhookin payload ei kanna
+    #     `discounts`ia, sama tieto on session `total_details.breakdown`issa,
+    #     joka tulee vain laajennettuna haussa. Fail-soft kuten kohta 2.
+    sess_id = obj.get("id")
+    if obj.get("mode") == "payment" and isinstance(sess_id, str) and sess_id:
+        try:
+            sess = stripe.checkout.Session.retrieve(
+                sess_id, expand=["total_details.breakdown"])
+        except Exception as e:
+            print(f"[affiliate] Session.retrieve epäonnistui {sess_id}: {e}")
+            sess = None
+        tot = _stripe_field(sess, "total_details") or {}
+        brk = _stripe_field(tot, "breakdown") or {}
+        for d in (_stripe_field(brk, "discounts") or []):
+            disc = _stripe_field(d, "discount") or {}
+            code = _promo_code_string(_stripe_field(disc, "promotion_code"))
+            if code:
+                return code, "promo"
+
     # 3. REF-FALLBACK (16.8). Kaksi ensimmäistä polkua lukevat KÄYTETYN
     #    promokoodin, eli ne toimivat vain jos asiakas maksoi alennuksella.
     #
@@ -3444,12 +3464,41 @@ def _affiliate_tally(only: Optional[str] = None, fresh: bool = False) -> dict:
     except Exception as e:
         print(f"[affiliate-report] Stripe-haku epaonnistui: {e}")
 
+    # 3) Kausipassin kertamaksut (WP6, Villen paatos 4.11: provisio 30 %
+    #    myos passista). Passi ei ole tilaus, joten kohta 2 ei nae sita:
+    #    webhook leimaa koodin PaymentIntentin metadataan
+    #    (`_stamp_affiliate_payment`), ja checkout kirjoittaa samaan
+    #    metadataan `plan=season_pass_2026_27`. Hyvitetty maksu (koko summa)
+    #    lasketaan erikseen, koska provisio ei koske sita.
+    #    Oma lahdelippu: passien lukuvirhe ei saa nollata tilauslukua.
+    passes_ok = False
+    try:
+        pis = stripe.PaymentIntent.search(
+            query=(f"metadata['plan']:'{season_pass.SEASON_PASS_ID}' "
+                   "AND status:'succeeded'"),
+            limit=100, expand=["data.latest_charge"])
+        for pi in pis.auto_paging_iter():
+            meta = _stripe_field(pi, "metadata")
+            code = _clean_affiliate_ref(_stripe_field(meta, "affiliate"))
+            bucket = _bucket(code) if code else None
+            if bucket is None:
+                continue
+            bucket["passes"] = bucket.get("passes", 0) + 1
+            charge = _stripe_field(pi, "latest_charge")
+            if charge is not None and not isinstance(charge, str) \
+                    and _stripe_field(charge, "refunded"):
+                bucket["passes_refunded"] = bucket.get("passes_refunded", 0) + 1
+        passes_ok = True
+    except Exception as e:
+        print(f"[affiliate-report] passihaku (PaymentIntent) epaonnistui: {e}")
+
     result = {
         "codes": out,
         "total_accounts_scanned": total_users,
-        "sources_ok": {"supabase": supa_ok, "stripe": stripe_ok},
+        "sources_ok": {"supabase": supa_ok, "stripe": stripe_ok,
+                       "stripe_passes": passes_ok},
     }
-    if supa_ok and stripe_ok:
+    if supa_ok and stripe_ok and passes_ok:
         with _AFFILIATE_TALLY_LOCK:
             _AFFILIATE_TALLY_CACHE[key] = (now, result)
     return result
@@ -3476,6 +3525,10 @@ def affiliate_report(request: Request):
                  ainoa luku joka liikkuu, koska kukaan ei maksa.
       stamped  = Stripe-tilaukset joilla metadata.affiliate == koodi. Tama on
                  se luku josta provisio lasketaan.
+      passes   = kausipassin kertamaksut (PaymentIntent, metadata.plan ==
+                 season_pass_2026_27 ja metadata.affiliate == koodi), 4.11.2026
+                 alkaen; passes_refunded = niista kokonaan hyvitetyt (ei
+                 provisiota). Oma lahdelippu sources_ok.stripe_passes.
 
     🔴 signups on SYSTEMAATTISESTI ALAKANTTIIN eika sita saa esittaa
     "linkin klikkauksina". Ref luetaan selaimen localStoragesta
@@ -4013,6 +4066,7 @@ def creator_report(request: Request):
     counts = tally["codes"].get(code) or {}
     supa_ok = tally["sources_ok"]["supabase"]
     stripe_ok = tally["sources_ok"]["stripe"]
+    passes_ok = tally["sources_ok"].get("stripe_passes", False)
 
     return {
         "code": code,
@@ -4020,6 +4074,10 @@ def creator_report(request: Request):
         "signups": (counts.get("signups", 0) if supa_ok else None),
         "stamped": (counts.get("stamped", 0) if stripe_ok else None),
         "statuses": (counts.get("statuses") or {}) if stripe_ok else None,
+        # WP6 (4.11.2026, Villen paatos: provisio 30 % myos passista):
+        # kausipassit erikseen, koska passi ei ole tilaus eika nay `stamped`issa.
+        "passes": (counts.get("passes", 0) if passes_ok else None),
+        "passes_refunded": (counts.get("passes_refunded", 0) if passes_ok else None),
         "sources_ok": tally["sources_ok"],
         "commission_pct": 30,
         # Ikkunan aikana kukaan ei maksa, eli `stamped` EI VOI liikkua ennen
@@ -5107,7 +5165,7 @@ def _get_profile_premium_state(user_id: str) -> Optional[dict]:
 def _stamp_affiliate_payment(payment_intent_id: str, code: str, source: str) -> bool:
     """Affiliate-leima kertamaksulle (PaymentIntentin metadata), tilauksen
     `_stamp_affiliate`in pari. Fail-soft: leima ei saa estaa oikeutta.
-    HUOM: /api/admin/affiliate-report lukee viela vain tilauksia."""
+    Raportti (`_affiliate_tally` kohta 3) lukee taman leiman 4.11.2026 alkaen."""
     try:
         stripe.PaymentIntent.modify(
             payment_intent_id,
@@ -5142,6 +5200,11 @@ def _fulfil_season_pass(user_id: str, obj: dict) -> None:
          nayttaa silloin "continues until <pvm>" eika "Renews on <pvm>".
          Passi ei uusiudu, joten jalkimmainen olisi epatosi.
     """
+    # Affiliate ENSIN (julkaisutarkistaja 4.11): leima on fail-soft eika riipu
+    # oikeudesta. Viimeisena se jai kirjoittamatta kaikilla alla olevilla
+    # paluupoluilla, myos silloin kun premium_source-leima kaatuu
+    # (migraatio ajamatta), eli yksikaan passi ei olisi saanut provisiota.
+    _stamp_season_pass_affiliate(obj)
     vanha = _get_web_subscription("user_id", user_id)
     if vanha and vanha.get("stripe_subscription_id") and season_pass.web_row_active(vanha):
         print(f"[Stripe web] KAUSIPASSI aktiivisen tilauksen paalle user_id={user_id} "
@@ -5176,16 +5239,22 @@ def _fulfil_season_pass(user_id: str, obj: dict) -> None:
         "subscription_cancel_at_period_end": True,
         "subscription_current_period_end": season_pass.SEASON_PASS_END_ISO,
     })
-    # Affiliate (provisio) kertamaksulle. Viimeisena ja fail-softina.
+
+
+def _stamp_season_pass_affiliate(obj: dict) -> None:
+    """Affiliate (provisio) kertamaksulle PaymentIntentiin. Fail-soft: mikaan
+    taalla ei saa estaa oikeuden kirjausta, joten kaikki poikkeukset niellaan
+    lokiin. Kutsutaan `_fulfil_season_pass`in ALUSSA (ks. siella)."""
     pi = obj.get("payment_intent")
-    if isinstance(pi, str) and pi:
-        try:
-            aff = _affiliate_code_from_session(obj)
-        except Exception as e:  # noqa: BLE001
-            print(f"[affiliate] kertamaksun koodin luku epaonnistui: {e}")
-            aff = None
-        if aff:
-            _stamp_affiliate_payment(pi, aff[0], aff[1])
+    if not (isinstance(pi, str) and pi):
+        return
+    try:
+        aff = _affiliate_code_from_session(obj)
+    except Exception as e:  # noqa: BLE001
+        print(f"[affiliate] kertamaksun koodin luku epaonnistui: {e}")
+        return
+    if aff:
+        _stamp_affiliate_payment(pi, aff[0], aff[1])
 
 
 def _revoke_season_pass(charge: dict) -> None:

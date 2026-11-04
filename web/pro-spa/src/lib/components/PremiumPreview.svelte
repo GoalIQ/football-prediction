@@ -7,11 +7,14 @@
 	import {
 		loadPricing,
 		openCheckout,
+		planHint,
 		planLabel,
+		seasonPassEnd,
 		showApprox,
 		webCheckoutBlocked
 	} from '$lib/pricing.svelte';
 	import StoreOnlyNotice from './StoreOnlyNotice.svelte';
+	import { planTerms } from '$lib/seasonPass';
 	// 20.9: hinta palvelimelta, ks. pricing.svelte.ts. Haku on kertaluontoinen
 	// ja fail-soft: jos se ei onnistu, PLANS jaa voimaan.
 	$effect(() => { void loadPricing(); });
@@ -126,12 +129,12 @@
 	     🔴 POISTA WRAPPER 12.9.2026 12:30 UTC jalkeen (jata .plans-lohko). -->
 	{#snippet planButtons(forceSecondary: boolean)}
 		<div class="plans">
-			{#each Object.entries(PLANS) as [key, plan] (key)}
-				{@const approx = showApprox(key as PlanKey) ? planApprox(key as PlanKey) : null}
+			{#each Object.keys(PLANS) as key (key)}
+				{@const approx = showApprox(key as PlanKey) ? planApprox(key as PlanKey, seasonPassEnd() !== null) : null}
 				<div class="plan">
 					<!-- 31.7: UK/US-kävijälle valuuttalikiarvo (Adaptive Pricing hoitaa
 					     checkoutin tarkan summan kävijän valuutassa) -->
-					<span class="muted">{plan.hint}{approx ? ` · ${approx}` : ''}</span>
+					<span class="muted">{planHint(key as PlanKey)}{approx ? ` · ${approx}` : ''}</span>
 					<button
 						class={!forceSecondary && key === 'season' ? 'primary' : 'secondary'}
 						disabled={busy !== null}
@@ -157,7 +160,7 @@
 	{:else}
 		<p class="muted no-account">
 			Skip the signup: pay with Stripe and we'll set up your account and email you a sign-in
-			link. Cancel anytime from the Account menu. One subscription covers web, iOS and Android.
+			link. {planTerms(seasonPassEnd())}
 		</p>
 	{/if}
 	{#if buyError}
@@ -181,7 +184,7 @@
 			{appCtaLabel(appStore)}
 		</a>
 		<p class="muted app-cta-note">
-			Same subscription either way. On your phone the store already has your
+			Same Premium either way. On your phone the store already has your
 			payment details, so it takes a few seconds.
 		</p>
 		{/if}
