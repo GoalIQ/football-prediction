@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-05T17:21:16+00:00",
+  "updated_at": "2026-11-05T18:55:46+00:00",
   "logged_total": 3334,
   "logged_with_timestamp": 3286,
   "pending": 2221,
@@ -217,7 +217,62 @@
       "pct_exact": 0.107,
       "brier": 0.5856,
       "brier_n": 1000,
-      "logged_with_timestamp": 3230
+      "logged_with_timestamp": 3230,
+      "baseline_home": {
+        "n": 1000,
+        "correct": 444,
+        "pct": 0.444
+      },
+      "pick_calibration": [
+        {
+          "lo": 0.3,
+          "hi": 0.4,
+          "n": 167,
+          "won": 66,
+          "pct_won": 0.3952,
+          "mean_p": 0.3773
+        },
+        {
+          "lo": 0.4,
+          "hi": 0.5,
+          "n": 372,
+          "won": 170,
+          "pct_won": 0.457,
+          "mean_p": 0.4464
+        },
+        {
+          "lo": 0.5,
+          "hi": 0.6,
+          "n": 243,
+          "won": 133,
+          "pct_won": 0.5473,
+          "mean_p": 0.5472
+        },
+        {
+          "lo": 0.6,
+          "hi": 0.7,
+          "n": 133,
+          "won": 95,
+          "pct_won": 0.7143,
+          "mean_p": 0.6489
+        },
+        {
+          "lo": 0.7,
+          "hi": 0.8,
+          "n": 63,
+          "won": 50,
+          "pct_won": 0.7937,
+          "mean_p": 0.7428
+        },
+        {
+          "lo": 0.8,
+          "hi": 1.0,
+          "n": 22,
+          "won": 17,
+          "pct_won": 0.7727,
+          "mean_p": 0.8491
+        }
+      ]
     },
     "national": {
       "n": 56,
@@ -233,7 +288,30 @@
       "pct_exact": 0.1964,
       "brier": 0.4916,
       "brier_n": 56,
-      "logged_with_timestamp": 56
+      "logged_with_timestamp": 56,
+      "baseline_home": {
+        "n": 56,
+        "correct": 21,
+        "pct": 0.375
+      },
+      "pick_calibration": [
+        {
+          "lo": 0.3,
+          "hi": 0.5,
+          "n": 27,
+          "won": 12,
+          "pct_won": 0.4444,
+          "mean_p": 0.4286
+        },
+        {
+          "lo": 0.5,
+          "hi": 0.9,
+          "n": 29,
+          "won": 23,
+          "pct_won": 0.7931,
+          "mean_p": 0.6509
+        }
+      ]
     },
     "unclassified_n": 0
   },
