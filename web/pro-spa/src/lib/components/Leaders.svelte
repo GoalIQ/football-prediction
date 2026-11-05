@@ -1012,7 +1012,7 @@
 	}
 	/* 30.7 per-GW DefCon -matriisi */
 	.dc-honesty {
-		border-left: 3px solid var(--accent, #f5c542);
+		border-left: 3px solid var(--accent);
 		padding-left: var(--s-2);
 		font-size: var(--step--1);
 	}
@@ -1029,7 +1029,7 @@
 		text-align: left;
 	}
 	.gw-toggle .chev {
-		color: var(--muted-fg, #8a847a);
+		color: var(--faint);
 		font-size: var(--step--1);
 	}
 	.gw-row td {
@@ -1049,11 +1049,11 @@
 		padding: 2px 6px;
 		font-size: var(--step--1);
 		font-variant-numeric: tabular-nums;
-		color: var(--muted-fg, inherit);
+		color: inherit;
 	}
 	.gw-chip.hit {
-		border-color: var(--teal, #2ed6c2);
-		color: var(--teal, #2ed6c2);
+		border-color: var(--giq-teal);
+		color: var(--giq-teal);
 		font-weight: 700;
 	}
 	.gw-chip .gw-n {

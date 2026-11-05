@@ -292,10 +292,10 @@
 		background: rgba(46, 214, 194, 0.08);
 	}
 	.own td.name {
-		color: var(--teal, #2ed6c2);
+		color: var(--giq-teal);
 	}
 	.own-dot {
-		color: var(--teal, #2ed6c2);
+		color: var(--giq-teal);
 		font-size: 0.7em;
 		margin-left: 4px;
 	}
@@ -319,7 +319,7 @@
 	}
 	th.cur,
 	td.cur {
-		box-shadow: inset 2px 0 0 var(--teal, #2ed6c2);
+		box-shadow: inset 2px 0 0 var(--giq-teal);
 	}
 	td.avg {
 		font-weight: 700;

@@ -1153,7 +1153,7 @@
 		background: none;
 		border: 0;
 		padding: 0;
-		color: var(--accent, #f5c542);
+		color: var(--accent);
 		font: inherit;
 		cursor: pointer;
 		text-decoration: underline;

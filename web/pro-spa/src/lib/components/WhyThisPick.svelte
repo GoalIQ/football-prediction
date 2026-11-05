@@ -49,8 +49,8 @@
 
 <style>
 	.why {
-		background: var(--surface-alt, #1f1d1a);
-		border-left: 2px solid var(--teal, #2ed6c2);
+		background: var(--surface-2);
+		border-left: 2px solid var(--giq-teal);
 		border-radius: 2px;
 		padding: 10px 12px;
 		margin: 12px 0;
@@ -61,7 +61,7 @@
 		font-weight: 700;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
-		color: var(--muted, #a8a29a);
+		color: var(--text-muted);
 	}
 	/* Ajurit ENNEN lausetta ja omina riveinaan: lause on tarkka mutta se
 	   luetaan sanasta sanaan, kun taas kolme riviä lukuineen luetaan
@@ -79,18 +79,18 @@
 		align-items: baseline;
 		justify-content: space-between;
 		gap: 12px;
-		border-left: 3px solid var(--giq-gold, #f5c542);
+		border-left: 3px solid var(--giq-gold);
 		padding: 3px 0 3px 8px;
 	}
 	.why-driver-label {
 		font-size: 12.5px;
 		font-weight: 700;
-		color: var(--giq-cream, #f3f2f2);
+		color: var(--giq-cream);
 	}
 	.why-driver-value {
 		font-size: 12.5px;
 		font-weight: 700;
-		color: var(--giq-gold, #f5c542);
+		color: var(--giq-gold);
 		text-align: right;
 		white-space: nowrap;
 	}
@@ -98,11 +98,11 @@
 		margin: 0;
 		font-size: 13px;
 		line-height: 1.5;
-		color: var(--muted, #a8a29a);
+		color: var(--text-muted);
 	}
 	.why-source {
 		margin: 6px 0 0;
 		font-size: 11px;
-		color: var(--muted, #a8a29a);
+		color: var(--text-muted);
 	}
 </style>

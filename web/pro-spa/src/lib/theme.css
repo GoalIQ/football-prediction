@@ -60,6 +60,11 @@
 	   --border-strongia (3.50:1), koska 1.4.11 koskee niitä. */
 	--border: rgba(243, 242, 242, 0.24);
 	--border-strong: rgba(243, 242, 242, 0.4);
+	/* 5.11 (WP7): sisaviivat taulukoissa ja listoissa. Sama arvo kuin hubin
+	   --line-soft. PlayerCard ja RateTeam viittasivat maarittelemattomaan
+	   --lineen, joten selain kaytti niiden omia fallbackeja (#2a2724 ja
+	   0.13-alfa), eli kahta eri harmaata. Lahde: design/tokens.json. */
+	--border-soft: rgba(243, 242, 242, 0.12);
 	--text: var(--giq-cream);
 	/* --giq-muted on brandi-tason alias, jotta komponentti joka JOUTUU
 	   ylikirjoittamaan --text-mutedin (Hero-bandin .menu) voi viitata samaan
@@ -104,6 +109,11 @@
 	   käydä läpi; kumpikaan ei enää tarkoita groteskia tai antiikvaa. */
 	--font-sans: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	--font-display: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	/* 5.11 (WP7): --step--2 oli kaytossa 15 kohdassa (BeatTheModel, RivalPanel,
+	   SeasonRace, PlanChains, Predict, TeamPitchManager, TransferPlanner) mutta
+	   maarittelematta, joten font-size pudotettiin ja teksti peri vanhempansa
+	   koon. Alaraja 0.75rem = 12 px (WP13: ei alle 12 px). */
+	--step--2: clamp(0.75rem, 0.73rem + 0.08vw, 0.8rem);
 	--step--1: clamp(0.82rem, 0.8rem + 0.1vw, 0.88rem);
 	--step-0: clamp(0.95rem, 0.92rem + 0.15vw, 1rem);
 	--step-1: clamp(1.15rem, 1.08rem + 0.35vw, 1.3rem);

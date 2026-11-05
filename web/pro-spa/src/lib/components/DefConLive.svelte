@@ -342,13 +342,13 @@
 		line-height: 1.4;
 	}
 	.dcl {
-		border: 1px solid var(--track);
-		background: var(--panel);
+		border: 1px solid var(--border);
+		background: var(--surface);
 		margin-bottom: 16px;
 	}
 	.bar {
-		background: var(--cream);
-		color: var(--ink);
+		background: var(--giq-cream);
+		color: var(--giq-ink);
 		font-size: 11.5px;
 		text-transform: uppercase;
 		letter-spacing: 0.16em;
@@ -375,14 +375,14 @@
 		min-width: 0;
 	}
 	.name {
-		color: var(--cream);
+		color: var(--giq-cream);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
 	.c {
-		color: var(--ink);
-		background: var(--amber);
+		color: var(--giq-ink);
+		background: var(--accent);
 		font-size: 10px;
 		padding: 0 4px;
 		font-weight: 700;
@@ -394,24 +394,24 @@
 	}
 	.track {
 		height: 6px;
-		background: var(--track);
+		background: var(--border);
 		display: block;
 	}
 	.fill {
 		height: 100%;
-		background: var(--amber);
+		background: var(--accent);
 		display: block;
 	}
 	li.hit .fill {
-		background: var(--green);
+		background: var(--positive);
 	}
 	.num {
 		font-variant-numeric: tabular-nums;
-		color: var(--muted);
+		color: var(--text-muted);
 		white-space: nowrap;
 	}
 	.ok {
-		color: var(--green);
+		color: var(--positive);
 		margin-left: 6px;
 	}
 	.note {

@@ -301,7 +301,7 @@
 	.beat {
 		/* Sama kohtelu kuin track record -lohkolla: kauden vertailu on
 		   luottamusväite, ei yksi kortti muiden joukossa. */
-		border: 2px solid var(--teal, #2ed6c2);
+		border: 2px solid var(--giq-teal);
 		border-radius: var(--radius);
 		padding: var(--s-4);
 		margin: var(--s-4) 0;
@@ -421,7 +421,7 @@
 		padding: 0.35em 0.6em;
 		border: 1px solid var(--border);
 		border-radius: var(--radius);
-		background: var(--surface-alt, transparent);
+		background: transparent;
 		color: var(--text);
 	}
 	.objective button {
@@ -432,7 +432,7 @@
 		cursor: pointer;
 	}
 	.objective button.set {
-		color: var(--teal, #2ed6c2);
+		color: var(--giq-teal);
 		font-weight: 700;
 	}
 	.objective button.quiet {

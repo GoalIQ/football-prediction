@@ -1211,19 +1211,19 @@
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
 		gap: 1px;
-		background: var(--line, #2a2724);
-		border: 1px solid var(--line, #2a2724);
+		background: var(--border-soft);
+		border: 1px solid var(--border-soft);
 		margin: 0 0 14px;
 	}
 	.pc-overview > div {
-		background: var(--surface-alt, #1f1d1a);
+		background: var(--surface-2);
 		padding: 8px 10px;
 	}
 	.pc-overview dt {
 		font-size: 10px;
 		letter-spacing: 0.05em;
 		text-transform: uppercase;
-		color: var(--muted, #a8a29a);
+		color: var(--text-muted);
 		margin-bottom: 3px;
 	}
 	.pc-overview dd {
