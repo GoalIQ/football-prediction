@@ -14,7 +14,7 @@ joka kerta komponentin omaa fallbackia, eli vari oli kovakoodattu vaikka
 koodi naytti tokenilta. Kaksi niista oli paletin ulkopuolella (#2a2724 ja
 0.13-alfa, kaksi eri sisaviivan harmaata).
 
-PORTTI (CLAUDE.md 6a): design/tokens.json on lahde.
+PORTTI (CLAUDE.md 6a): web/design-tokens.json on lahde (web/ ei julkaistu hubiin).
   (1) SPA:n theme.css:n brandimuuttujat == tokens.json.
   (2) SPA:n jokainen var(--x) viittaa maariteltyyn tokeniin (theme.css tai
       sama tiedosto). Fallback ei saa kantaa varia hiljaa.
@@ -34,7 +34,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-TOKENS = json.loads((ROOT / "design" / "tokens.json").read_text(encoding="utf-8"))
+TOKENS = json.loads((ROOT / "web" / "design-tokens.json").read_text(encoding="utf-8"))
 COLORS = TOKENS["colors"]
 SPA = ROOT / "web" / "pro-spa" / "src"
 THEME = SPA / "lib" / "theme.css"

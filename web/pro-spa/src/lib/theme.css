@@ -63,7 +63,7 @@
 	/* 5.11 (WP7): sisaviivat taulukoissa ja listoissa. Sama arvo kuin hubin
 	   --line-soft. PlayerCard ja RateTeam viittasivat maarittelemattomaan
 	   --lineen, joten selain kaytti niiden omia fallbackeja (#2a2724 ja
-	   0.13-alfa), eli kahta eri harmaata. Lahde: design/tokens.json. */
+	   0.13-alfa), eli kahta eri harmaata. Lahde: web/design-tokens.json. */
 	--border-soft: rgba(243, 242, 242, 0.12);
 	--text: var(--giq-cream);
 	/* --giq-muted on brandi-tason alias, jotta komponentti joka JOUTUU
