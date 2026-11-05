@@ -95,8 +95,11 @@
 
 <section class="intro" aria-labelledby="intro-h">
 	<p class="eyebrow">FPL tools from a match model with a public record</p>
+	<!-- 5.11 (WP14, auditointi B10): sama lupaus kuin goaliq.app:n H1:ssa
+	     ("the model's picks before the deadline"), jotta landingilta tuleva
+	     kavija ei kohtaa uutta pitchia. -->
 	<h1 id="intro-h">
-		Get a squad you can defend<br />before the deadline
+		The model's picks for your team,<br />before the deadline
 	</h1>
 	<p class="lede">
 		GoalIQ projects every player in its projection for the gameweeks ahead and ranks your captain
