@@ -392,12 +392,91 @@ def _by_model(rows: list[dict], predictions: list[dict] = ()) -> dict:
         return sum(1 for e in predictions
                    if e.get("logged_at") and model_of(e.get("competition")) == model)
 
+    # WP12 (5.11): perustaso ja valinnan kalibrointi lasketaan SAMOISTA riveista
+    # kuin lohkon luku. Jos ne laskettaisiin pinnalla erikseen, record-sivu voisi
+    # verrata 1000 ottelun mallilukua eri otoksen kotivoittoosuuteen.
     return {
-        "club": {**_metrics_block(club), "logged_with_timestamp": _logged("club")},
+        "club": {**_metrics_block(club), "logged_with_timestamp": _logged("club"),
+                 "baseline_home": _baseline_home(club),
+                 "pick_calibration": _pick_calibration(club)},
         "national": {**_metrics_block(national),
-                     "logged_with_timestamp": _logged("national")},
+                     "logged_with_timestamp": _logged("national"),
+                     "baseline_home": _baseline_home(national),
+                     "pick_calibration": _pick_calibration(national)},
         "unclassified_n": len(rows) - len(club) - len(national),
     }
+
+
+def _baseline_home(rows: list[dict]) -> dict:
+    """Perustaso "valitse aina kotijoukkue" samoilla riveilla kuin mallin luku.
+
+    Osuma = 90 min -tulos oli kotivoitto (`actual_outcome == "home"`), sama
+    gradaus kuin mallin `hit_1x2`:ssa. Ilman perustasoa 53 % nayttaa
+    kolikonheitolta, vaikka kolmen lopputuloksen arvauksessa kolikkoa ei ole.
+    """
+    n = len(rows)
+    correct = sum(1 for e in rows if e["result"]["actual_outcome"] == "home")
+    return {"n": n, "correct": correct,
+            "pct": round(correct / n, 4) if n else None}
+
+
+#: Kalibrointilokero yhdistetaan naapuriinsa (keskelle pain), jos siina on
+#: alle taman verran otteluita. Sama raja kuin sivun MIN_PCT_N: prosenttia ei
+#: nayteta alle kymmenesta ratkenneesta ottelusta.
+MIN_CAL_BIN_N = 10
+
+
+def _pick_calibration(rows: list[dict]) -> list[dict]:
+    """Valinnan kalibrointi 10 %:n lokeroin: kun malli antoi valinnalleen p:n,
+    kuinka usein valinta voitti.
+
+    Valinta = `predicted_winner` (koti tai vieras, ei koskaan tasapeli), ja
+    voitto = `hit_1x2`, eli sama osuma kuin julkisessa luvussa. Lokeroiden
+    n:ien summa = rivit joilla on valinnan todennakoisyys, joten taulu ja
+    otsikkoluku kuvaavat samaa joukkoa. Harvat reunalokerot yhdistetaan
+    keskelle pain (ks. MIN_CAL_BIN_N), jotta 3 ottelun lokero ei nayta
+    "67 %":a. Palauttaa [] jos rivit eivat riita yhteenkaan nayttokelpoiseen
+    lokeroon tai otos on alle MIN_DISPLAY_N.
+    """
+    pts = [(p, bool(e["result"]["hit_1x2"]))
+           for e in rows if (p := _winner_pct(e)) is not None]
+    if len(pts) < MIN_DISPLAY_N:
+        return []
+    bins: dict[int, list] = {}
+    for p, won in pts:
+        b = min(int(p * 10), 9)
+        s = bins.setdefault(b, [0, 0, 0.0])
+        s[0] += 1
+        s[1] += int(won)
+        s[2] += p
+    # [lo, hi, n, won, sum_p] nousevassa jarjestyksessa
+    seq = [[b, b + 1, *bins[b]] for b in sorted(bins)]
+    # Yhdista harva lokero naapuriinsa keskelle pain (ylapuolisko vasemmalle,
+    # alapuolisko oikealle). Rivia ei pudoteta koskaan: lokeroiden n:ien summa
+    # pysyy rivien maarana.
+    while len(seq) > 1:
+        sparse = [i for i, s in enumerate(seq) if s[2] < MIN_CAL_BIN_N]
+        if not sparse:
+            break
+        i = sparse[0]
+        j = i - 1 if i >= len(seq) / 2 else i + 1
+        a, b = sorted((i, j))
+        merged = [seq[a][0], seq[b][1], seq[a][2] + seq[b][2],
+                  seq[a][3] + seq[b][3], seq[a][4] + seq[b][4]]
+        seq[a:b + 1] = [merged]
+    if len(seq) == 1 and seq[0][2] < MIN_CAL_BIN_N:
+        return []
+    out = []
+    for lo, hi, n, won, sum_p in seq:
+        out.append({
+            "lo": round(lo / 10, 1),
+            "hi": round(hi / 10, 1),
+            "n": n,
+            "won": won,
+            "pct_won": round(won / n, 4),
+            "mean_p": round(sum_p / n, 4),
+        })
+    return out
 
 
 def _metrics_block(rows: list[dict]) -> dict:
