@@ -181,7 +181,7 @@
 
 <style>
 	.rival {
-		border: 2px solid var(--teal, #2ed6c2);
+		border: 2px solid var(--giq-teal);
 		border-radius: var(--radius);
 		padding: var(--s-4);
 		margin: var(--s-4) 0;

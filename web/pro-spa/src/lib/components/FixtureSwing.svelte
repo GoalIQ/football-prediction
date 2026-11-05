@@ -249,7 +249,7 @@
 		font-size: var(--step-1);
 	}
 	.muted {
-		color: var(--muted-fg, #8a847a);
+		color: var(--faint);
 	}
 	.meta {
 		display: block;
@@ -274,7 +274,7 @@
 		font-variant-numeric: tabular-nums;
 	}
 	.hi {
-		color: var(--teal, #2ed6c2);
+		color: var(--giq-teal);
 	}
 	.strong {
 		font-weight: 700;
@@ -297,7 +297,7 @@
 		text-align: left;
 	}
 	.chev {
-		color: var(--muted-fg, #8a847a);
+		color: var(--faint);
 	}
 	.gw-row td {
 		background: rgba(243, 242, 242, 0.03);
@@ -320,11 +320,11 @@
 		font-variant-numeric: tabular-nums;
 	}
 	.gw-chip .gw-n {
-		color: var(--muted-fg, #8a847a);
+		color: var(--faint);
 		font-size: 0.85em;
 	}
 	.gw-chip .gw-opp {
-		color: var(--muted-fg, #8a847a);
+		color: var(--faint);
 		font-size: 0.85em;
 		white-space: nowrap;
 	}
@@ -332,10 +332,10 @@
 		font-weight: 700;
 	}
 	.gw-chip.best {
-		border-color: var(--accent, #f5c542);
+		border-color: var(--accent);
 	}
 	.gw-chip.best .gw-xp {
-		color: var(--accent-strong, #f5c542);
+		color: var(--accent-strong);
 	}
 	.gw-chip.worst {
 		opacity: 0.6;

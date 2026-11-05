@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "about": "GoalIQ design tokens: the one source for brand colours on the hub (goaliq.app), the Premium SPA (pro.goaliq.app) and the app (goaliq-app lib/theme.ts). Ulkoasuohjelma WP7, 5.11.2026. Pinnat eivat lue tata tiedostoa ajossa: tests/test_design_tokens.py kaataa buildin, jos yksikin pinta poikkeaa tasta. Uusi vari lisataan TANNE ensin. ink2-lift ja paper-lift: SPA nostaa korttipintaa askeleen (theme.css loppu), hub ja sovellus kayttavat ink2/paper.",
+  "colors": {
+    "ink": "#0B0A09",
+    "ink2": "#141311",
+    "paper": "#1F1D1A",
+    "ink2-lift": "#171512",
+    "paper-lift": "#201D19",
+    "cream": "#F3F2F2",
+    "gold": "#F5C542",
+    "teal": "#2ED6C2",
+    "rust": "#FF8A5C",
+    "green": "#5FD97A",
+    "muted": "#A8A29A",
+    "faint": "#8A847A",
+    "line": "rgba(243,242,242,0.24)",
+    "line-strong": "rgba(243,242,242,0.40)",
+    "line-soft": "rgba(243,242,242,0.12)"
+  },
+  "spa_theme_css": {
+    "--giq-ink": "ink",
+    "--giq-ink-2": "ink2-lift",
+    "--giq-paper": "paper-lift",
+    "--giq-cream": "cream",
+    "--giq-gold": "gold",
+    "--giq-gold-deep": "gold",
+    "--giq-teal": "teal",
+    "--giq-teal-deep": "teal",
+    "--giq-coral": "rust",
+    "--giq-rust": "rust",
+    "--giq-muted": "muted",
+    "--faint": "faint",
+    "--positive": "green",
+    "--negative": "rust",
+    "--border": "line",
+    "--border-strong": "line-strong",
+    "--border-soft": "line-soft"
+  },
+  "app_theme_ts_giq": {
+    "coral": "rust",
+    "gold": "gold",
+    "goldDeep": "gold",
+    "teal": "teal",
+    "tealDeep": "teal",
+    "ink": "ink",
+    "ink2": "ink2",
+    "cream": "cream",
+    "paper": "paper",
+    "white": "cream"
+  }
+}

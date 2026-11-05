@@ -476,7 +476,7 @@
 	.basis {
 		font-size: var(--step--1);
 		margin: 0 0 var(--s-2);
-		border-left: 3px solid var(--accent, #f5c542);
+		border-left: 3px solid var(--accent);
 		padding-left: var(--s-2);
 	}
 	.sortbtn {
@@ -529,7 +529,7 @@
 		font-variant-numeric: tabular-nums;
 	}
 	.gw-chip.beat {
-		border-color: var(--teal, #2ed6c2);
+		border-color: var(--giq-teal);
 	}
 	.gw-chip .gw-n {
 		font-size: 0.72em;

@@ -265,16 +265,16 @@
 	}
 	.share-btn {
 		background: transparent;
-		border: 1px solid var(--track);
-		color: var(--muted);
+		border: 1px solid var(--border);
+		color: var(--text-muted);
 		font: inherit;
 		font-size: 11px;
 		padding: 4px 8px;
 		cursor: pointer;
 	}
 	.share-btn:hover:not(:disabled) {
-		color: var(--cream);
-		border-color: var(--muted);
+		color: var(--giq-cream);
+		border-color: var(--text-muted);
 	}
 	.share-btn:disabled {
 		opacity: 0.6;

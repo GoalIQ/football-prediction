@@ -2212,24 +2212,24 @@
 		gap: var(--s-2) var(--s-4);
 		margin: 0 0 var(--s-3);
 		padding: 6px var(--s-3);
-		background: var(--surface-alt, #1f1d1a);
-		border: 1px solid var(--line, rgba(243, 242, 242, 0.13));
+		background: var(--surface-2);
+		border: 1px solid var(--border-soft);
 		font-size: 13px;
 	}
 	.strip-item {
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
-		color: var(--muted, #a8a29a);
+		color: var(--text-muted);
 		cursor: help;
 	}
 	.strip-item strong {
-		color: var(--text, #f3f2f2);
+		color: var(--text);
 	}
 	.strip-note {
 		margin-left: 6px;
 		font-size: 11px;
-		color: var(--accent, #f5c542);
+		color: var(--accent);
 		border: 1px solid rgba(245, 197, 66, 0.4);
 		padding: 1px 5px;
 	}

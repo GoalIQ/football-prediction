@@ -1325,12 +1325,12 @@
 		font-size: 10px;
 		font-weight: 700;
 		letter-spacing: 0.04em;
-		color: var(--ink);
-		background: var(--amber);
+		color: var(--giq-ink);
+		background: var(--accent);
 		line-height: 1.5;
 	}
 	.doubt.out {
-		background: var(--negative, #ff8a5c);
+		background: var(--negative);
 	}
 	.label {
 		margin: 0 0 var(--s-1);
@@ -1401,7 +1401,7 @@
 	   vakioselityksista: tama koskee juuri nyt nakyvia lukuja. */
 	.live-note {
 		margin: 0 0 var(--s-3);
-		border-left: 3px solid var(--amber, #f5c542);
+		border-left: 3px solid var(--accent);
 		padding: var(--s-2) var(--s-3);
 		background: var(--surface);
 		color: var(--text-muted);
@@ -1540,7 +1540,7 @@
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 0.02em;
-		color: #f3f2f2;
+		color: var(--giq-cream);
 		max-width: 100%;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -1557,7 +1557,7 @@
 	.pxp {
 		font-size: clamp(14px, calc(var(--kit) * 0.28), 26px);
 		line-height: 1.1;
-		color: #f5c542;
+		color: var(--accent);
 		font-weight: 800;
 		font-variant-numeric: tabular-nums;
 	}
@@ -1593,7 +1593,7 @@
 		font-variant-numeric: tabular-nums;
 	}
 	.pdiff.under {
-		color: var(--negative, #ff8a5c);
+		color: var(--negative);
 	}
 	/* Tuomio kitin vasempaan ylakulmaan (kapteenibadge on oikealla). */
 	.mark {
@@ -1670,7 +1670,7 @@
 		font-weight: 800;
 		line-height: 1;
 		font-variant-numeric: tabular-nums;
-		color: var(--amber);
+		color: var(--accent);
 	}
 	.score-val.model {
 		color: var(--text-muted);
@@ -1682,7 +1682,7 @@
 		color: #7de2d1;
 	}
 	.score-verdict.lost {
-		color: var(--negative, #ff8a5c);
+		color: var(--negative);
 	}
 	.score-meta {
 		margin: var(--s-1) 0 0;
@@ -1695,7 +1695,7 @@
 		font-weight: 700;
 	}
 	.rank-move.down {
-		color: var(--negative, #ff8a5c);
+		color: var(--negative);
 	}
 	.score-xp {
 		margin: var(--s-2) 0 0;
@@ -1708,7 +1708,7 @@
 		font-weight: 700;
 	}
 	.xp-diff.under {
-		color: var(--negative, #ff8a5c);
+		color: var(--negative);
 	}
 	.score-swing {
 		margin: 2px 0 0;
