@@ -721,6 +721,10 @@ def _club_block(m: dict | None) -> dict | None:
         "draw_n": m.get("draw_n") if m.get("draw_n") is not None
         else max(0, m["n"] - m.get("decisive_n", 0)),
         "logged": m["logged_with_timestamp"],
+        # WP12: perustaso ja kalibrointi samoista riveista (accuracy._by_model).
+        # Puuttuvat vanhasta artefaktista -> record_head_html jattaa osion pois.
+        "baseline_home": m.get("baseline_home"),
+        "pick_calibration": m.get("pick_calibration") or [],
     }
 
 
@@ -1006,6 +1010,116 @@ def by_comp_html(c: dict) -> str:
         + rows
         + "</div>"
     )
+
+
+def _pct_of(won: int, n: int) -> str:
+    """Prosentti laskureista, ei tallennetusta 4-desimaalisesta osuudesta
+    (2.11 sovelluksessa 0.5965 -> "59.7%" vaikka 68/114 = 59.6 %)."""
+    return fmt_pct(100 * won / n)
+
+
+def _band_txt(lo: float, hi: float, last: bool) -> str:
+    a, b = round(lo * 100), round(hi * 100)
+    if last and b >= 100:
+        return f"{a}% or more"
+    return f"{a}&ndash;{b}%"
+
+
+def record_head_html(c: dict) -> str:
+    """WP12 (B6): record-sivun karki. Yksi luku, perustaso samoilla otteluilla,
+    valinnan kalibrointi 10 %:n lokeroin n:ineen ja linkki raakalokiin.
+
+    Kaikki luvut `acc_club`ista (by_model.club), eli samasta lohkosta kuin
+    by-comp-summarivi ja otsikkopintojen `public_headline`. Jos artefaktista
+    puuttuu perustaso tai kalibrointi (vanha accuracy.json ennen ensimmaista
+    putkiajoa), kyseinen osa jaa pois eika sivu kaadu.
+    """
+    k = c.get("acc_club")
+    if not k or not k.get("n"):
+        return ""
+    n = k["n"]
+    parts = []
+    base = k.get("baseline_home") or {}
+    if base.get("n") == n:
+        diff = k["correct"] - base["correct"]
+        more = (f"The model got {diff} more results right."
+                if diff > 0 else "")
+        parts.append(
+            '<div class="trk-block">'
+            '<div class="bycomp-title">Against the simplest rule</div>'
+            '<div class="trk-vs">'
+            f'<div class="trk-row"><span class="trk-name">GoalIQ model</span>'
+            f'<span class="trk-pct">{_pct_of(k["correct"], n)}</span>'
+            f'<span class="bycomp-n">{k["correct"]} of {n}</span></div>'
+            f'<div class="trk-row trk-base"><span class="trk-name">Always pick the home side</span>'
+            f'<span class="trk-pct">{_pct_of(base["correct"], n)}</span>'
+            f'<span class="bycomp-n">{base["correct"]} of {n}</span></div>'
+            "</div>"
+            f'<p class="bycomp-note">Same {n} completed club matches. {more}</p>'
+            "</div>"
+        )
+    cal = k.get("pick_calibration") or []
+    if cal and sum(b["n"] for b in cal) == n:
+        rows = []
+        for i, b in enumerate(cal):
+            pct = 100 * b["won"] / b["n"]
+            rows.append(
+                '<div class="trk-cal-row">'
+                f'<span class="trk-band">{_band_txt(b["lo"], b["hi"], i == len(cal) - 1)}</span>'
+                f'<span class="trk-bar" aria-hidden="true"><i style="width:{pct:.1f}%"></i></span>'
+                f'<span class="trk-pct">{_pct_of(b["won"], b["n"])}</span>'
+                f'<span class="bycomp-n">{b["won"]} of {b["n"]}</span>'
+                "</div>"
+            )
+        parts.append(
+            '<div class="trk-block">'
+            '<div class="bycomp-title">How often the pick won</div>'
+            '<p class="bycomp-note">Matches grouped by the chance the model gave its '
+            "pick before kick-off. The pick is the home or away side, never the draw. "
+            "If the chances are honest, each row&#39;s win rate sits near its band.</p>"
+            '<div class="trk-cal-head"><span>Model&#39;s chance</span>'
+            "<span>Pick won</span></div>"
+            + "".join(rows)
+            + "</div>"
+        )
+    # Julkaisutarkistaja 5.11 k1: lause luettelee void-syyt, joten se on tosi
+    # vain niin kauan kuin lokissa on vain TRK_VOID_REASONS-koodit (portti
+    # tests/test_track_record_baseline_calibration.py).
+    parts.append(
+        '<p class="bycomp-note trk-raw">Rows are added and graded, never removed: '
+        "misses stay in. Void rows stay in the "
+        f'<a href="{PREDICTION_LOG_URL}">raw log (JSON)</a> too. A void row is a '
+        "postponed or cancelled match, or a World Cup game logged without a "
+        "timestamp.</p>"
+    )
+    return ('<div class="trk" aria-label="Track record in context">'
+            + "".join(parts) + "</div>")
+
+
+#: Void-koodit jotka record_head_html:n raakaloki-lause selittaa. Uusi koodi
+#: lokissa kaataa portin, jolloin lause paivitetaan ennen kuin se jaa vajaaksi.
+TRK_VOID_REASONS = frozenset({"POSTPONED", "CANCELLED", "NO_TIMESTAMP"})
+
+
+TRK_CSS = (
+    ".trk{margin:6px 0 18px;max-width:520px;}"
+    ".trk-block{margin:0 0 16px;}"
+    ".trk-row,.trk-cal-row{display:flex;align-items:baseline;gap:10px;padding:6px 0;"
+    "border-bottom:1px solid var(--line,rgba(243,242,242,.24));}"
+    ".trk-name{flex:1;font-weight:600;}"
+    ".trk-base .trk-name,.trk-base .trk-pct{opacity:.7;}"
+    ".trk-pct{font-weight:800;font-variant-numeric:tabular-nums;min-width:4.2em;"
+    "text-align:right;}"
+    ".trk-band{width:6.6em;font-variant-numeric:tabular-nums;}"
+    ".trk-bar{flex:1;height:8px;background:rgba(128,128,128,.2);align-self:center;}"
+    ".trk-bar i{display:block;height:100%;background:var(--amber,#F5C542);}"
+    ".trk-cal-head{display:flex;justify-content:space-between;font-size:12px;"
+    "opacity:.6;padding:4px 0;}"
+    # Kiintea leveys n-sarakkeelle, jotta palkit alkavat ja loppuvat samassa
+    # kohdassa jokaisella rivilla (muuten "50 of 63" venyttaa palkkia).
+    ".trk .bycomp-n{min-width:6.4em;text-align:right;}"
+    ".trk-raw{margin-top:4px;}"
+)
 
 
 # CSS jaettuna fpl.html-templaten ja predictions.html-markerin kesken —
@@ -4344,8 +4458,11 @@ def update_predictions(c: dict, preds: list[dict]) -> bool:
         r"(<!-- GEN:ACC-DATASET-START -->).*?(<!-- GEN:ACC-DATASET-END -->)",
         lambda m: m.group(1) + ds_block + m.group(2), new, flags=re.S)
     # #117: koko record-taulu (sisältää #111-by-comp-lohkon taulun päällä).
-    record_block = record_table_html(preds, c) + call_margin_html(
-        _load_json(CALL_MARGIN_PATH))
+    # WP12: karkeen perustaso + kalibrointi + raakaloki ennen by-compia.
+    head = record_head_html(c)
+    record_block = ((f"<style>{TRK_CSS}</style>" + head if head else "")
+                    + record_table_html(preds, c) + call_margin_html(
+                        _load_json(CALL_MARGIN_PATH)))
     new = re.sub(
         r"(<!-- GEN:ACC-RECORD-START -->).*?(<!-- GEN:ACC-RECORD-END -->)",
         lambda m: m.group(1) + record_block + m.group(2), new, flags=re.S)
