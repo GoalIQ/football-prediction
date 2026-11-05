@@ -11,6 +11,7 @@ from src.marketing import bsky_gate as gate
 
 DL = datetime(2026, 10, 24, 17, 30, tzinfo=timezone.utc)
 GW = 9
+JAADYTYS = datetime(2026, 10, 20, 13, 0, tzinfo=timezone.utc)   # ennen jokaista testikommenttia
 JUURI = Path(__file__).resolve().parents[1]
 
 
@@ -20,11 +21,11 @@ def _c(assoc, body="Captain Haaland, model too low on Salah.", **kw):
 
 def test_ask_vain_48h_ennen_deadlinea_ja_tasan_kerran():
     luodut = []
-    ok = kanta.ask(GW, DL, DL - timedelta(hours=47), lambda t: None, luodut.append)
+    ok = kanta.ask(GW, DL, DL - timedelta(hours=47), lambda t: None, luodut.append, frozen=JAADYTYS)
     assert ok == "luotu" and luodut[0]["title"] == "Kanta GW9" and luodut[0]["labels"] == ["kanta"]
-    assert kanta.ask(GW, DL, DL - timedelta(hours=49), lambda t: None, luodut.append) == "ei-aika"
-    assert kanta.ask(GW, DL, DL + timedelta(hours=1), lambda t: None, luodut.append) == "ei-aika"
-    assert kanta.ask(GW, DL, DL - timedelta(hours=30), lambda t: {"number": 1}, luodut.append) == "jo-olemassa"
+    assert kanta.ask(GW, DL, DL - timedelta(hours=49), lambda t: None, luodut.append, frozen=JAADYTYS) == "ei-aika"
+    assert kanta.ask(GW, DL, DL + timedelta(hours=1), lambda t: None, luodut.append, frozen=JAADYTYS) == "ei-aika"
+    assert kanta.ask(GW, DL, DL - timedelta(hours=30), lambda t: {"number": 1}, luodut.append, frozen=JAADYTYS) == "jo-olemassa"
     assert len(luodut) == 1
 
 
@@ -32,9 +33,9 @@ def test_read_suodattaa_omistajan_ja_deadlinen():
     kommentit = [_c("OWNER"), _c("MEMBER", "second"), _c("NONE", "random"), _c("CONTRIBUTOR", "x"),
                  _c("OWNER", "bot says", user={"type": "Bot"}), _c("OWNER", "  ")]
     now = DL - timedelta(hours=5)
-    assert [t["text"] for t in kanta.read(GW, DL, now, kommentit)] == [kommentit[0]["body"], "second"]
-    assert kanta.read(GW, DL, now, kommentit)[0]["gw"] == GW
-    assert kanta.read(GW, DL, DL + timedelta(minutes=1), kommentit) == []
+    assert [t["text"] for t in kanta.read(GW, DL, now, kommentit, frozen=JAADYTYS)] == [kommentit[0]["body"], "second"]
+    assert kanta.read(GW, DL, now, kommentit, frozen=JAADYTYS)[0]["gw"] == GW
+    assert kanta.read(GW, DL, DL + timedelta(minutes=1), kommentit, frozen=JAADYTYS) == []
 
 
 # Issue #64:n kommentti sellaisena kuin botin token sen näkee (30.10: jäsenyys orgissa yksityinen).
@@ -46,15 +47,15 @@ def test_read_tunnistaa_yllapitajan_kirjautumisnimesta_vaikka_jasenyys_on_yksity
     """GW9: vastaus oli CONTRIBUTOR, ja jokainen ajo 29.10 15:10Z jälkeen kirjasi 'uusi kanta False'."""
     now = datetime(2026, 10, 30, 15, 0, tzinfo=timezone.utc)
     dl = datetime(2026, 10, 31, 11, 0, tzinfo=timezone.utc)
-    assert [t["text"] for t in kanta.read(9, dl, now, [GW9_VASTAUS])] == [GW9_VASTAUS["body"]]
+    assert [t["text"] for t in kanta.read(9, dl, now, [GW9_VASTAUS], frozen=JAADYTYS)] == [GW9_VASTAUS["body"]]
     # Negatiivinen kontrolli: sama kommentti muulta kirjautumisnimeltä ei ole ylläpitäjän kanta.
     vieras = {**GW9_VASTAUS, "user": {"login": "Veikkoville2", "type": "User"}}
     hylatyt = Counter()
-    assert kanta.read(9, dl, now, [vieras], hylatyt) == []
+    assert kanta.read(9, dl, now, [vieras], hylatyt, frozen=JAADYTYS) == []
     assert hylatyt == {"kirjoittaja CONTRIBUTOR": 1}
     # Botti ei ole ylläpitäjä, vaikka sen association olisi MEMBER.
     botti = {**GW9_VASTAUS, "author_association": "MEMBER", "user": {"login": "github-actions[bot]", "type": "Bot"}}
-    assert kanta.read(9, dl, now, [botti]) == []
+    assert kanta.read(9, dl, now, [botti], frozen=JAADYTYS) == []
 
 
 def test_kirjautumisnimet_yhdesta_lahteesta(monkeypatch, tmp_path):
@@ -69,8 +70,8 @@ def test_kirjautumisnimet_yhdesta_lahteesta(monkeypatch, tmp_path):
     try:
         now, dl = DL - timedelta(hours=5), DL
         toisen = {**GW9_VASTAUS, "user": {"login": "Toinen", "type": "User"}}
-        assert len(kanta.read(9, dl, now, [toisen])) == 1
-        assert kanta.read(9, dl, now, [GW9_VASTAUS]) == []
+        assert len(kanta.read(9, dl, now, [toisen], frozen=JAADYTYS)) == 1
+        assert kanta.read(9, dl, now, [GW9_VASTAUS], frozen=JAADYTYS) == []
     finally:
         kanta.maintainer_logins.cache_clear()
 
@@ -82,6 +83,7 @@ def _verkko(monkeypatch, kommentit):
         return [{"title": "Kanta GW9", "number": 64,
                  "comments_url": "https://api.github.com/repos/GoalIQ/football-prediction/issues/64/comments"}]
     monkeypatch.setattr(kanta, "_req", req)
+    monkeypatch.setattr(kanta, "frozen_at", lambda gw: JAADYTYS)
 
 
 def test_current_takes_kertoo_luvun_ja_hylkayssyyt_stderriin(monkeypatch, capsys):
@@ -172,7 +174,7 @@ def test_issue_loytyy_vaikka_label_puuttuu(monkeypatch):
     assert kanta._find_issue("t", 9)["number"] == 3
     assert len(haut) == 2
     luodut = []
-    assert kanta.ask(GW, DL, DL - timedelta(hours=20), lambda t: kanta._find_issue("t", GW), luodut.append) \
+    assert kanta.ask(GW, DL, DL - timedelta(hours=20), lambda t: kanta._find_issue("t", GW), luodut.append, frozen=JAADYTYS) \
         == "jo-olemassa" and luodut == []
 
 

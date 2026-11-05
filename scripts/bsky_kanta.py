@@ -14,6 +14,13 @@ associationin. Ylläpitäjän jäsenyys orgissa on yksityinen, joten botin token
 CONTRIBUTOR, ja `current_takes` nieli tilanteen hiljaa. Sama vika korjattiin korjaus.py:ssä 21.10
 kirjautumisnimellä, mutta tämä tiedosto kopioi vanhan säännön. Nyt kirjautumisnimet luetaan korjaus.py:stä
 (yksi lähde, kieltoportin alla), ja jokainen luku kertoo stderriin, montako kommenttia hylättiin millä syyllä.
+
+5.11.2026 (ylläpitäjän sääntö: "vasta kun jäädytetty rivi on valmis"): GW10:n issue avautui 4.11 18:49Z, 18 h
+ennen mallin rivin jäädytystä (5.11 12:59Z). Kanta vertaa ihmistä malliin ("missä olet eri mieltä mallin kanssa"),
+joten ennen jäädytystä kirjoitettu vastaus voi kiistellä rivin kanssa, jota malli ei lopulta pelaa. Nyt `ask`
+ei avaa issueta ennen kuin `data/model_squad_frozen/gw<N>.json` on olemassa, ja `read` hylkää kommentin, joka on
+kirjoitettu ennen jäädytyksen `frozen_at`-leimaa tai kierrokselle, jota ei ole jäädytetty. Jäädytys ei
+kirjoitu uudelleen (freeze_model_squad_gw.py), joten leima on kierroksen ainoa rivi.
 """
 from __future__ import annotations
 
@@ -43,6 +50,27 @@ MAX_TAKE_CHARS = 1500
 # vain ihminen), joten agentti ei voi lisätä joukkoon ketään, ja korjaus.py ajetaan sellaisenaan irrallisena
 # kopiona ($RUNNER_TEMP/portit), joten se ei voi itse tuoda joukkoa muualta.
 LOGIN_SOURCE = Path(__file__).resolve().parents[1] / ".github" / "auto-kehitys" / "korjaus.py"
+# Mallin jäädytetty rivi (scripts/freeze_model_squad_gw.py kirjoittaa, ei koskaan uudelleen).
+FROZEN_DIR = Path(__file__).resolve().parents[1] / "data" / "model_squad_frozen"
+
+
+def _utc(s) -> datetime | None:
+    try:
+        t = datetime.fromisoformat(str(s).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return t if t.tzinfo else None   # naiivia leimaa ei arvata UTC:ksi
+
+
+def frozen_at(gw: int) -> datetime | None:
+    """Kierroksen jäädytyshetki; None = riviä ei ole jäädytetty (tai tiedosto on toisen kierroksen tai rikki)."""
+    try:
+        meta = json.loads((FROZEN_DIR / f"gw{gw}.json").read_text(encoding="utf-8")).get("meta") or {}
+    except (OSError, ValueError, AttributeError):
+        return None
+    if meta.get("gw") != gw:
+        return None
+    return _utc(meta.get("frozen_at"))
 
 
 @functools.lru_cache(maxsize=1)
@@ -92,10 +120,13 @@ def ask_due(deadline: datetime, now: datetime) -> bool:
     return MIN_ASK_LEAD <= deadline - now <= ASK_WINDOW
 
 
-def ask(gw: int, deadline: datetime, now: datetime, find, create) -> str:
-    """`find(title)` -> olemassa oleva issue tai None; `create(payload)` -> url. Palauttaa tilan sanana."""
+def ask(gw: int, deadline: datetime, now: datetime, find, create, *, frozen: datetime | None) -> str:
+    """`find(title)` -> olemassa oleva issue tai None; `create(payload)` -> url; `frozen` = `frozen_at(gw)`.
+    Palauttaa tilan sanana. Ennen jäädytystä ei kysytä (5.11): kanta verrataan riviin, jonka malli pelaa."""
     if not ask_due(deadline, now):
         return "ei-aika"
+    if frozen is None or frozen > now:
+        return "ei-jaadytetty"
     if find(title(gw)):
         return "jo-olemassa"
     create({"title": title(gw), "body": body(gw, deadline), "assignees": [ISSUE_ASSIGNEE],
@@ -117,16 +148,27 @@ def rejection(c: dict) -> str | None:
     return None
 
 
-def read(gw: int, deadline: datetime, now: datetime, comments, rejected: Counter | None = None) -> list[dict]:
+def read(gw: int, deadline: datetime, now: datetime, comments, rejected: Counter | None = None, *,
+         frozen: datetime | None) -> list[dict]:
     """Kuluvan kierroksen ylläpitäjän kommentit. `comments`: GitHubin issue-kommenttilista (dict).
-    Deadlinen jälkeen ei mitään: vanha kanta ei kuulu seuraavaan kierrokseen. `rejected` kerää hylkäyssyyt."""
+    Deadlinen jälkeen ei mitään: vanha kanta ei kuulu seuraavaan kierrokseen. `rejected` kerää hylkäyssyyt.
+    `frozen` = `frozen_at(gw)`: ilman jäädytystä ei mitään, ja ennen jäädytystä kirjoitettu kommentti hylätään."""
     rejected = Counter() if rejected is None else rejected
     if now >= deadline:
         rejected["deadline ohi"] += len(comments or [])
         return []
+    if frozen is None:
+        rejected["ei jäädytystä"] += len(comments or [])
+        return []
     out = []
     for c in comments or []:
         syy = rejection(c)
+        if not syy:
+            kirjoitettu = _utc(c.get("created_at"))
+            if kirjoitettu is None:
+                syy = "aika puuttuu"
+            elif kirjoitettu < frozen:
+                syy = "ennen jäädytystä"
         if syy:
             rejected[syy] += 1
             continue
@@ -172,7 +214,7 @@ def current_takes(gw: int, deadline: datetime, now: datetime, token: str | None 
             return _report(gw, f"issueta {title(gw)!r} ei löydy")
         comments = _req(f"{issue['comments_url']}?per_page=100", token)
         rejected: Counter = Counter()
-        takes = read(gw, deadline, now, comments, rejected)
+        takes = read(gw, deadline, now, comments, rejected, frozen=frozen_at(gw))
         return _report(gw, f"kommentteja {len(comments or [])}, hyväksytty {len(takes)}, "
                            f"hylätty {dict(rejected) or 0}", takes)
     except Exception as e:  # noqa: BLE001
@@ -208,7 +250,7 @@ def cmd_ask(gw: int, deadline: datetime, now: datetime) -> int:
         return 0
     url = f"https://api.github.com/repos/{ISSUE_REPO}/issues"
     tila = ask(gw, deadline, now, lambda t: _find_issue(token, gw),
-               lambda p: _req(url, token, p))
+               lambda p: _req(url, token, p), frozen=frozen_at(gw))
     print(f"kanta ask GW{gw}: {tila}")
     return 0
 

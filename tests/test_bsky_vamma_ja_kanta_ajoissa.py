@@ -100,16 +100,17 @@ def test_aivojen_ohje_kertoo_saannon():
 # ---------------------------------------------------------------- kanta ajoissa
 
 DL = datetime(2026, 10, 31, 11, 0, tzinfo=timezone.utc)   # GW9
+JAADYTYS = datetime(2026, 10, 20, 13, 0, tzinfo=timezone.utc)
 
 
 def test_kantaa_ei_kysyta_kun_vastaus_ei_ehdi():
     luodut = []
     gw8 = datetime(2026, 10, 23, 17, 30, tzinfo=timezone.utc)
     assert kanta.ask(8, gw8, datetime(2026, 10, 23, 16, 52, tzinfo=timezone.utc), lambda t: None,
-                     luodut.append) == "ei-aika"                                    # 23.10: 38 min ennen
+                     luodut.append, frozen=JAADYTYS) == "ei-aika"                                    # 23.10: 38 min ennen
     assert kanta.ask(9, DL, DL - kanta.MIN_ASK_LEAD + timedelta(minutes=1), lambda t: None,
-                     luodut.append) == "ei-aika"
-    assert kanta.ask(9, DL, DL - kanta.MIN_ASK_LEAD, lambda t: None, luodut.append) == "luotu"
+                     luodut.append, frozen=JAADYTYS) == "ei-aika"
+    assert kanta.ask(9, DL, DL - kanta.MIN_ASK_LEAD, lambda t: None, luodut.append, frozen=JAADYTYS) == "luotu"
     assert len(luodut) == 1
     assert kanta.MIN_ASK_LEAD > kanta.ANSWER_LEAD + gate.MIN_POST_GAP
 
