@@ -39,7 +39,11 @@ HINTAPINNAT = ["index.html", "faq.html", "predictions.html", "fpl.html",
 
 # Hinnan tunnistimet. Useita muotoja, koska sama luku kirjoitetaan sivuilla
 # eri tavoin (&euro;, €, EUR, pilkku vs piste).
-HINTA = re.compile(r"3[.,]99\s*(?:&euro;|€|EUR|euros)", re.I)
+# 5.11.2026: sivut kirjoittavat nykyaan valuutan ENSIN ("&euro;3.99 / month",
+# "€3.99 a month"). Regex tunsi vain muodon "3.99 €", joten index.html,
+# predictions.html ja fpl.html putosivat pinnoista ja main oli punainen:
+# muutos tuli botin [skip ci] -sivupaistossa, jota tests.yml ei ajanut.
+HINTA = re.compile(r"3[.,]99\s*(?:&euro;|€|EUR|euros)|(?:&euro;|€)\s*3[.,]99", re.I)
 
 # Ikkunan tunnistimet.
 IKKUNA = re.compile(r"12 September|September 12|GW4 deadline", re.I)
@@ -221,7 +225,7 @@ def test_portti_nakee_hinnan_ja_ikkunan_oikeat_muodot():
     """Negatiivinen kontrolli: ilman tata `HINTA`/`IKKUNA` voisivat olla
     rikki ja portti lapaisisi tyhjana."""
     for muoto in ("3.99 &euro;/month", "3,99 €", "3.99 EUR per month",
-                  "3.99 euros per month"):
+                  "3.99 euros per month", "&euro;3.99 / month", "€3.99 a month"):
         assert HINTA.search(muoto), muoto
     for muoto in ("until 12 September", "the GW4 deadline on 12 September"):
         assert IKKUNA.search(muoto), muoto
