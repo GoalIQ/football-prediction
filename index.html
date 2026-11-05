@@ -133,7 +133,7 @@
    "name": "Is GoalIQ good for FPL?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "Yes. GoalIQ is built FPL-first: clean sheet probability, fixture difficulty, a rating and the captain pick for your squad from rate my team, price watch with shareable image cards and the full xG/xA/xGI leaderboard and expected points for the next gameweek (top 20, web) are free, and GoalIQ Premium adds the full analysis of your own team, with the hold or transfer call, plus an interactive team manager with a gameweek planner, per-gameweek expected points (xP) for every player in the projection, the captain ranker, player value (xP per million) for the top 50 with position and team filters, showing the scoring rate per 90 minutes and expected minutes separately so a high rate on low minutes reads as a bench risk and not a bargain, a DefCon tracker with price-band filters, shareable image cards (web) and transfer suggestions with apply. Every number comes from a match model with a published, pre-match-logged track record."
+    "text": "Yes. GoalIQ is built FPL-first: clean sheet probability, fixture difficulty, a rating and the captain pick for your squad are free, with no sign-in. GoalIQ Premium adds the transfer and chip calls for your own team and the captain ranker. Every number comes from a match model with a published, pre-match-logged track record."
    }
   },
   {
@@ -141,7 +141,7 @@
    "name": "What FPL tools does GoalIQ have?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "Free: clean sheet probabilities; fixture difficulty (web); a player lookup with official availability news; a rating and the captain pick for your squad from rate my team; your mini-league table; price watch; xG, xA and xGI leaders for every player with data; expected points for the next gameweek alone, top 20 with each one's opponent and start chance (web); a filterable player stats table with per 90 and per start views and CSV export; defence profiles by pitch zone; and shareable image cards (web). GoalIQ Premium: the full rate my team and draft rater analysis, with the weak spot in your XI, the hold or transfer call and your chips; the fit checker; a second squad rated next to yours; your gameweek review; Beat the model, which logs your captain and transfer calls and grades them against the model's, with a season scoreboard and a decision journal; head-to-head win probability in your mini-league; the watchlist; your own players marked in price watch and differentials filtered by your squad; per-gameweek expected points for every player in the projection, with ownership and the scoring rate per 90 shown separately from expected minutes; the captain ranker with a differential pick; a rolling six-gameweek planner and transfer plans that chain 1 to 2 moves; chip timing for Wildcard, Bench Boost, Triple Captain and Free Hit; edge mode with rank-aware picks for your mini-league; a live DefCon panel for your own squad and the full leaderboard; player value and GK rotation pairs; player compare for up to four; and shareable cards of your XI and the rankings (web). The web app also predicts any match, with win probability free and expected goals and scoreline probabilities in Premium. Upcoming fixtures and league tables are free too. Available on the web, iOS and Android."
+    "text": "Free: clean sheet probabilities, fixture difficulty, rate my team with the captain pick, your mini-league table, price watch, a player lookup, xG, xA and xGI leaders, player stats with CSV export, defence profiles, and expected points for the next gameweek (top 20). GoalIQ Premium: the whole projection for every player and gameweek, the hold or transfer call with the move itself, the captain ranker, chip timing, and mini-league tools including edge mode and Beat the model. Any match can be predicted too, with win probability free and expected goals and scoreline probabilities in Premium, on the web, iOS and Android."
    }
   },
   {
@@ -470,6 +470,12 @@
   .tool-list li { padding-left: 20px; position: relative; }
   .tool-list li::before { content: "\25B8"; position: absolute; left: 0; color: var(--green); }
   .premium-p .tool-list li::before { color: var(--amber); }
+  .prem-more { margin-top: 14px; font-size: 13px; line-height: 1.55; color: var(--muted); }
+  .prem-more summary { cursor: pointer; color: var(--amber); font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+  .prem-more summary::-webkit-details-marker { display: none; }
+  .prem-more summary::before { content: "\25B8"; margin-right: 8px; }
+  .prem-more[open] summary::before { content: "\25BE"; }
+  .prem-more p { margin-top: 6px; }
   .panel-cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: auto; }
   .early-offer { border-left: 3px solid var(--amber); background: rgba(245,197,66,0.08);
                  padding: 11px 13px; font-size: 12.5px; line-height: 1.6; color: var(--cream); }
@@ -1030,29 +1036,34 @@ text-transform:uppercase}
                strongest argument against paying. Premium now says what you
                do with it; the full feature list still lives in the FAQ and
                in the /fpl upsell. -->
-            <li><strong>Your own team in full:</strong> the weak spot in your XI, the hold or
-              transfer call, your gameweek review and DefCon live during a gameweek.</li>
-            <li>Mini-league head-to-head win probability, the fit checker, and Beat the model:
-              your captain and transfer calls graded against the model's every gameweek.</li>
-            <li><strong>Captain ranker:</strong> the top three, a differential pick and
-              the bonus expectation behind each.</li>
-            <li>The best 1-2 move chains the model checked, hits priced in. Apply one to
-              your planner in one tap. With your team ID, replacements are capped at
-              your bank plus the outgoing player's price.</li>
-            <li>Chip windows, scored against your own squad.</li>
-            <li><strong>Every player, every gameweek in the window.</strong> Free shows
-              the top 100 over the window and twenty for the next gameweek. Premium is
-              the whole projection, gameweek by gameweek, with a CSV export, plus the
-              rolling planner.</li>
-            <li>Where your season went: the gap to the model round by round, captaincy,
-              bench and autosubs, and a decision journal of what each call you made
-              differently cost or gained.</li>
-            <li><strong>Edge mode</strong> for your mini-league rank, and which players
-              actually close the gap on the manager above you.</li>
-            <li>Player value, GK rotation pairs, the DefCon tracker, a 50-player
-              watchlist, compare up to four players, shareable cards, and full match
-              analysis with expected goals and the scoreline table.</li>
+            <!-- 5 Nov (WP14, audit B10): four outcomes instead of nine dense
+               rows. Nothing was dropped: every feature from the old list is
+               in the "Everything else" list below, which stays on the page. -->
+            <li><strong>Transfers:</strong> the hold or transfer call for your own XI,
+              with the move itself. The best 1-2 move chains the model checked, hits
+              priced in. With your team ID, replacements are capped at your bank plus
+              the outgoing player's price.</li>
+            <li><strong>Captain ranker:</strong> the top three, a differential pick and the
+              bonus expectation behind each.</li>
+            <li><strong>Chips:</strong> Wildcard, Bench Boost, Triple Captain and Free Hit
+              windows, scored against your own squad.</li>
+            <li><strong>Your mini-league:</strong> head-to-head win probability, edge mode
+              for your rank, and Beat the model, which grades your captain and transfer
+              calls against the model's every gameweek.</li>
           </ul>
+          <details class="prem-more">
+            <summary>Everything else in Premium</summary>
+            <p>The weak spot in your XI and the fit checker. Every player, every gameweek
+              in the window: free shows the top 100 over the window and twenty for the
+              next gameweek, Premium is the whole projection gameweek by gameweek with a
+              CSV export, plus the rolling planner and apply-in-one-tap transfers. Where
+              your season went: the gap to the model round by round, captaincy, bench and
+              autosubs, and a decision journal of what each call you made differently cost
+              or gained. DefCon live during a gameweek and the DefCon tracker, player
+              value, GK rotation pairs, a 50-player watchlist, compare up to four players,
+              shareable cards, and full match analysis with expected goals and the
+              scoreline table.</p>
+          </details>
           <p class="panel-cta"><a class="btn btn-primary" href="https://pro.goaliq.app/checkout?plan=season" data-cta="pricing-season">Get the season pass &#9656;</a>
             <a class="btn btn-quiet" href="https://pro.goaliq.app/checkout?plan=monthly" data-cta="pricing-monthly">Start Monthly</a></p>
           <p class="fineprint">Season pass: one payment, Premium until 30 May 2027, nothing renews. Monthly: cancel anytime. 30-day money back on web purchases. One Premium account works on web, iOS and Android.</p>
@@ -1191,22 +1202,24 @@ vertical-align:top}
 <section>
   <div class="wrap">
     <div class="bar"><span>&#9612; How it works</span><span>P105</span></div>
-    <div class="section-head"><p>Three taps from a fixture to a full statistical breakdown.</p></div>
+    <!-- 5 Nov (WP14, audit B10): this page leads with FPL, so the steps do
+         too. The match-prediction walkthrough lives on /predictions. -->
+    <div class="section-head"><p>From your FPL team ID to the call at the deadline.</p></div>
     <div class="steps">
       <div class="step">
         <div class="n">01</div>
-        <h3>Pick the match</h3>
-        <p>Choose two teams from a covered league or the Champions League.</p>
+        <h3>Add your team</h3>
+        <p>Paste your FPL team ID. A rating and the captain pick for your squad need no sign-in.</p>
       </div>
       <div class="step">
         <div class="n">02</div>
-        <h3>Let the model run</h3>
-        <p>A Dixon-Coles model computes the outcome in seconds.</p>
+        <h3>The model runs every fixture</h3>
+        <p>The match model behind our public record sets each fixture's goal and clean sheet chances, and those become expected points for every player.</p>
       </div>
       <div class="step">
         <div class="n">03</div>
-        <h3>See the full picture</h3>
-        <p>Win probabilities, free. Expected goals and scoreline probabilities with GoalIQ Premium, plus head-to-head history in the app.</p>
+        <h3>Make the call</h3>
+        <p>Your rating, the captain pick, clean sheets and fixture difficulty are free. Premium adds the transfer and chip calls for your own squad, and the captain ranker.</p>
       </div>
     </div>
   </div>
@@ -1230,18 +1243,18 @@ vertical-align:top}
     <dl class="faq-list">
       <div class="faq-item">
         <dt>Is GoalIQ good for FPL?</dt>
-        <dd>Yes. GoalIQ is built FPL-first: clean sheet probability, fixture difficulty, a rating and the captain pick for your squad from rate my team, price watch with shareable image cards and the full xG/xA/xGI leaderboard and expected points for the next gameweek (top 20, web) are free, and GoalIQ Premium adds the full analysis of your own team, with the hold or transfer call, plus an interactive team manager with a gameweek planner, per-gameweek expected points (xP) for every player in the projection, the captain ranker, player value (xP per million) for the top 50 with position and team filters, showing the scoring rate per 90 minutes and expected minutes separately so a high rate on low minutes reads as a bench risk and not a bargain, a DefCon tracker with price-band filters, shareable image cards (web) and transfer suggestions with apply. Every number comes from a match model with a published, pre-match-logged track record.</dd>
+        <dd>Yes. GoalIQ is built FPL-first: clean sheet probability, fixture difficulty, a rating and the captain pick for your squad are free, with no sign-in. GoalIQ Premium adds the transfer and chip calls for your own team and the captain ranker. Every number comes from a match model with a published, pre-match-logged track record.</dd>
       </div>
       <div class="faq-item">
         <dt>What FPL tools does GoalIQ have?</dt>
         <dd>
-          <!-- Was one 314-word paragraph. Split into three so it can be
-               scanned; no feature was dropped. This text must stay identical
+          <!-- 5 Nov (WP14, audit B10): three short paragraphs; the full Premium
+               list is in the Premium panel's "Everything else" list. This text must stay identical
                to the FAQPage JSON-LD in the head: structured data requires
                the answer to be visible on the page. -->
-          <p>Free: clean sheet probabilities; fixture difficulty (web); a player lookup with official availability news; a rating and the captain pick for your squad from rate my team; your mini-league table; price watch; xG, xA and xGI leaders for every player with data; expected points for the next gameweek alone, top 20 with each one's opponent and start chance (web); a filterable player stats table with per 90 and per start views and CSV export; defence profiles by pitch zone; and shareable image cards (web).</p>
-          <p>GoalIQ Premium: the full rate my team and draft rater analysis, with the weak spot in your XI, the hold or transfer call and your chips; the fit checker; a second squad rated next to yours; your gameweek review; Beat the model, which logs your captain and transfer calls and grades them against the model's, with a season scoreboard and a decision journal; head-to-head win probability in your mini-league; the watchlist; your own players marked in price watch and differentials filtered by your squad; per-gameweek expected points for every player in the projection, with ownership and the scoring rate per 90 shown separately from expected minutes; the captain ranker with a differential pick; a rolling six-gameweek planner and transfer plans that chain 1 to 2 moves; chip timing for Wildcard, Bench Boost, Triple Captain and Free Hit; edge mode with rank-aware picks for your mini-league; a live DefCon panel for your own squad and the full leaderboard; player value and GK rotation pairs; player compare for up to four; and shareable cards of your XI and the rankings (web).</p>
-          <p>The web app also predicts any match, with win probability free and expected goals and scoreline probabilities in Premium. Upcoming fixtures and league tables are free too. Available on the web, iOS and Android.</p>
+          <p>Free: clean sheet probabilities, fixture difficulty, rate my team with the captain pick, your mini-league table, price watch, a player lookup, xG, xA and xGI leaders, player stats with CSV export, defence profiles, and expected points for the next gameweek (top 20).</p>
+          <p>GoalIQ Premium: the whole projection for every player and gameweek, the hold or transfer call with the move itself, the captain ranker, chip timing, and mini-league tools including edge mode and Beat the model.</p>
+          <p>Any match can be predicted too, with win probability free and expected goals and scoreline probabilities in Premium, on the web, iOS and Android.</p>
         </dd>
       </div>
       <!-- 7 Sep: two products carry the words "Champions League" and the
