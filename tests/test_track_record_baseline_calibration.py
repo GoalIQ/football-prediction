@@ -145,6 +145,22 @@ def test_perustaso_eri_otoksesta_ei_renderoidy():
     assert "How often the pick won" not in html
 
 
+def test_raakaloki_lause_kattaa_jokaisen_void_koodin():
+    """Julkaisutarkistaja 5.11: lause luettelee void-syyt (postponed, cancelled,
+    World Cup ilman aikaleimaa). Uusi koodi (esim. ABANDONED) tekisi siita
+    vajaan hiljaa, joten jokaisen lokin void-arvon on oltava listalla."""
+    log = acc.load_log()
+    koodit = {str(e["void"]) for e in log["predictions"] if e.get("void")}
+    assert koodit, "lokissa ei ole yhtaan void-rivia: tarkista lukija"
+    tuntemattomat = sorted(koodit - b.TRK_VOID_REASONS)
+    assert not tuntemattomat, (
+        f"Uusi void-koodi lokissa: {tuntemattomat}. Paivita record_head_html:n "
+        "raakaloki-lause (julkaisutarkistajan kautta) ja TRK_VOID_REASONS.")
+    # NO_TIMESTAMP-rivit ovat MM-rivejä, kuten lause sanoo.
+    nts = [e for e in log["predictions"] if e.get("void") == "NO_TIMESTAMP"]
+    assert all(acc.model_of(e.get("competition")) == "national" for e in nts)
+
+
 def test_predictions_html_karki_ennen_by_competitionia():
     agg = acc.compute_aggregate(acc.load_log())
     c = _ctx(agg)

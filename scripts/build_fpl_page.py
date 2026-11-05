@@ -1082,13 +1082,23 @@ def record_head_html(c: dict) -> str:
             + "".join(rows)
             + "</div>"
         )
+    # Julkaisutarkistaja 5.11 k1: lause luettelee void-syyt, joten se on tosi
+    # vain niin kauan kuin lokissa on vain TRK_VOID_REASONS-koodit (portti
+    # tests/test_track_record_baseline_calibration.py).
     parts.append(
         '<p class="bycomp-note trk-raw">Rows are added and graded, never removed: '
-        "misses stay in. Postponed matches are marked void and stay in the "
-        f'<a href="{PREDICTION_LOG_URL}">raw log (JSON)</a>.</p>'
+        "misses stay in. Void rows stay in the "
+        f'<a href="{PREDICTION_LOG_URL}">raw log (JSON)</a> too. A void row is a '
+        "postponed or cancelled match, or a World Cup game logged without a "
+        "timestamp.</p>"
     )
     return ('<div class="trk" aria-label="Track record in context">'
             + "".join(parts) + "</div>")
+
+
+#: Void-koodit jotka record_head_html:n raakaloki-lause selittaa. Uusi koodi
+#: lokissa kaataa portin, jolloin lause paivitetaan ennen kuin se jaa vajaaksi.
+TRK_VOID_REASONS = frozenset({"POSTPONED", "CANCELLED", "NO_TIMESTAMP"})
 
 
 TRK_CSS = (
