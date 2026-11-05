@@ -99,7 +99,7 @@
 	     ("the model's picks before the deadline"), jotta landingilta tuleva
 	     kavija ei kohtaa uutta pitchia. -->
 	<h1 id="intro-h">
-		The model's calls for your team,<br />before the deadline
+		The model's picks for your team,<br />before the deadline
 	</h1>
 	<p class="lede">
 		GoalIQ projects every player in its projection for the gameweeks ahead and ranks your captain
