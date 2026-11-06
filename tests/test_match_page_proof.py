@@ -182,7 +182,7 @@ def test_premium_maara_on_sama_kuin_predictissa():
 def test_lukon_nappi_vie_olemassa_olevaan_kassaan_ja_hinta_yhdesta_lahteesta():
     from src import price_copy as PC
     html = bpp.render_match_page("PL", _entry(2), NOW)
-    napit = re.findall(r'<a class="btn solid" href="([^"]+)"', html)
+    napit = re.findall(r'<a class="giq-btn giq-btn--primary" href="([^"]+)"', html)
     assert napit == ["https://pro.goaliq.app/checkout?plan=season"]
     # WP6 (4.11.2026): vuosipaketti on kertamaksu -> PC.season_cta().
     assert f"Start Premium, {PC.season_cta()}" in html
