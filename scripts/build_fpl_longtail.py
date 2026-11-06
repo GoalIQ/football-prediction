@@ -4905,7 +4905,7 @@ def render_expected_points(xp: dict, now: datetime,
     lead = rows[0]
     # LOYDETTAVYYS-5 (3.11): 184 -> alle 160. Top-100-rajaus pysyy samassa
     # lauseessa kuin "ranked" (portti 21.8); karki pudotetaan kokonaisena.
-    _xp_rank = (f"All FPL players ranked by expected points over {window}, "
+    _xp_rank = (f"FPL players ranked by expected points over {window}, "
                 f"the top 100 shown free, no sign-in.")
     _xp_tail = "Scoring rate and minutes shown separately."
     desc = seo_meta.fit([

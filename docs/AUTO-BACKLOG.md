@@ -299,6 +299,9 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
 - 2026-11: `optimal_xi` (`src/models/fpl_rate_team.py`) valitsee avauksen horisontti-xP:llä eikä kierroksen xP:llä. GW10:n
   jäädytetyssä mallirivissä penkille jäi pelaaja, jonka kierros-xP oli 0,7 suurempi kuin aloittavan, vaikka muodostelma olisi
   ollut laillinen. Jäädytettyyn riviin ei kosketa, koska se on julkinen loki. Avauksen pitää lukea saman kierroksen xP.
+- 2026-11: `src/marketing/public_surface.py` hakee saraketta tarkalla nimellä `6GW xP`, mutta sivujen otsikko on `{n_gw}GW xP`.
+  Kun ikkunassa on muu määrä kierroksia (6.11 mitattu `5GW xP`), `/fpl/expected-points`- ja seurasivujen luvut jäävät pois
+  reply-moduulista. Vika on turvallinen, koska luku puuttuu eikä väärää lukua synny. Sarake pitää hakea ikkunan pituudesta riippumatta.
 
 ## Avoimet
 
