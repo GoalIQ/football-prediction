@@ -145,7 +145,7 @@
 
 		{#if data.differentials && data.differentials.length > 0}
 			<div class="table-wrap">
-				<table>
+				<table class="giq-table">
 					<thead>
 						<tr>
 							<th>{data.stance === 'protect' ? 'Cover' : 'Consider'}</th>

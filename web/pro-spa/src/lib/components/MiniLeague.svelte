@@ -214,7 +214,7 @@
 		{/if}
 
 		<div class="table-wrap league-tall">
-			<table>
+			<table class="giq-table">
 				<thead>
 					<tr>
 						<th class="num">#</th>

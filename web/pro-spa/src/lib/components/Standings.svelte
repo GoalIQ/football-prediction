@@ -154,7 +154,7 @@
 		{sharing ? 'Rendering…' : shareButtonLabel()}
 	</button>
 {/if}
-		<table>
+		<table class="giq-table">
 			<thead>
 				<tr>
 					<th scope="col" class="num">#</th>

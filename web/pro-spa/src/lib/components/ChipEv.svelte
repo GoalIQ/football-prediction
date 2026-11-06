@@ -257,7 +257,7 @@
 						Rougher estimate GW{est.gw}: {est.ev > 0 ? '+' : ''}{est.ev.toFixed(1)} xP
 					</p>
 				{/if}
-				<table class="chip-top3">
+				<table class="giq-table chip-top3">
 					<tbody>
 						{#each top3(chip) as w (w.gw)}
 							<tr>

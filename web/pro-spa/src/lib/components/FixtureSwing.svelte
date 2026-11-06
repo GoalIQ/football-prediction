@@ -147,7 +147,7 @@
 		<p class="muted">No projection data yet.</p>
 	{:else}
 		<div class="table-wrap">
-			<table>
+			<table class="giq-table">
 				<thead>
 					<tr>
 						<th>Player</th>

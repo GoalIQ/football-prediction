@@ -119,7 +119,7 @@
 				<span class="demo-title">Projected points</span>
 				<span class="demo-tag">loading</span>
 			</div>
-			<table>
+			<table class="giq-table">
 				<thead><tr><th scope="col">Player</th><th scope="col" class="ta-r">xP</th><th scope="col" class="ta-r">Total</th></tr></thead>
 				<tbody>
 					{#each Array(10) as _, i (i)}
@@ -136,7 +136,7 @@
 				<span class="demo-title">Projected points, {horizon.range ?? horizon.label} total</span>
 				<span class="demo-tag">live from the model</span>
 			</div>
-			<table>
+			<table class="giq-table">
 				<thead>
 					<tr>
 						<th scope="col">Player</th>

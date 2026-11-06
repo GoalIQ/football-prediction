@@ -103,7 +103,7 @@
 			     ranker jarjestaa seuraavan GW:n mukaan). -->
 			<p class="tag">Free from {SOURCE_TOOL}: top {rows.length || PREVIEW_ROWS}</p>
 			<div class="table-wrap">
-				<table>
+				<table class="giq-table">
 					<thead>
 						<tr>
 							<th class="num">#</th>

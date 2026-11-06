@@ -178,6 +178,36 @@ def test_kontrolli_myyntikehotus_tunnistetaan():
         '<button class="x">Keep it</button\n\t>\n<button class="giq-btn">See Premium</button>') == []
 
 
+def tables_without_shared_class(src: str) -> int:
+    """Taulukot ilman jaettua luokkaa."""
+    body = re.sub(r"<!--.*?-->", " ", src, flags=re.S)
+    return sum(1 for m in re.finditer(r"<table\b([^>]*)>", body) if "giq-table" not in m.group(1))
+
+
+def test_jokaisella_taulukolla_on_jaettu_otsikko():
+    paths = list((ROOT / "web/pro-spa/src").rglob("*.svelte")) + _root_pages() + [
+        ROOT / "scripts/build_fpl_page.py", ROOT / "scripts/build_fpl_longtail.py"]
+    viat = {p.name: n for p in paths
+            if (n := tables_without_shared_class(p.read_text(encoding="utf-8")))}
+    assert not viat, viat
+
+
+def test_taulukon_saanto_on_vain_typografiaa():
+    """Taytteet ja leveydet kuuluvat taulukolle: 31 taulukkoa, omat sarakkeet."""
+    m = re.search(r"\.giq-table\.giq-table th\{([^}]*)\}", SC.components_css())
+    assert m, "taulukon saanto puuttuu"
+    props = {d.split(":")[0] for d in m.group(1).split(";") if d}
+    assert props == {"font-family", "font-size", "font-weight", "letter-spacing",
+                     "text-transform", "color"}
+
+
+def test_kontrolli_taulukko_tunnistetaan():
+    assert tables_without_shared_class("<table><tr></tr></table>") == 1
+    assert tables_without_shared_class('<table class="lb" id="x">') == 1
+    assert tables_without_shared_class('<table class="giq-table lb">') == 0
+    assert tables_without_shared_class("<!-- <table> -->") == 0
+
+
 def test_spa_teemassa_ei_vanhaa_linkkinappia():
     css = (ROOT / "web/pro-spa/src/lib/theme.css").read_text(encoding="utf-8")
     assert "a.btn-primary" not in css and "a.btn-secondary" not in css

@@ -127,9 +127,12 @@ def test_kontrolli_artefaktissa_on_mennyt_deadline(monkeypatch):
     r = rt.rate_team(entry=ENTRY)
     assert r["meta"]["transfer_horizon_gw"] < r["meta"]["horizon_gw"], (
         r["meta"]["transfer_horizon_gw"], r["meta"]["horizon_gw"])
-    # negatiivinen kontrolli: deadline = pienin gw -> ei kavennusta
+    # negatiivinen kontrolli: deadline = pienin gw -> ei kavennusta.
+    # 6.11: tama ajoi rate_teamin oikealla tililla, jonka kierros tulee FPL:sta.
+    # Kun artefakti jaa vanhaksi (Understat-katko) ja FPL siirtyy seuraavaan
+    # kierrokseen, tili on jo artefaktin pienimman rivin ohi ja moottori kaventaa
+    # oikein. Kontrolli kiinnittaa siksi kierroksen, eika nojaa FPL:n tilaan.
     same = copy.deepcopy(base)
     same["meta"]["deadline_gameweek"] = gws[0]
-    monkeypatch.setattr(rt, "load_xp", lambda: same)
-    r2 = rt.rate_team(entry=ENTRY)
-    assert r2["meta"]["transfer_horizon_gw"] == r2["meta"]["horizon_gw"]
+    assert transfer_horizon_gws(same["players"], same, gws[0]) == gws
+    assert transfer_horizon_gws(same["players"], shifted, gws[0]) == gws[1:]

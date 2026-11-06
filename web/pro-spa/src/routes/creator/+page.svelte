@@ -249,7 +249,7 @@
 			<div class="card">
 				<h2>Those subscriptions by status</h2>
 				<div class="table-wrap">
-					<table>
+					<table class="giq-table">
 						<thead><tr><th>Status</th><th>Count</th></tr></thead>
 						<tbody>
 							{#each Object.entries(report.statuses) as [status, n] (status)}

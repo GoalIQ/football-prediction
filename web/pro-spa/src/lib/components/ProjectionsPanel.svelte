@@ -115,7 +115,7 @@
 		<input type="search" placeholder="Search" bind:value={search} aria-label="Search players" />
 	</div>
 	<div class="table-wrap">
-		<table>
+		<table class="giq-table">
 			<thead>
 				<tr>
 					<th>Player</th>

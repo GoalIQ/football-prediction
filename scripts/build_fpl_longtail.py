@@ -919,7 +919,7 @@ def render_differentials(diff: dict, now: datetime) -> str | None:
         if horizon else
         "the model-horizon projection divided by the number of gameweeks in it")
     body = (
-        f'<div class="lb-wrap"><table class="lb">'
+        f'<div class="lb-wrap"><table class="giq-table lb">'
         "<thead><tr>"
         '<th class="n">#</th><th>Player</th><th>Team</th>'
         '<th class="m-hide">Pos</th><th class="n">Price</th>'
@@ -1945,7 +1945,7 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
               for i, r in enumerate(rows[:CARD_ROWS])],
         file_name="goaliq-xg-leaders.png")
     table = (
-        f'<div class="lb-wrap"><table class="lb" id="xgt2"{kortti}>'
+        f'<div class="lb-wrap"><table class="giq-table lb" id="xgt2"{kortti}>'
         "<thead><tr>"
         # Mobiili (a) 9.8: Pos/Price/Mins/Games ovat suodatinkontekstia, xG/xA/
         # xGI on se mita sivulta tullaan katsomaan. Taulukko oli 589px = 1,5 x
@@ -2671,7 +2671,7 @@ def render_stats(stats: dict, now: datetime) -> str | None:
               for i, r in enumerate(rows[:CARD_ROWS])],
         file_name="goaliq-fpl-points.png")
     table = (
-        f'<div class="lb-wrap"><table class="lb"{kortti_st}>'
+        f'<div class="lb-wrap"><table class="giq-table lb"{kortti_st}>'
         f'<thead id="sth">{thead}</thead>'
         f'<tbody id="stb">{trows}</tbody></table></div>'
         '<button type="button" class="chip" id="stmore" '
@@ -2870,7 +2870,7 @@ def render_defence(defence: dict, now: datetime) -> str | None:
               for i, r in enumerate(rows[:CARD_ROWS])],
         file_name="goaliq-defence-xgc.png")
     table = (
-        f'<div class="lb-wrap"><table class="lb"{kortti}>'
+        f'<div class="lb-wrap"><table class="giq-table lb"{kortti}>'
         "<thead><tr>"
         '<th class="n">#</th><th>Team</th>'
         '<th class="n" title="Expected goals conceded per match">xGC</th>'
@@ -3153,7 +3153,7 @@ def render_club_best(xp: dict, now: datetime) -> str | None:
                     f"guessed from price ({n_prior} of {len(rows)}).</p>")
         sections.append(
             f'<h2 id="{pos.lower()}">Best {pos} at every club</h2>'
-            '<div class="lb-wrap"><table class="lb">'
+            '<div class="lb-wrap"><table class="giq-table lb">'
             "<thead><tr>"
             '<th class="n">#</th><th>Player</th><th>Club</th>'
             '<th class="n m-hide">Price</th>'
@@ -3405,7 +3405,7 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
         sections.append(
             '<h2 id="out">Ruled out</h2>'
             + _share_button("6px 0 4px")
-            + f'<div class="lb-wrap"><table class="lb"{kortti_out}>'
+            + f'<div class="lb-wrap"><table class="giq-table lb"{kortti_out}>'
             "<thead><tr><th>Player</th><th>Club</th>"
             '<th class="m-hide">Pos</th><th>Status</th>'
             '<th class="n">Owned</th>'
@@ -3439,7 +3439,7 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
         )
         sections.append(
             '<h2 id="doubtful">Doubtful</h2>'
-            '<div class="lb-wrap"><table class="lb">'
+            '<div class="lb-wrap"><table class="giq-table lb">'
             "<thead><tr><th>Player</th><th>Club</th>"
             '<th class="m-hide">Pos</th><th>Status</th>'
             '<th class="n">Chance</th><th class="n">Owned</th>'
@@ -3557,7 +3557,7 @@ def _note_block(p) -> str:
             )
             # Taulukko kaaritaan omaan vieritinsailioonsa: leveä sisalto ei saa
             # panna koko sivua vaakavieritykseen kapealla ruudulla.
-            return f'<div class="tblwrap"><table class="note-tbl">{th}<tbody>{body}</tbody></table></div>'
+            return f'<div class="tblwrap"><table class="giq-table note-tbl">{th}<tbody>{body}</tbody></table></div>'
     return ""
 
 
@@ -3854,7 +3854,7 @@ def render_minutes_accuracy(doc: dict | None, now: datetime) -> str | None:
         f"and were still in the game the next season, so they qualified.</p>"
 
         f"<h2>Where the error is</h2>"
-        f'<div class="tblwrap"><table class="note-tbl"><thead><tr>'
+        f'<div class="tblwrap"><table class="giq-table note-tbl"><thead><tr>'
         f"<th>Group</th><th>Players</th><th>Average error, minutes</th>"
         f"<th>Bias, minutes</th></tr></thead><tbody>{leikkaukset}"
         f"</tbody></table></div>"
@@ -3864,14 +3864,14 @@ def render_minutes_accuracy(doc: dict | None, now: datetime) -> str | None:
            f"<p>The builder normalises each club to one keeper and ten outfield "
            f"players before the numbers reach a page, so these are the same "
            f"groups measured after that pass.</p>"
-           f'<div class="tblwrap"><table class="note-tbl"><thead><tr>'
+           f'<div class="tblwrap"><table class="giq-table note-tbl"><thead><tr>'
            f"<th>Group</th><th>Players</th><th>Average error, minutes</th>"
            f"<th>Bias, minutes</th></tr></thead><tbody>{jalkeen}"
            f"</tbody></table></div>" if jalkeen else "")
 
         + (f"<h2>Three summers, not one</h2>"
            f"<p>One summer could be luck, so the same test runs on three.</p>"
-           f'<div class="tblwrap"><table class="note-tbl"><thead><tr>'
+           f'<div class="tblwrap"><table class="giq-table note-tbl"><thead><tr>'
            f"<th>Prior to season</th><th>Players</th><th>Error, live setting</th>"
            f"<th>Error, best setting</th><th>Overshoot, 60+ starters</th>"
            f"<th>Overshoot, 80+ starters</th>"
@@ -3880,7 +3880,7 @@ def render_minutes_accuracy(doc: dict | None, now: datetime) -> str | None:
         + (f"<h2>Tuning doesn't fix it</h2>"
            f"<p>The prior weights recent rounds more heavily than old ones. "
            f"Here is the whole range, from very sharp to no decay at all.</p>"
-           f'<div class="tblwrap"><table class="note-tbl"><thead><tr>'
+           f'<div class="tblwrap"><table class="giq-table note-tbl"><thead><tr>'
            f"<th>Setting</th><th>Average error, minutes</th><th>Bias</th>"
            f"</tr></thead><tbody>{puoliintumat}</tbody></table></div>"
            f"<p>The best setting scores "
@@ -4393,7 +4393,7 @@ def render_club_page(short: str, players: list[dict], meta: dict,
 
     osat = [
         f'<h2 id="best">{escape(nimi)} best players for {escape(window)}</h2>'
-        '<div class="lb-wrap"><table class="lb">'
+        '<div class="lb-wrap"><table class="giq-table lb">'
         '<thead><tr><th class="n">#</th><th>Player</th>'
         '<th class="m-hide">Pos</th><th class="n">Price</th>'
         '<th class="n m-hide">Owned</th>'
@@ -4408,7 +4408,7 @@ def render_club_page(short: str, players: list[dict], meta: dict,
     if sp:
         osat.append(
             '<h2 id="set-pieces">Set-piece takers</h2>'
-            '<div class="lb-wrap"><table class="lb">'
+            '<div class="lb-wrap"><table class="giq-table lb">'
             "<thead><tr><th>Situation</th><th>Order</th></tr></thead>"
             f"<tbody>{sp}</tbody></table></div>"
             # 🔴 16.8: edellinen versio sanoi etta nama pelaajat "all start
@@ -4430,7 +4430,7 @@ def render_club_page(short: str, players: list[dict], meta: dict,
     if xi:
         osat.append(
             '<h2 id="xi">Predicted XI</h2>'
-            '<div class="lb-wrap"><table class="lb">'
+            '<div class="lb-wrap"><table class="giq-table lb">'
             '<thead><tr><th>Player</th><th class="m-hide">Pos</th>'
             '<th class="n">Price</th><th class="n">Start</th></tr></thead>'
             f"<tbody>{xi}</tbody></table></div>"
@@ -4546,7 +4546,7 @@ def render_predicted_lineups(xp: dict, now: datetime) -> str | None:
         slug = CLUB_SLUGS[short]
         lohkot.append(
             f'<h2 id="{slug}">{escape(str(ryhma[0].get("team") or short))}</h2>'
-            '<div class="lb-wrap"><table class="lb">'
+            '<div class="lb-wrap"><table class="giq-table lb">'
             '<thead><tr><th>Player</th><th class="m-hide">Pos</th>'
             '<th class="n">Price</th><th class="n">Start</th></tr></thead>'
             f"<tbody>{rivit}</tbody></table></div>"
@@ -4792,7 +4792,7 @@ def _gw_xp_section(xp: dict) -> str:
         f"player to score in gameweek {gw} alone.{dl_teksti} The "
         f"projected-points list on our gameweek card is this same list, so "
         f"you can check it here without an account.</p>"
-        f'<div class="lb-wrap"><table class="lb">'
+        f'<div class="lb-wrap"><table class="giq-table lb">'
         "<thead><tr>"
         '<th class="n">#</th><th>Player</th><th>Team</th>'
         '<th>Pos</th><th class="n">Price</th>'
@@ -4994,7 +4994,7 @@ def render_expected_points(xp: dict, now: datetime,
               for i, r in enumerate(rows[:CARD_ROWS])],
         file_name="goaliq-expected-points.png")
     table = (
-        f'<div class="lb-wrap"><table class="lb"{kortti}>'
+        f'<div class="lb-wrap"><table class="giq-table lb"{kortti}>'
         "<thead><tr>"
         '<th class="n">#</th><th>Player</th><th>Team</th>'
         # 15.8: Pos ja Price EIVAT ole enaa m-hide. Ne ovat suodattimen
@@ -5681,7 +5681,7 @@ def render_points(player_gw: dict, now: datetime, gw: int | None = None,
                "value": str(r["pts"])}
               for i, r in enumerate(rivit[:10])],
         file_name=f"goaliq-points-gw{gw}.png")
-    table = (f'<div class="lb-wrap"><table class="lb"{kortti}>'
+    table = (f'<div class="lb-wrap"><table class="giq-table lb"{kortti}>'
              f"<thead>{thead}</thead><tbody>"
              + "".join(solu(r) for r in rivit)
              + "".join(solu_dnp(r) for r in dnp_rivit)

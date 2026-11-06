@@ -950,7 +950,7 @@
 					</p>
 					{#if gwCompare.length > 0}
 						<div class="table-wrap">
-							<table>
+							<table class="giq-table">
 								<thead>
 									<tr>
 										<th>GW</th>
@@ -1011,7 +1011,7 @@
 			{@const gws = actionableRows(meta, player.gameweeks)}
 			<h4 class="gw-title">Projected points by gameweek</h4>
 			<div class="table-wrap">
-				<table>
+				<table class="giq-table">
 					<thead>
 						<tr>
 							<th>GW</th>
@@ -1055,7 +1055,7 @@
 					</p>
 				{/if}
 				<div class="table-wrap">
-					<table>
+					<table class="giq-table">
 						<thead>
 							<tr>
 								<th>GW</th>

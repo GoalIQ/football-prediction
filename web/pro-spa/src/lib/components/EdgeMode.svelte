@@ -128,7 +128,7 @@
 	{#if data.captain_top5.length > 0}
 		<h3>Captains, ownership-weighted</h3>
 		<div class="table-wrap">
-			<table>
+			<table class="giq-table">
 				<thead>
 					<tr>
 						<th class="num">#</th>

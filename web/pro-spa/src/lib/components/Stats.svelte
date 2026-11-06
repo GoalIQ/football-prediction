@@ -318,7 +318,7 @@
 	<p class="muted">No players match.</p>
 {:else}
 	<div class="table-wrap">
-		<table>
+		<table class="giq-table">
 			<thead>
 				<tr>
 					<th>#</th>

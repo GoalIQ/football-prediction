@@ -79,17 +79,53 @@ def test_rivinvaihto_on_crlf():
 
 # --- 2. julkaistu tiedosto vastaa artefaktia ja sivua ---------------------
 
+def _uid(gw: int) -> str:
+    return f"UID:fpl-gw{gw}-deadline@goaliq.app"
+
+
+def ics_ristiriidat(dls: list[dict], loydetyt: set[str], now: dt.datetime) -> list[str]:
+    """Kalenterin invariantti, joka pitaa kierroksen joka vaiheessa.
+
+    6.11.2026: testi vertasi kalenteria artefaktin KOKO listaan. Kun phase0 jaa
+    vanhaksi (Understat-katko) ja deadline menee, kalenteri pudottaa menneen
+    kierroksen oikein, mutta artefakti pitaa sen listalla: testi oli punainen
+    koko katkon ajan, vaikka sivu ja kalenteri olivat oikein. Mennyt kierros
+    saa siis puuttua. Tuleva ei saa, eika artefaktin ulkopuolista saa olla.
+    """
+    kaikki = {_uid(d["gw"]) for d in dls}
+    tulevat = {_uid(d["gw"]) for d in dls
+               if dt.datetime.fromisoformat(d["utc"]).astimezone(dt.timezone.utc) > now}
+    viat = [f"tuleva kierros puuttuu: {u}" for u in sorted(tulevat - loydetyt)]
+    viat += [f"artefaktin ulkopuolella: {u}" for u in sorted(loydetyt - kaikki)]
+    return viat
+
+
 @pytest.mark.skipif(not ICS.exists(), reason="deadlines.ics ei viela generoitu")
 def test_julkaistu_ics_vastaa_artefaktia():
     dls = _meta().get("deadlines") or []
     assert dls, "artefaktissa ei ole deadlineja -> sivu ja kalenteri ovat sokeita"
-    teksti = ICS.read_text(encoding="utf-8")
-    odotetut = {f"UID:fpl-gw{d['gw']}-deadline@goaliq.app" for d in dls}
-    loydetyt = set(re.findall(r"UID:\S+", teksti))
-    assert loydetyt == odotetut, (
-        "kalenteri ja artefakti eri mielta kierroksista: "
-        f"vain kalenterissa {sorted(loydetyt - odotetut)}, "
-        f"vain artefaktissa {sorted(odotetut - loydetyt)}")
+    loydetyt = set(re.findall(r"UID:\S+", ICS.read_text(encoding="utf-8")))
+    assert loydetyt, "kalenteri on tyhja"
+    viat = ics_ristiriidat(dls, loydetyt, dt.datetime.now(dt.timezone.utc))
+    assert not viat, viat
+
+
+_DLS = [{"gw": 10, "utc": "2026-11-06T18:30:00+00:00"},
+        {"gw": 11, "utc": "2026-11-20T18:30:00+00:00"}]
+_ENNEN = dt.datetime(2026, 11, 6, 12, 0, tzinfo=dt.timezone.utc)
+_JALKEEN = dt.datetime(2026, 11, 6, 19, 0, tzinfo=dt.timezone.utc)
+
+
+@pytest.mark.parametrize("now,loydetyt,ok", [
+    (_ENNEN, {_uid(10), _uid(11)}, True),      # ennen deadlinea, kaikki mukana
+    (_JALKEEN, {_uid(11)}, True),              # deadlinen jalkeen, mennyt pudotettu
+    (_JALKEEN, {_uid(10), _uid(11)}, True),    # deadlinen jalkeen, ei viela rakennettu
+    (_ENNEN, {_uid(11)}, False),               # tuleva puuttuu
+    (_JALKEEN, {_uid(10)}, False),             # seuraava puuttuu
+    (_JALKEEN, {_uid(11), _uid(12)}, False),   # artefaktin ulkopuolinen kierros
+])
+def test_kalenterin_invariantti_joka_vaiheessa(now, loydetyt, ok):
+    assert (not ics_ristiriidat(_DLS, loydetyt, now)) is ok
 
 
 @pytest.mark.skipif(not ICS.exists(), reason="deadlines.ics ei viela generoitu")
@@ -97,14 +133,17 @@ def test_sivu_ja_kalenteri_sanovat_saman_seuraavan_deadlinen():
     """Muisti `jakopinta-lukee-eri-tiedostoa-kuin-sivu`: kaksi pintaa samasta
     luvusta on kaksi tilaisuutta olla eri mielta."""
     dls = _meta().get("deadlines") or []
-    eka = dt.datetime.fromisoformat(dls[0]["utc"]).astimezone(dt.timezone.utc)
     html = SIVU.read_text(encoding="utf-8", errors="replace")
     # WP2 (1.11.2026): UTC-teksti on <time datetime>-elementissa, jonka selain
     # lokalisoi (src/local_time.py); staattinen teksti ja hetki ovat samat.
     m = re.search(r"Next deadline: Gameweek (\d+), (?:<time [^>]*>)?(\d+ \w+) at "
                   r"(\d{2}:\d{2}) UTC", html)
     assert m, "fpl.html ei kerro seuraavaa deadlinea -> paluusyy katosi sivulta"
-    assert int(m.group(1)) == dls[0]["gw"]
+    # Sivu lukee kellosta seuraavan kierroksen; artefaktin ensimmainen rivi voi
+    # olla mennyt, kun phase0 on vanha. Haetaan siksi sivun nimeama kierros.
+    rivi = next((d for d in dls if d["gw"] == int(m.group(1))), None)
+    assert rivi, f"sivun kierros GW{m.group(1)} puuttuu artefaktista"
+    eka = dt.datetime.fromisoformat(rivi["utc"]).astimezone(dt.timezone.utc)
     assert m.group(3) == eka.strftime("%H:%M")
     ensimmainen_ics = re.search(r"DTSTART:(\S+)", ICS.read_text(encoding="utf-8")).group(1)
     assert ensimmainen_ics == eka.strftime("%Y%m%dT%H%M%SZ")

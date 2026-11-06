@@ -181,7 +181,7 @@
 		</p>
 	{/if}
 	<div class="table-wrap">
-		<table>
+		<table class="giq-table">
 			<thead>
 				<tr>
 					<th class="num">#</th>

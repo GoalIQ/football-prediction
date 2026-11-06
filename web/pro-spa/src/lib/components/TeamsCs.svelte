@@ -50,7 +50,7 @@
 			fixture. Teams are sorted by their average across these gameweeks.
 		</p>
 		<div class="table-wrap">
-			<table>
+			<table class="giq-table">
 				<thead>
 					<tr>
 						<th class="stick">Team</th>

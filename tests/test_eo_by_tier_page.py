@@ -74,7 +74,7 @@ def _visible(html_text: str) -> str:
 
 
 def _main_table_ths(html_text: str) -> list[str]:
-    tbl = html_text.split('<div class="scroll"><table>')[1]
+    tbl = html_text.split('<div class="scroll"><table class="giq-table">')[1]
     return re.findall(r"<th(?:\s[^>]*)?>", tbl.split("</thead>")[0])
 
 

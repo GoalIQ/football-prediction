@@ -702,7 +702,7 @@
 		<p class="muted">No data yet.</p>
 	{:else}
 		<div class="table-wrap">
-			<table>
+			<table class="giq-table">
 				<thead>
 					<tr>
 						<th>#</th>
@@ -845,7 +845,7 @@
 		<p class="muted">No data yet.</p>
 	{:else}
 		<div class="table-wrap">
-			<table>
+			<table class="giq-table">
 				<thead>
 					<tr>
 						<th>#</th>
