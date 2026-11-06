@@ -6237,7 +6237,7 @@ def fantasy_price_watch(
 
 
 @app.get("/api/fantasy/rate-team",
-         description="Rate an FPL squad from its public entry ID. The rating is free; the rest of the analysis, including the captain pick and transfer suggestions, is part of GoalIQ Premium.")
+         description="Rate an FPL squad from its public entry ID. The rating and the captain pick are free; the rest of the analysis, including transfer suggestions, is part of GoalIQ Premium.")
 def fantasy_rate_team(
     request: Request,
     response: Response,

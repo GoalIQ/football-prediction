@@ -66,7 +66,7 @@ def render(gw: int, left: dict, right: dict, left_label: str, right_label: str,
     title = f"{left_label} VS {right_label}"
     d.text((MX, 44), f"GW{gw} ", font=f_t, fill=AMBER)
     d.text((MX + d.textlength(f"GW{gw} ", font=f_t), 44), title, font=f_t, fill=CREAM)
-    d.text((MX, 104), f"xP over the next six gameweeks  ·  GoalIQ model  ·  {stamp}",
+    d.text((MX, 104), f"xP over the coming gameweeks  ·  GoalIQ model  ·  {stamp}",
            font=_font(FONT_MED, 20), fill=MUTED)
 
     better = 0 if left["xp_6gw"]["value"] >= right["xp_6gw"]["value"] else 1
