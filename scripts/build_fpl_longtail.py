@@ -4816,7 +4816,22 @@ def _gw_xp_section(xp: dict) -> str:
     )
 
 
-def render_expected_points(xp: dict, now: datetime) -> str | None:
+def _phase0_fixtures() -> list[dict] | None:
+    """Kickoff-ajat /fpl:n payloadista kierroksen tilaa varten.
+
+    xP-artefakti voi jaada vanhaksi Understat-katkossa, mutta kickoff-aika ei
+    vanhene. Ilman tiedostoa palautetaan None, jolloin kutsuja kayttaa metaa.
+    """
+    try:
+        payload = json.loads((ROOT / "data" / "fpl_projections_phase0.json")
+                             .read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return payload.get("fixtures")
+
+
+def render_expected_points(xp: dict, now: datetime,
+                           fixtures: list[dict] | None = None) -> str | None:
     """Koko xP-lista ilmaiseksi, ilman kirjautumista (9.8.2026).
 
     MIKSI TAMA SIVU ON OLEMASSA: postasimme X:aan ja Blueskyyn xP-lukuja
@@ -4869,6 +4884,12 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
     next_gw = meta.get("next_gameweek")
     in_progress = (isinstance(dl_gw, int) and isinstance(next_gw, int)
                    and dl_gw > next_gw)
+    # 6.11.2026: Understat-katkossa `next_gameweek` jai 1.11:n tilaan, joten sivu
+    # sanoi "Gameweek 9 is not finished" viisi vuorokautta GW9:n jalkeen. Sama
+    # lukija kuin /fpl:lla (4.11): kickoff-ajat ratkaisevat, jos ne ovat saatavilla.
+    if in_progress and fixtures is not None:
+        from src.models.fpl_gameweek import display_gameweek
+        in_progress = display_gameweek(meta, fixtures) == next_gw
     esikausi = str(meta.get("caveat_code") or "").endswith(".preseason")
     _gws2 = ((players[0] if players else {}).get("gameweeks")) or []
     window = _window_label(meta, _gws2, n_gw)
@@ -5813,7 +5834,7 @@ def main() -> int:
             (OUT_DIR / "model-xi.html").write_text(page, encoding="utf-8")
             built.append("model-xi")
         # 9.8: koko xP-lista ilmaiseksi — ks. render_expected_points-docstring.
-        page = render_expected_points(xp, now)
+        page = render_expected_points(xp, now, fixtures=_phase0_fixtures())
         if page:
             (OUT_DIR / "expected-points.html").write_text(page, encoding="utf-8")
             built.append("expected-points")
