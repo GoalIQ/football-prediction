@@ -183,7 +183,7 @@ td .m-sub.drv{display:block;font-size:11px;font-weight:400;opacity:.72;
   .stat b{font-size:24px;}
 
   /* --- 6. TOUCH TARGETS ------------------------------------------------ */
-  .btn,.cta,.nav-cta{min-height:44px;display:inline-flex;align-items:center;
+  .nav-cta{min-height:44px;display:inline-flex;align-items:center;
     justify-content:center;}
   .toolnav a{display:inline-block;padding:4px 0;}
 }

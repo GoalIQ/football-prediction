@@ -798,18 +798,16 @@ th .muted,
 }
 
 /* PRIMARY = tayttonappi. Sama hex ja sama kontrastisuunta kuin hubin
-   .btn-primaryssa ja mobiilin theme.textOnAccentissa: ink amberin paalla,
+   .giq-btn--primaryssa ja mobiilin theme.textOnAccentissa: ink amberin paalla,
    12.20:1. Valkoinen amberilla olisi 1.45:1. */
-button.primary,
-a.btn-primary {
+button.primary {
 	background: var(--accent);
 	color: var(--accent-contrast);
 	border-color: var(--accent);
 	font-weight: 700;
 	letter-spacing: 0.01em;
 }
-button.primary:hover,
-a.btn-primary:hover {
+button.primary:hover {
 	background: #ffd45e;
 	border-color: #ffd45e;
 	color: var(--accent-contrast);
@@ -825,33 +823,6 @@ button.primary:disabled:hover {
 	border-color: var(--border);
 	color: #8A847A;
 	cursor: default;
-}
-
-/* Linkkinappi: samat mitat kuin <button>, jotta <a href> ja <button> eivat
-   ole eri kokoisia vierekkain. Reitinvaihdon PITAA olla <a>, koska
-   keskiklikkaus ja "avaa uuteen valilehteen" katoavat napista. */
-a.btn-primary,
-a.btn-secondary {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 0.5em;
-	min-height: 44px;
-	padding: 0.6em 1.3em;
-	border: 1px solid var(--border-strong);
-	border-radius: var(--radius);
-	font-family: var(--font-sans);
-	font-size: var(--step-0);
-	font-weight: 600;
-	cursor: pointer;
-}
-a.btn-secondary {
-	color: var(--text);
-}
-a.btn-secondary:hover {
-	border-color: var(--accent);
-	color: var(--accent-strong);
-	text-decoration: none;
 }
 
 /* Kortin pinta erottui pohjasta 1.07:1, mika on kaytannossa ei lainkaan:

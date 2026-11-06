@@ -68,7 +68,7 @@
 			     checkoutin tarkan summan kävijän valuutassa) -->
 			<span class="muted">{planHint(key as PlanKey)}{approx ? ` · ${approx}` : ''}</span>
 			<button
-				class={key === 'season' ? 'primary' : 'secondary'}
+				class={key === 'season' ? 'giq-btn giq-btn--primary' : 'giq-btn giq-btn--quiet'}
 				disabled={busy !== null}
 				onclick={() => void buy(key as PlanKey)}
 			>
@@ -185,8 +185,8 @@
 		margin-top: var(--s-4);
 	}
 	.plan {
+		flex: 1 1 240px;
 		display: grid;
 		gap: var(--s-2);
-		justify-items: start;
 	}
 </style>

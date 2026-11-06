@@ -1,5 +1,6 @@
 <script lang="ts">
 	import '$lib/theme.css';
+	import '$lib/giq-components.css';
 	import { onMount } from 'svelte';
 	import { initAnalytics, capture } from '$lib/analytics';
 	import { initAuth } from '$lib/auth.svelte';

@@ -136,7 +136,7 @@
 					     checkoutin tarkan summan kävijän valuutassa) -->
 					<span class="muted">{planHint(key as PlanKey)}{approx ? ` · ${approx}` : ''}</span>
 					<button
-						class={!forceSecondary && key === 'season' ? 'primary' : 'secondary'}
+						class={!forceSecondary && key === 'season' ? 'giq-btn giq-btn--primary' : 'giq-btn giq-btn--quiet'}
 						disabled={busy !== null}
 						onclick={() => void buy(key as PlanKey)}
 					>
@@ -176,7 +176,7 @@
 		<!-- 23.9: kauppailmoitus sisaltaa jo kauppalinkit, ei toista kertaa. -->
 		{#if !webCheckoutBlocked()}
 		<a
-			class="app-cta"
+			class="giq-btn giq-btn--ghost app-cta"
 			href={STORE_URL[appStore]}
 			rel="noopener"
 			onclick={() => capture('app_handoff_tapped', { store: appStore })}
@@ -316,16 +316,8 @@
 		color: var(--accent);
 	}
 	.app-cta {
-		display: block;
+		width: 100%;
 		margin: var(--s-4) 0 0.5rem;
-		padding: 0.85rem 1rem;
-		border-radius: 10px;
-		background: transparent;
-		border: 1px solid var(--accent, #e5006d);
-		color: var(--accent, #e5006d);
-		font-weight: 600;
-		text-align: center;
-		text-decoration: none;
 	}
 	.app-cta-note {
 		margin: 0 0 1rem;
@@ -338,9 +330,9 @@
 		margin-top: var(--s-4);
 	}
 	.plan {
+		flex: 1 1 240px;
 		display: grid;
 		gap: var(--s-1);
-		justify-items: start;
 	}
 	.no-account {
 		margin-top: var(--s-3);

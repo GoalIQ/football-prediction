@@ -385,7 +385,7 @@ def free_window_block(now=None) -> str:
     auki = (
         f'<p class="price-note"><b>{note_text()}</b></p>\n'
         f'<div class="cta-row">\n'
-        f'  <a class="cta" href="{PRO_URL}" data-cta="fpl-freewindow">'
+        f'  <a class="giq-btn giq-btn--primary" href="{PRO_URL}" data-cta="fpl-freewindow">'
         f'Get Premium free</a>\n'
         f'</div>\n'
         f'<p class="price-note">After {day_label()} it is \u20ac{PC.SEASON} a year, '
@@ -397,7 +397,7 @@ def free_window_block(now=None) -> str:
     # 3,6 \u20ac/kk. Sanat src.price_copy-lukijasta.
     kiinni = (
         f'<div class="cta-row">\n'
-        f'  <a class="cta" href="{PRO_TAB_URL}" data-cta="fpl-premium">'
+        f'  <a class="giq-btn giq-btn--primary" href="{PRO_TAB_URL}" data-cta="fpl-premium">'
         f'Get Premium</a>\n'
         f'</div>\n'
         f'<p class="price-note">{PC.season_cta()}, one payment until '
@@ -2228,7 +2228,7 @@ CSS = """
   :root{ --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
          --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; }
   body{ font-family:var(--sans); font-size:16px; line-height:1.65; }
-  h1,h2,h3,h4,.brand,.logo,.btn,.nav-cta,.record-chip,.stat b,
+  h1,h2,h3,h4,.brand,.logo,.nav-cta,.record-chip,.stat b,
   table,th,td,.num,.pick,.tflag,code,kbd,.mono,.tag,.chip,
   .toolnav,.clubnav,.share,.lbctl,.lb,.ticker{ font-family:var(--mono); }
   /* Reading measure: prose only, never a table, so no column is squeezed. */
@@ -2280,9 +2280,6 @@ CSS = """
   .brand a{ color:var(--cream); text-decoration:none; display:inline-flex; align-items:center; gap:0; }
   .brand span{ color:var(--amber); }
   .brand-icon{ margin-right:8px; width:26px; height:26px; border-radius:var(--radius); display:block; }
-  .cta{ display:inline-block; background:transparent; color:var(--amber); border:1px solid var(--amber); text-decoration:none; padding:14px 24px; border-radius:var(--radius); font-weight:800; min-height:48px; }
-  .cta:hover{ background:var(--amber); color:var(--ink); }
-  .cta.secondary{ background:transparent; border:1px solid var(--line-strong); color:inherit; }
   .cta-row{ display:flex; flex-wrap:wrap; gap:12px; margin:26px 0 8px; }
   .hero{ padding:44px 0 52px; }
   .hero h1{ font-size:36px; line-height:1.15; margin:0 0 14px; color:var(--cream); }
@@ -2293,8 +2290,6 @@ CSS = """
   h2{ font-size:25px; margin:54px 0 10px; }
   .content{ padding-bottom:70px; }
   .content a{ color:var(--teal); }
-  .content a.cta{ color:var(--amber); }
-  .content a.cta.secondary{ color:var(--cream); }
   .scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); padding:4px 12px 10px; }
   /* 8 Aug (user report): the column is 960px, so even a wide screen did not
      show every table column. Tables may now escape the column and grow with
@@ -2350,7 +2345,7 @@ CSS = """
     font-size:14px; }
   .sticky-cta.on{ display:flex; }
   .sticky-cta p{ margin:0; color:var(--muted); }
-  .sticky-cta .btn{ white-space:nowrap; }
+  .sticky-cta .giq-btn{ white-space:nowrap; }
   .sticky-cta .close{ background:none; border:0; color:var(--muted); font-size:20px;
     line-height:1; padding:4px 8px; cursor:pointer; }
   @media (max-width:560px){
@@ -2375,7 +2370,6 @@ CSS = """
   /* Narrow mobile: CTA buttons stack full width, a long label cannot overflow (#15) */
   @media (max-width:520px){
     .cta-row{ flex-direction:column; align-items:stretch; }
-    .cta{ max-width:100%; text-align:center; }
   }
   html,body{ overflow-x:clip; }
 """ + MOBILE_CSS
@@ -2898,9 +2892,9 @@ def render_page(c: dict, xp: dict | None = None) -> str:
 {_deadline_row(c)}
 
 <div class="cta-row">
-  <a class="cta" href="{PRO_TAB_URL}" data-cta="fpl">See the full xP dashboard on GoalIQ Premium</a>
-  <a class="cta secondary" href="{PLAY_URL}">Google Play</a>
-  <a class="cta secondary" href="{APPSTORE_URL}">App Store</a>
+  <a class="giq-btn giq-btn--primary" href="{PRO_TAB_URL}" data-cta="fpl">See the full xP dashboard on GoalIQ Premium</a>
+  <a class="giq-btn giq-btn--quiet" href="{PLAY_URL}">Google Play</a>
+  <a class="giq-btn giq-btn--quiet" href="{APPSTORE_URL}">App Store</a>
 </div>
 <p class="meta">One account, premium on web, iOS and Android.</p>
 <p class="note">The model's squad is frozen before every deadline. We play it in FPL as
@@ -3013,9 +3007,9 @@ API.</p>
 </dl>
 
 <div class="cta-row">
-  <a class="cta" href="{PRO_TAB_URL}" data-cta="fpl">Open GoalIQ Premium: per-gameweek xP and captain ranker</a>
-  <a class="cta secondary" href="{PLAY_URL}">Predict any fixture in the GoalIQ app</a>
-  <a class="cta secondary" href="{APPSTORE_URL}">Download on the App Store</a>
+  <a class="giq-btn giq-btn--primary" href="{PRO_TAB_URL}" data-cta="fpl">Open GoalIQ Premium: per-gameweek xP and captain ranker</a>
+  <a class="giq-btn giq-btn--quiet" href="{PLAY_URL}">Predict any fixture in the GoalIQ app</a>
+  <a class="giq-btn giq-btn--quiet" href="{APPSTORE_URL}">Download on the App Store</a>
 </div>
 
 <p class="disclaimer"><strong>Disclaimer:</strong> GoalIQ provides model
@@ -3033,7 +3027,7 @@ predictions and analytics. Not betting advice.</p>
      mode can throw on read, and a promo bar must never break the page. -->
 <div class="sticky-cta" id="stickyCta" hidden>
   <p>Free here: clean sheets and the fixture grid. Premium: expected points for every player in the projection, plus the captain ranker.</p>
-  <a class="cta" href="{PRO_TAB_URL}&amp;src=fpl-sticky&amp;srcp=fpl" data-cta="fpl-sticky">See what to do &#9656;</a>
+  <a class="giq-btn giq-btn--primary" href="{PRO_TAB_URL}&amp;src=fpl-sticky&amp;srcp=fpl" data-cta="fpl-sticky">See what to do &#9656;</a>
   <button class="close" type="button" id="stickyClose" aria-label="Hide this bar">&times;</button>
 </div>
 <script>

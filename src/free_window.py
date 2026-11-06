@@ -281,7 +281,7 @@ def band_html(now: _dt.datetime | None = None) -> str:
 
 
 def hero_cta_open_html() -> str:
-    return (f'<a class="btn btn-primary" href="{PRO_URL}" '
+    return (f'<a class="giq-btn giq-btn--primary" href="{PRO_URL}" '
             'data-cta="hero-freewindow">Get Premium free &#9656;</a>')
 
 
@@ -299,7 +299,7 @@ def hero_cta_closed_html() -> str:
     "Get the season pass" (`season_checkout_url`), teksti ja hinta ennallaan.
     """
     # WP6 (4.11.2026): vuosipaketti on kertamaksu -> src.price_copy.season_cta.
-    return (f'<a class="btn btn-primary" href="{season_checkout_url()}" '
+    return (f'<a class="giq-btn giq-btn--primary" href="{season_checkout_url()}" '
             f'data-cta="hero-premium">Get Premium &middot; '
             f'{PC.season_cta("&euro;")} &#9656;</a>')
 

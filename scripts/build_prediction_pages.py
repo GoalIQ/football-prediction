@@ -252,7 +252,7 @@ h1,h2,h3,.brand{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Co
 :root{--mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;}
 body{font-family:var(--sans);font-size:16px;line-height:1.65;}
-h1,h2,h3,h4,.brand,.btn,table,th,td,.num,code,kbd,.mono,.tag{font-family:var(--mono);}
+h1,h2,h3,h4,.brand,table,th,td,.num,code,kbd,.mono,.tag{font-family:var(--mono);}
 p,.lede,.hint,.note,.fineprint{max-width:68ch;}
 td p,th p,table p{max-width:none;}
 @media (hover:none){nav a,footer a,.share a{display:inline-flex;align-items:center;min-height:44px;}}
@@ -296,10 +296,6 @@ font-variant-numeric:tabular-nums;}
 .rec{border-left:4px solid var(--teal);background:var(--paper);border-radius:0;
 padding:10px 14px;font-size:13px;color:var(--muted);margin:16px 0;}
 .cta-row{display:flex;flex-wrap:wrap;gap:12px;margin:22px 0;}
-.btn{background:transparent;color:var(--gold-deep,#F5C542);border:1px solid var(--gold,#F5C542);font-weight:700;padding:12px 22px;
-border-radius:0;text-decoration:none;font-size:14px;}
-.btn:hover{background:rgba(245,197,66,0.14);}
-.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);}
 .mrow{display:flex;align-items:center;justify-content:space-between;gap:10px;
 padding:12px 0;border-bottom:1px solid var(--line);}
 .mrow:last-child{border-bottom:none;}
@@ -312,7 +308,7 @@ color:var(--muted);font-size:13px;}
 footer a{color:var(--muted);}
 .note{color:var(--muted);font-size:12px;margin:18px 0;}
 @media (max-width:520px){.cta-row{flex-direction:column;align-items:stretch;}
-.btn{text-align:center;}}
+}
 /* --- 1 Nov 2026 (UI programme WP11): match page as proof, hub grouped. ---
    Tokens only from this :root and the landing page (--green is the
    landing's #5FD97A). NOTE the naming here is inverted against the landing:
@@ -357,9 +353,7 @@ filter:blur(4px);user-select:none;pointer-events:none;}
 border:1px solid var(--line);font-family:var(--mono);font-size:14px;color:var(--muted);}
 .lock-grid .xg{grid-column:1/-1;}
 .lock-txt{font-size:15px;margin:4px 0 14px;}
-.btn.solid{display:inline-block;background:var(--amber);color:var(--cream);border-color:var(--amber);}
-.btn.solid:hover{background:var(--gold);}
-@media (max-width:520px){.btn.solid{display:block;}}
+@media (max-width:520px){.giq-btn--primary{width:100%;}}
 .form-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;
 border-bottom:1px solid var(--line);}
 .form-row:last-of-type{border-bottom:0;}
@@ -957,7 +951,7 @@ def _scoreline_lock(e: dict, played: bool = False) -> str:
                if isinstance(p, (int, float)) and 0 < p < 1 else "")
             + "</div>"
         )
-    button = (f'<a class="btn solid" href="{CHECKOUT_URL}" data-cta="match-page-premium">'
+    button = (f'<a class="giq-btn giq-btn--primary" href="{CHECKOUT_URL}" data-cta="match-page-premium">'
               f"Start Premium, {PC.season_cta()}</a>")
     if played:
         return (
@@ -1344,8 +1338,8 @@ def render_match_page(comp: str, e: dict, now: datetime | None = None,
            f'hits and misses included.</div>')
         + _share_block(url, home, away)
         + f'<div class="cta-row">'
-        f'<a class="btn ghost" href="https://pro.goaliq.app/matches/predict">Run your own prediction</a>'
-        f'<a class="btn ghost" href="/predictions/{cfg["slug"]}/">More {escape(cfg["name"])} predictions</a>'
+        f'<a class="giq-btn giq-btn--quiet" href="https://pro.goaliq.app/matches/predict">Run your own prediction</a>'
+        f'<a class="giq-btn giq-btn--quiet" href="/predictions/{cfg["slug"]}/">More {escape(cfg["name"])} predictions</a>'
         f"</div>"
         f'<p class="note">{DISCLAIMER}</p>'
     )
@@ -1496,8 +1490,8 @@ def render_league_hub(comp: str, rows: list[dict], now: datetime,
     body = (
         summary + "".join(sections)
         + f'<div class="cta-row">'
-        f'<a class="btn" href="https://pro.goaliq.app/matches/predict">Run your own prediction</a>'
-        f'<a class="btn ghost" href="/predictions">All football predictions</a>'
+        f'<a class="giq-btn giq-btn--primary" href="https://pro.goaliq.app/matches/predict">Run your own prediction</a>'
+        f'<a class="giq-btn giq-btn--quiet" href="/predictions">All football predictions</a>'
         f"</div>"
         f'<p class="note">Updated {now.strftime("%d %b %Y %H:%M UTC")} · {DISCLAIMER}</p>'
     )
@@ -1578,7 +1572,7 @@ def update_predictions_hub_links(live: list[str]) -> bool:
         return False
     live_set = set(live)
     links = " ".join(
-        f'<a class="btn-ghost" href="/predictions/{LEAGUES[c]["slug"]}/" '
+        f'<a class="giq-btn giq-btn--quiet" href="/predictions/{LEAGUES[c]["slug"]}/" '
         f'style="margin:4px;">{escape(LEAGUES[c]["name"])} predictions</a>'
         for c in live
     )
