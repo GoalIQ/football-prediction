@@ -51,7 +51,7 @@
 	<div class="stores">
 		{#each order as store, i (store)}
 			<a
-				class={i === 0 ? 'btn-primary' : 'btn-secondary'}
+				class={i === 0 ? 'giq-btn giq-btn--primary' : 'giq-btn giq-btn--quiet'}
 				href={STORE_URL[store]}
 				rel="noopener"
 				onclick={() => capture('app_handoff_tapped', { store, reason: 'region_store_only', source })}

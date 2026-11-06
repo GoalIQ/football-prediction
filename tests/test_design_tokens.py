@@ -53,6 +53,7 @@ SPA_HEX_POIKKEUKSET: dict[str, str] = {
     "lib/components/Hero.svelte": "SVG-merkin fill-attribuutti (logo), ei tyylia.",
     "lib/components/GoalsXgChart.svelte": "Kommentti joka dokumentoi mitatun kontrastin.",
     "routes/spl/+page.svelte": "Kommentti joka dokumentoi Villen havainnon.",
+    "lib/giq-components.css": "Generoitu src/site_components.py:sta. Sama merkkijono kuin hubissa, jossa sivun muuttujat eivat ole yhtenaiset; varit todistetaan paletista testissa test_napin_varit_ovat_paletissa.",
 }
 
 

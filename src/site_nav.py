@@ -37,6 +37,8 @@ STDLIB-ONLY: generaattorit ajetaan GH Actionsissa ilman riippuvuuksia.
 """
 from __future__ import annotations
 
+from src.site_components import btn_css
+
 from src.brand import logo_svg
 
 PRO = "https://pro.goaliq.app/"
@@ -138,6 +140,9 @@ SITE_NAV_CSS = (
     "nav.gqn a.gqn-brand{font-size:17px;}"
     "nav.gqn a.gqn-cta{padding:0 12px;}"
     "}"
+    # WP15: jaettu nappi kulkee samassa lohkossa, jonka kaikki generaattorit
+    # jo liittavat sivulle (src/site_components.py).
+    + btn_css()
 )
 
 

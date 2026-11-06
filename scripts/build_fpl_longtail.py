@@ -233,12 +233,6 @@ border-radius:var(--radius);padding:16px 20px;font-size:14px;color:var(--muted);
 margin:24px 0 16px;}
 .rec a{color:var(--teal);font-weight:700;}
 .cta-row{display:flex;flex-wrap:wrap;gap:12px;margin:22px 0;}
-.btn{background:transparent;color:var(--amber);border:1px solid var(--amber);font-weight:700;padding:12px 22px;
-border-radius:var(--radius);text-decoration:none;font-size:14px;}
-.btn:hover{background:var(--amber);color:var(--ink);}
-.btn.ghost{background:transparent;color:var(--cream);
-border:1px solid var(--line);}
-.btn.ghost:hover{background:transparent;color:var(--amber);}
 .mrow{display:flex;align-items:center;justify-content:space-between;gap:10px;
 padding:12px 0;border-bottom:1px solid var(--line);}
 .mrow:last-child{border-bottom:none;}
@@ -346,7 +340,7 @@ font-variant-numeric:tabular-nums;}
 letter-spacing:.03em;}
 @media (max-width:520px){.xip{width:64px;}.xirow{gap:6px;}}
 @media (max-width:520px){.cta-row{flex-direction:column;align-items:stretch;}
-.btn{text-align:center;}}
+}
 .toolnav{margin:34px 0 6px;padding-top:18px;border-top:1px solid var(--line);
 display:flex;flex-direction:column;gap:10px;justify-content:flex-start;
 align-items:stretch;}
@@ -672,8 +666,8 @@ def _differentials_doc() -> dict | None:
 def _cta() -> str:
     return (
         '<div class="cta-row">'
-        '<a class="btn" href="https://pro.goaliq.app/?tab=premium">Open GoalIQ Premium</a>'
-        '<a class="btn ghost" href="/fpl">Free clean-sheet probability &amp; FDR</a>'
+        '<a class="giq-btn giq-btn--primary" href="https://pro.goaliq.app/?tab=premium">Open GoalIQ Premium</a>'
+        '<a class="giq-btn giq-btn--quiet" href="/fpl">Free clean-sheet probability &amp; FDR</a>'
         "</div>"
     )
 

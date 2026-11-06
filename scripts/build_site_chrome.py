@@ -37,6 +37,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from src import site_components as SC  # noqa: E402
 from src import site_identity as SI  # noqa: E402
 from src import site_nav as SN  # noqa: E402
 from src.copy_stamp import HASH_RE, paivita_leima  # noqa: E402
@@ -190,6 +191,12 @@ def main(argv: list[str] | None = None) -> int:
         jaljessa.append(name)
         if not check:
             p.write_text(new, encoding="utf-8", newline="\n")
+    # WP15: SPA saa saman napin generoituna tiedostona, ei kopiona.
+    spa_old = SC.SPA_CSS_PATH.read_text(encoding="utf-8") if SC.SPA_CSS_PATH.exists() else ""
+    if spa_old != SC.spa_css():
+        jaljessa.append(SC.SPA_CSS_PATH.name)
+        if not check:
+            SC.SPA_CSS_PATH.write_text(SC.spa_css(), encoding="utf-8", newline="\n")
     if check and jaljessa:
         print("build_site_chrome --check: jaljessa lahteesta: " + ", ".join(jaljessa))
         print("Aja: python -m scripts.build_site_chrome")
