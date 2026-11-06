@@ -199,7 +199,7 @@
 		{#if webCheckoutBlocked()}
 			<StoreOnlyNotice source="pro_web_root" compact />
 		{:else}
-			<button type="button" class="primary" onclick={onUpgrade}>See plans</button>
+			<button type="button" class="giq-btn giq-btn--primary" onclick={onUpgrade}>See plans</button>
 			<p class="act-note muted">
 				€3.99 a month or €25 for the season{#if approxMonthly}
 					({approxMonthly}, {approxSeason}){/if}. {planTerms(seasonPassEnd())}

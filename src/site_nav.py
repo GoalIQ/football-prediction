@@ -37,7 +37,7 @@ STDLIB-ONLY: generaattorit ajetaan GH Actionsissa ilman riippuvuuksia.
 """
 from __future__ import annotations
 
-from src.site_components import btn_css
+from src.site_components import components_css
 
 from src.brand import logo_svg
 
@@ -142,7 +142,7 @@ SITE_NAV_CSS = (
     "}"
     # WP15: jaettu nappi kulkee samassa lohkossa, jonka kaikki generaattorit
     # jo liittavat sivulle (src/site_components.py).
-    + btn_css()
+    + components_css()
 )
 
 

@@ -172,7 +172,7 @@
 		<p class="muted small lock">
 			Free preview: the top {data.players.length} by horizon xP. The full projection for every player
 			is part of GoalIQ Premium.
-			{#if onUpgrade}<button type="button" class="linkbtn" onclick={onUpgrade}>See Premium</button>{/if}
+			{#if onUpgrade}<button type="button" class="giq-link" onclick={onUpgrade}>See Premium</button>{/if}
 		</p>
 	{/if}
 </div>
@@ -326,14 +326,5 @@
 	}
 	.lock {
 		margin: var(--s-2) 0 0;
-	}
-	.linkbtn {
-		background: none;
-		border: 0;
-		padding: 0;
-		font: inherit;
-		color: var(--accent-strong);
-		cursor: pointer;
-		text-decoration: underline;
 	}
 </style>

@@ -161,7 +161,7 @@
 					<div class="plan">
 						<button
 							type="button"
-							class={key === 'season' ? 'primary' : 'secondary'}
+							class={key === 'season' ? 'giq-btn giq-btn--primary' : 'giq-btn giq-btn--quiet'}
 							disabled={busy !== null}
 							onclick={() => void buy(key as PlanKey)}
 						>
@@ -182,7 +182,7 @@
 			</p>
 			{/if}
 			<p class="more">
-				<button type="button" class="linkish" onclick={onUpgrade}>See Premium</button>
+				<button type="button" class="giq-link" onclick={onUpgrade}>See Premium</button>
 				{#if appStore && !webCheckoutBlocked()}
 					<a
 						class="app-link"
@@ -285,11 +285,10 @@
 		gap: var(--s-4);
 	}
 	.plan {
+		flex: 1 1 240px;
 		display: grid;
 		gap: var(--s-1);
-		justify-items: start;
 		align-content: start;
-		max-width: 22rem;
 	}
 	.buy > .small {
 		margin: var(--s-3) 0 0;
@@ -307,18 +306,6 @@
 		margin: var(--s-2) 0 0;
 	}
 	/* Toissijaiset: tekstin nakoisia, eivat kilpaile ostonappien kanssa. */
-	.linkish {
-		background: none;
-		border: none;
-		min-height: 44px;
-		padding: 0;
-		color: var(--text);
-		font: inherit;
-		font-weight: 600;
-		text-decoration: underline;
-		text-underline-offset: 3px;
-		cursor: pointer;
-	}
 	.app-link {
 		color: var(--text-muted);
 		font-size: var(--step--1);

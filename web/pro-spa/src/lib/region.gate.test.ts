@@ -134,7 +134,7 @@ describe('region: etusivun ProductIntro', () => {
 		expect(muu).toBeGreaterThan(alku);
 		const perus = markup.slice(muu, loppu);
 		expect(perus).toContain(
-			'<button type="button" class="primary" onclick={onUpgrade}>See plans</button>'
+			'<button type="button" class="giq-btn giq-btn--primary" onclick={onUpgrade}>See plans</button>'
 		);
 		expect(perus).toContain('€3.99 a month or €25 for the season{#if approxMonthly}');
 		expect(perus).toContain('({approxMonthly}, {approxSeason}){/if}. {planTerms(seasonPassEnd())}');

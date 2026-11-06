@@ -416,7 +416,7 @@
 				<strong>Free shows the win probabilities.</strong> Premium adds expected goals for
 				both teams, scoreline probabilities, the chance of three or more goals and the chance
 				both teams score.
-				<button type="button" class="linklike" onclick={showPaywall}>See Premium</button>
+				<button type="button" class="giq-link" onclick={showPaywall}>See Premium</button>
 			</div>
 		{/if}
 

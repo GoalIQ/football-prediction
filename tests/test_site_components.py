@@ -38,7 +38,14 @@ GENERATORS = ("scripts/build_fpl_page.py", "scripts/build_fpl_longtail.py",
               "src/partners.py", "scripts/mobile_css.py")
 SPA_SALES = ("web/pro-spa/src/lib/components/Paywall.svelte",
              "web/pro-spa/src/lib/components/StoreOnlyNotice.svelte",
-             "web/pro-spa/src/lib/components/PremiumPreview.svelte")
+             "web/pro-spa/src/lib/components/PremiumPreview.svelte",
+             "web/pro-spa/src/lib/components/LockedToolPreview.svelte")
+
+#: Myyntikehotuksen tunnistus. Listaa tiedostoista ei voi pitaa: WP15:n
+#: ensimmainen viipale jatti LockedToolPreview'n ostonapit vanhoiksi, koska se
+#: puuttui kasin tehdysta listasta. Saanto katsoo jokaisen komponentin.
+SALES_TEXT = re.compile(r"\b(See Premium|See plans|Get Premium)\b")
+_ELEMENT_RE = re.compile(r"<(button|a)\b((?:[^>{]|\{[^{}]*\})*)>(.*?)</\1\s*>", re.S)
 
 _CLASS_RE = re.compile(r"""class=\\?["']([^"'\\]*)\\?["']""")
 _RULE_RE = re.compile(r"(?:^|[\s,{}>+~])a?\.(" + "|".join(sorted(map(re.escape, OLD), key=len, reverse=True))
@@ -79,11 +86,11 @@ def test_spa_lataa_napin_teeman_jalkeen():
 
 
 def test_hub_saa_napin_samassa_lohkossa_kuin_palkin():
-    assert SC.btn_css() in SITE_NAV_CSS
+    assert SC.components_css() in SITE_NAV_CSS
 
 
 def test_napin_varit_ovat_paletissa():
-    css = SC.btn_css().lower()
+    css = SC.components_css().lower()
     palette = {str(v).lower().replace(" ", "") for v in TOKENS["colors"].values()}
     used = set(re.findall(r"#[0-9a-f]{3,8}\b", css)) | set(re.findall(r"rgba\([^)]*\)", css.replace(" ", "")))
     assert used, "vareja ei loytynyt, onko luku rikki?"
@@ -92,7 +99,7 @@ def test_napin_varit_ovat_paletissa():
 
 @pytest.mark.parametrize("name", sorted(SC.VARIANTS))
 def test_variantti_voittaa_sivun_linkkisaannon(name):
-    css = SC.btn_css()
+    css = SC.components_css()
     assert f".giq-btn.giq-btn--{name}{{" in css
     assert f".giq-btn.giq-btn--{name}:hover{{" in css
     # Yksinkertainen valitsin olisi (0,1,0) ja havisi `.content a`:lle.
@@ -100,7 +107,7 @@ def test_variantti_voittaa_sivun_linkkisaannon(name):
 
 
 def test_perusnappi_on_kaksoisluokka_ja_44px():
-    css = SC.btn_css()
+    css = SC.components_css()
     assert css.startswith(".giq-btn.giq-btn{")
     assert "min-height:44px" in css
 
@@ -122,6 +129,53 @@ def test_generaattorissa_ei_vanhaa_nappia(rel):
 @pytest.mark.parametrize("rel", SPA_SALES)
 def test_spa_myyntinappi_on_jaettu(rel):
     assert "giq-btn giq-btn--" in (ROOT / rel).read_text(encoding="utf-8")
+
+
+def sales_without_shared_class(src: str) -> list[str]:
+    """Myyntikehotukset, joilla ei ole jaettua luokkaa."""
+    body = re.sub(r"<script.*?</script>|<style.*?</style>|<!--.*?-->", " ", src, flags=re.S)
+    return [m.group(3).strip()[:40] for m in _ELEMENT_RE.finditer(body)
+            if SALES_TEXT.search(m.group(3))
+            and not re.search(r"giq-(btn|link)", m.group(2))]
+
+
+def test_spa_jokainen_myyntikehotus_on_jaettu():
+    viat = []
+    for f in sorted((ROOT / "web/pro-spa/src").rglob("*.svelte")):
+        for t in sales_without_shared_class(f.read_text(encoding="utf-8")):
+            viat.append(f"{f.name}: {t}")
+    assert not viat, viat
+
+
+def test_lukko_on_sama_kaikilla_pinnoilla():
+    css = SC.components_css()
+    assert ".giq-lock.giq-lock{" in css and ".giq-tag.giq-tag{" in css and ".giq-link.giq-link{" in css
+    spa = (ROOT / "web/pro-spa/src/lib/components/PersonalLock.svelte").read_text(encoding="utf-8")
+    assert 'class="giq-lock plock"' in spa and 'class="giq-tag"' in spa
+    assert '<aside class="giq-lock upsell">' in (ROOT / "scripts/build_fpl_page.py").read_text(encoding="utf-8")
+    pages = (ROOT / "scripts/build_prediction_pages.py").read_text(encoding="utf-8")
+    assert pages.count('class="card giq-lock"') == 2
+
+
+def test_spa_lukko_ei_maarittele_ulkoasua_itse():
+    """`.plock` saa asetella, ei piirtaa: reuna ja pinta tulevat kirjastosta."""
+    src = (ROOT / "web/pro-spa/src/lib/components/PersonalLock.svelte").read_text(encoding="utf-8")
+    rule = re.search(r"\.plock \{(.*?)\}", src, flags=re.S).group(1)
+    assert "border" not in rule and "background" not in rule
+
+
+def test_kontrolli_myyntikehotus_tunnistetaan():
+    assert sales_without_shared_class('<button class="primary">See Premium</button>') == ["See Premium"]
+    assert sales_without_shared_class(
+        "<button class={k ? 'primary' : 'secondary'} onclick={() => buy(k)}>Get Premium: x</button>"
+    ) == ["Get Premium: x"]
+    assert sales_without_shared_class('<a class="linklike" href="/">See plans</a>') == ["See plans"]
+    assert sales_without_shared_class('<button class="giq-link">See Premium</button>') == []
+    assert sales_without_shared_class('<button class="primary">Rate my team</button>') == []
+    assert sales_without_shared_class('<!-- <button class="primary">See Premium</button> -->') == []
+    # Svelte-muotoilu jakaa sulkutagin riveille; haku ei saa valua seuraavaan nappiin.
+    assert sales_without_shared_class(
+        '<button class="x">Keep it</button\n\t>\n<button class="giq-btn">See Premium</button>') == []
 
 
 def test_spa_teemassa_ei_vanhaa_linkkinappia():
