@@ -287,6 +287,15 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
 - 2026-11: Mobiilisovelluksen Fixtures-rivi ei saa todennäköisyyspalkkia otteluille, joissa on Académico de Viseu FC
   (3.11: 116/117 seuraavan 7 päivän riviä sai palkin). Loki tuntee joukkueen nimellä "Academico Viseu", mutta
   goaliq-appin `lib/fixtureNames.ts` jättää nimen tarkoituksella mappaamatta (rivin 186 kommentti), ja peruste on vanhentunut.
+- 2026-11: Bluesky-botin `owner_take`-postaus typisti ylläpitäjän perustelun. Kannassa oli vertailu: hylätyn vaihtoehdon
+  katto, valitun vaihtoehdon katto ja johtopäätös. Postaukseen jäi vain ensimmäinen, joten lause ei kytkeytynyt valintaan.
+  Ylläpitäjä luki sen ristiriidaksi ja poisti postauksen 6.11. Postauksessa pitää olla valitun vaihtoehdon peruste tai sana,
+  joka sitoo perustelun valintaan. Aivojen ohje (`.github/workflows/bsky-bot.yml`) ja tarkistaja
+  (`.claude/agents/bsky-tarkistaja.md`) ovat agentin ulottumattomissa, joten ne muutetaan käsin mergen yhteydessä.
+- 2026-11: `scripts/bsky_bot.py` `cmd_perf` ei tunnista poistettua postausta. `bsky.get_posts` ei palauta sitä, joten lokirivi
+  jää arvoon `engagement` 0 ja `topic_table` laskee sen aiheen tilastoon. 6.11 poistettu postaus nosti `owner_take`-aiheen
+  n:n kahteen ja laski `engaged_rate_bayes`-arvon 0,667:stä 0,5:een, ja aiheen mittari tarkistetaan 2026-11-22. Puuttuva uri
+  pitää merkitä poistetuksi ja jättää taulukosta pois, mutta vain kun haku itse onnistui.
 
 ## Avoimet
 
