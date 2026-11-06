@@ -4887,6 +4887,9 @@ def render_expected_points(xp: dict, now: datetime,
     # 6.11.2026: Understat-katkossa `next_gameweek` jai 1.11:n tilaan, joten sivu
     # sanoi "Gameweek 9 is not finished" viisi vuorokautta GW9:n jalkeen. Sama
     # lukija kuin /fpl:lla (4.11): kickoff-ajat ratkaisevat, jos ne ovat saatavilla.
+    # Funktio lukee ajat itse, jotta builderi ja test_committed_pages_match_builder
+    # kulkevat saman polun: kutsujan parametri erottaisi sivun testin tuloksesta.
+    fixtures = fixtures if fixtures is not None else _phase0_fixtures()
     if in_progress and fixtures is not None:
         from src.models.fpl_gameweek import display_gameweek
         in_progress = display_gameweek(meta, fixtures) == next_gw
@@ -5834,7 +5837,7 @@ def main() -> int:
             (OUT_DIR / "model-xi.html").write_text(page, encoding="utf-8")
             built.append("model-xi")
         # 9.8: koko xP-lista ilmaiseksi — ks. render_expected_points-docstring.
-        page = render_expected_points(xp, now, fixtures=_phase0_fixtures())
+        page = render_expected_points(xp, now)
         if page:
             (OUT_DIR / "expected-points.html").write_text(page, encoding="utf-8")
             built.append("expected-points")
