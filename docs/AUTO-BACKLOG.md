@@ -302,6 +302,19 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
 - 2026-11: `src/marketing/public_surface.py` hakee saraketta tarkalla nimellä `6GW xP`, mutta sivujen otsikko on `{n_gw}GW xP`.
   Kun ikkunassa on muu määrä kierroksia (6.11 mitattu `5GW xP`), `/fpl/expected-points`- ja seurasivujen luvut jäävät pois
   reply-moduulista. Vika on turvallinen, koska luku puuttuu eikä väärää lukua synny. Sarake pitää hakea ikkunan pituudesta riippumatta.
+- 2026-11: `load_xp_actionable` (`src/models/fpl_xp.py`) rajaa kierrokset artefaktin `meta.deadline_gameweek`:sta, joka on
+  rakennushetken arvo. Kun xP-builderi on kaatunut (Understat-katko 1.11 alkaen, artefaktissa 10), deadlinen jälkeen lukija pitää
+  menneen kierroksen mukana: mitattu oikealla artefaktilla, rivit GW10-14 ja horisonttisumma sisältää GW10:n kellosta riippumatta.
+  Lukijaa käyttävät `api/partner_feed.py` ja `src/models/fpl_player_stats.py`; `/api/fantasy/xp` lukee samaa kenttää
+  `attach_horizon_total_actionable`:n kautta. PR #92 nojasi juuri tähän
+  lukijaan ("lukijat suojaa"), mutta se suojaa vain, kun builder ajaa. `open_gameweek` lukee kellosta, mutta xP-artefaktissa ei ole
+  `deadlines`-listaa, joten se palauttaa None. Hub-sivut ja reply-moduuli ovat kunnossa (phase0:ssa lista on, moduuli kieltäytyy
+  deadlinen jälkeen). Ensimmäinen kerta 6.11 18:30Z, koska edellinen deadline meni ennen katkoa. Vaihetesti puuttuu tältä tilalta:
+  vanhentunut artefakti deadlinen jälkeen (`tests/test_gameweek_phase_invariants.py`).
+- 2026-11: Understat-katkon aikana `/fpl`:n GW-taulukon projected goals ja CS-% ovat 1.11:n sovituksesta, ottelusivujen voitto-%
+  päivittyy. GW10:ssä sama ottelu on 61,0 % `/api/fantasy`:ssa ja 45 % ottelusivulla; samalla sivulla näkyvä xG 2,28-1,20 ei sovi
+  45 %:iin. Erot keskittyvät nousijoihin (16, 6,5 ja 4,9 prosenttiyksikköä), muut ottelut ovat alle 3,5:n. Syy on mittaamatta:
+  sovituksen päivä vai nousijoiden eri käsittely. Molemmat luvut ovat julkisia, eikä lukija näe, että ne ovat eri mallitilasta.
 
 ## Avoimet
 
