@@ -536,7 +536,7 @@
 				<p class="muted">SPL projections not published yet. Check back soon.</p>
 			{:else}
 				<div class="table-wrap">
-					<table>
+					<table class="giq-table">
 						<thead>
 							<tr>
 								<th>Team</th>
@@ -607,7 +607,7 @@
 				     on mallin puolella, mutta se ei ole sita joka kierros, ja
 				     yhteisluku yksin piilottaisi sen. -->
 				<div class="table-wrap">
-					<table>
+					<table class="giq-table">
 						<thead>
 							<tr>
 								<th>Round</th>
@@ -660,7 +660,7 @@
 				<h3>GW{recon.gameweek} match by match</h3>
 				<p>The most recent round that finished.</p>
 				<div class="table-wrap">
-					<table>
+					<table class="giq-table">
 						<thead>
 							<tr>
 								<th>Match</th>
@@ -733,7 +733,7 @@
 					{/each}
 				</div>
 				<div class="table-wrap">
-					<table>
+					<table class="giq-table">
 						<thead>
 							<tr>
 								<th>Player</th>
@@ -791,7 +791,7 @@
 						{/if}
 					</div>
 					<div class="table-wrap">
-						<table>
+						<table class="giq-table">
 							<thead>
 								<tr>
 									<th>#</th><th>Player</th><th>Team</th><th>Pos</th>
@@ -838,7 +838,7 @@
 						</p>
 						<SquadPitch rows={pitchRows} bench={pitchBench} unitNote="xP per GW" />
 						<div class="table-wrap">
-							<table>
+							<table class="giq-table">
 								<thead>
 									<tr><th>Pos</th><th>Player</th><th>Team</th><th class="num">Price</th><th class="num">xP / GW</th></tr>
 								</thead>
@@ -879,7 +879,7 @@
 						{/if}
 					</div>
 					<div class="table-wrap">
-						<table>
+						<table class="giq-table">
 							<thead>
 								<tr><th>Player</th><th>Team</th><th>Pos</th><th class="num">Price</th><th class="num">xP / GW</th><th class="num">xP / GW per &pound;m</th></tr>
 							</thead>
@@ -915,7 +915,7 @@
 						{/if}
 					</div>
 					<div class="table-wrap">
-						<table>
+						<table class="giq-table">
 							<thead>
 								<tr><th>Player</th><th>Team</th><th>Pos</th><th class="num">Owned</th><th class="num">Price</th><th class="num">xP / GW</th></tr>
 							</thead>
@@ -950,7 +950,7 @@
 						{#each [['goals', 'Goals'], ['assists', 'Assists'], ['points', 'Fantasy points']] as [key, label] (key)}
 							<div>
 								<h3>{label}</h3>
-								<table>
+								<table class="giq-table">
 									<tbody>
 										{#each leaders(key as 'goals' | 'assists' | 'points') as p (p.id)}
 											<tr>
@@ -994,7 +994,7 @@
 					</div>
 					{#if cmpPlayers.length === 2}
 						<div class="table-wrap">
-							<table>
+							<table class="giq-table">
 								<thead>
 									<tr><th></th>{#each cmpPlayers as p (p.id)}<th>{p.web_name} ({p.team_short})</th>{/each}</tr>
 								</thead>

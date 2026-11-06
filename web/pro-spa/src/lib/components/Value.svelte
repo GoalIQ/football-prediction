@@ -196,7 +196,7 @@
 		<p class="muted">No players match these filters.</p>
 	{:else}
 		<div class="table-wrap">
-			<table>
+			<table class="giq-table">
 				<thead>
 					<tr>
 						<th>#</th>
@@ -340,7 +340,7 @@
 				<p class="muted small">{data.gk.meta.for_you_note}</p>
 			{/if}
 			<div class="table-wrap">
-				<table>
+				<table class="giq-table">
 					<thead>
 						<tr>
 							<th>Pair</th>

@@ -82,6 +82,11 @@ def components_css() -> str:
                f"border:0;color:{_COLORS['gold']};font:inherit;font-weight:700;"
                "text-decoration:underline;cursor:pointer;}")
     out.append(f".giq-link.giq-link:hover{{color:{_COLORS['cream']};}}")
+    # Taulukon otsikkorivi. VAIN typografia: taytteet, leveydet ja sticky
+    # jaavat taulukolle, koska jokaisella on omat sarakkeensa.
+    out.append(f".giq-table.giq-table th{{font-family:{MONO};font-size:11px;"
+               f"font-weight:600;letter-spacing:.08em;text-transform:uppercase;"
+               f"color:{_COLORS['muted']};}}")
     # Puhelimella isot kirjaimet ja .1em eivat mahdu: hinta katkesi kahtia
     # ("3.99 / EUR/MO") ja landingin nuoli putosi omalle rivilleen (mitattu 6.11).
     out.append("@media (max-width:480px){.giq-btn.giq-btn{padding:13px 14px;"

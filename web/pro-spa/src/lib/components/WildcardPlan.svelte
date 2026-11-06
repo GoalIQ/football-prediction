@@ -196,7 +196,7 @@
 
 		{#if plan.candidates?.length}
 			<h3>Every switch point</h3>
-			<table class="cands">
+			<table class="giq-table cands">
 				<thead>
 					<tr><th>GW</th><th>Gain</th><th>Per GW</th><th>Rounds</th></tr>
 				</thead>

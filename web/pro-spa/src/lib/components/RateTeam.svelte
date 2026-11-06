@@ -1556,7 +1556,7 @@
 		<h3>Transfer suggestions</h3>
 		{#if data.transfers.suggestions.length > 0}
 			<div class="table-wrap">
-				<table>
+				<table class="giq-table">
 					<thead>
 						<tr>
 							<th>Out</th>

@@ -162,7 +162,7 @@ describe('LockedToolPreview: hinta ja ostonappi samassa laatikossa, kauppa toiss
 
 	it('taulukko, sumennettu loppu ja ostonapit ovat saman .lock-cardin sisalla, tassa jarjestyksessa', () => {
 		const card = m.indexOf('<div class="lock-card">');
-		const table = m.indexOf('<table>');
+		const table = m.indexOf('<table class="giq-table">');
 		const ghost = m.indexOf('<div class="ghost"');
 		// WP6 (4.11.2026): silmukka kay avaimet, vihje tulee planHint-lukijasta.
 		const plans = m.indexOf('{#each Object.keys(PLANS)');
@@ -196,7 +196,7 @@ describe('Chip timingin lukossa ei Player xP -naytetta (22.9, julkaisutarkistaja
 	it('komponentti kysyy lukijalta ennen taulukkoa, ja ilman naytetta xP:ta ei haeta', () => {
 		const m = markup(src);
 		const guard = m.indexOf('{#if !sample}');
-		const table = m.indexOf('<table>');
+		const table = m.indexOf('<table class="giq-table">');
 		expect(guard).toBeGreaterThan(-1);
 		expect(guard).toBeLessThan(table);
 		const script = blankComments(src.slice(0, src.lastIndexOf('</script>')));

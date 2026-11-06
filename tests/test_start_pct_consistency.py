@@ -40,7 +40,7 @@ def _predicted_lineups() -> dict[tuple[str, str], int]:
     h = _sivu("predicted-lineups.html")
     out: dict[tuple[str, str], int] = {}
     for m in re.finditer(r'<h2 id="([^"]+)">.*?</h2>\s*<div class="lb-wrap">'
-                         r"<table class=\"lb\">(.*?)</table>", h, re.S):
+                         r"<table class=\"giq-table lb\">(.*?)</table>", h, re.S):
         slug, table = m.group(1), m.group(2)
         for tr in re.findall(r"<tr>(.*?)</tr>", table, re.S):
             tds = re.findall(r"<td[^>]*>(.*?)</td>", tr, re.S)

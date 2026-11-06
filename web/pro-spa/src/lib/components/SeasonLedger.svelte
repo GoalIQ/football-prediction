@@ -157,7 +157,7 @@
 
 		<details class="table">
 			<summary>Table</summary>
-			<table>
+			<table class="giq-table">
 				<thead>
 					<tr><th>GW</th><th>Projected</th><th>Scored</th><th>Difference</th></tr>
 				</thead>

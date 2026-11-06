@@ -1307,7 +1307,7 @@ def call_margin_html(doc: dict | None) -> str:
         f'{doc["decisive_above_n"]} ({doc["decisive_above_pct"]}%). Measured '
         f'{measured_txt} from {doc["n_graded"]} graded '
         f'{"club " if doc.get("scope") == "club" else ""}matches{_margin_scope(doc)}.</p>'
-        '<table class="margin-tbl"><thead><tr><th>Gap (points)</th><th>Matches</th>'
+        '<table class="giq-table margin-tbl"><thead><tr><th>Gap (points)</th><th>Matches</th>'
         '<th>With a winner</th><th>Named side won, when there was a winner</th>'
         '</tr></thead><tbody>'
         + "".join(rows) + "</tbody></table></div>"
@@ -1486,7 +1486,7 @@ def record_table_html(preds: list[dict], c: dict,
             "kickoff and graded after the match. A prediction can change "
             "until kickoff and is never edited after it. Each row moves to "
             "the graded table above when the result is in.</p>"
-            '<div class="rec-scroll"><table>'
+            '<div class="rec-scroll"><table class="giq-table">'
             '<thead><tr><th scope="col">Kick-off</th>'
             '<th scope="col" class="m-hide">Competition</th>'
             '<th scope="col">Match</th><th scope="col">Pick</th>'
@@ -1594,7 +1594,7 @@ def record_table_html(preds: list[dict], c: dict,
         "</style>"
         + by_comp_html(c)
         + f'<div class="rec-filters" role="group" aria-label="Filter by competition">{filter_btns}</div>'
-        + '<div class="rec-scroll"><table>'
+        + '<div class="rec-scroll"><table class="giq-table">'
         + "<caption style=\"caption-side:bottom;font-size:13px;opacity:.7;"
         + "text-align:left;padding:8px 2px;\">Every graded GoalIQ pre-match "
         + "prediction, newest first. Logged before kick-off, never edited after it.</caption>"
@@ -1785,7 +1785,7 @@ def cs_table_html(c: dict) -> str:
         raise SystemExit("cs_table: luottamusdata ei osunut yhteenkaan "
                          "joukkueeseen — nimien normalisointi on rikki")
     return (
-        '<div class="scroll"><table>'
+        '<div class="scroll"><table class="giq-table">'
         f"<caption>Model clean sheet probability for every Premier League team, "
         f"Gameweek {c['cs_gw']}, {c['season']} season. Sorted by clean sheet chance. "
         f"Squad turnover is the share of last season's minutes played by players "
@@ -1920,7 +1920,7 @@ def far_grid_html(c: dict) -> str:
         f'<p class="muted">{label} Lower is easier. Each column averages the '
         'model\'s difficulty over six gameweeks, so this shows where the '
         'swings are, not a number for any single match.</p>\n'
-        '<div class="table-wrap"><table class="fdr-grid">\n'
+        '<div class="table-wrap"><table class="giq-table fdr-grid">\n'
         f'<thead><tr><th scope="col">Team</th>{head}</tr></thead>\n'
         f'<tbody>{"".join(rows)}</tbody></table></div></details>\n'
     )
@@ -2010,7 +2010,7 @@ def fdr_grid_html(c: dict) -> str:
             + "</tr>"
         )
     return (
-        '<div class="scroll"><table>'
+        '<div class="scroll"><table class="giq-table">'
         f"<caption>Clean sheet probability per fixture for the next "
         f"{len(c['gws'])} gameweeks, with opponent and venue. Easy fixtures "
         f"({CS_EASY_MIN:.0f}% or more) are picked out in gold, hard ones "
@@ -2511,7 +2511,7 @@ def next_matches_block(log: dict | None, now: _dt.datetime, limit: int = 6) -> s
             "</tr>")
     return (
         f"<style>{NEXT_MATCHES_CSS}</style>"
-        '<div class="nm-wrap"><table class="nm">'
+        '<div class="nm-wrap"><table class="giq-table nm">'
         "<thead><tr><th>Kick-off</th><th>Match</th><th>Model call</th>"
         "<th>Logged</th></tr></thead>"
         f"<tbody>{''.join(tr)}</tbody></table></div>"
@@ -3510,7 +3510,7 @@ def gw_calls_html(log: dict | None, exception_notes: dict[int, str] | None = Non
         "points for the captain pick and the boom-or-bust pick, the ceiling number or more "
         "for ceiling, 3 or more for the safest pick. Provisional rows wait for "
         "FPL to confirm bonus points.</p>"
-        '<div class="scroll"><table>'
+        '<div class="scroll"><table class="giq-table">'
         "<caption>The model's gameweek calls, scored after each gameweek.</caption>"
         '<thead><tr><th scope="col">GW</th><th scope="col">Call</th>'
         '<th scope="col">Player</th><th scope="col" class="m-hide">Logged</th>'
@@ -3734,12 +3734,12 @@ def xp_accuracy_html(log: dict | None,
         "the players who did not play, whose score was 0 and whose "
         "projection was already low."
         + fpl_sentence + "</p>"
-        '<div class="scroll"><table>'
+        '<div class="scroll"><table class="giq-table">'
         f"<caption>MAE per gameweek, {n_gws} graded"
         f"{f', {n_cmp} with the FPL numbers frozen' if n_cmp else ''}.</caption>"
         + head + "<tbody>" + "".join(trs) + "</tbody></table></div>"
         f"<p>{pooled_note}{dnp_sentence}</p>"
-        '<div class="scroll"><table>'
+        '<div class="scroll"><table class="giq-table">'
         "<caption>MAE by what the player actually did, and by position.</caption>"
         + grp_head + "<tbody>" + "".join(grp) + "</tbody></table></div>"
         f'<p class="note">Source: <a href="{public_data_url("data/fpl_xp_gw_accuracy.json")}">data/fpl_xp_gw_accuracy.json</a> '
@@ -3952,7 +3952,7 @@ def eo_by_tier_html(eo: dict | None, mgr: dict | None = None) -> str:
     cap_html = ""
     if cap_trs:
         cap_html = (
-            '<div class="scroll"><table>'
+            '<div class="scroll"><table class="giq-table">'
             f"<caption>Share of each sample that captained the player in Gameweek {escape(str(picks_gw))}.</caption>"
             "<thead><tr>" + "".join(cap_ths) + "</tr></thead>"
             "<tbody>" + "".join(cap_trs) + "</tbody></table></div>")
@@ -3971,7 +3971,7 @@ def eo_by_tier_html(eo: dict | None, mgr: dict | None = None) -> str:
         f"Chip points count towards rank, so the {escape(tiers[0][1])} column is "
         f"who led after Gameweek {escape(str(rank_gw))}, not who is best. "
         f"{escape(metric)} Sorted by the {escape(tiers[0][1])} column.</p>\n"
-        '<div class="scroll"><table>'
+        '<div class="scroll"><table class="giq-table">'
         f"<caption>Effective ownership by rank tier, Gameweek {escape(str(picks_gw))} squads.</caption>"
         "<thead><tr>" + "".join(ths) + "</tr></thead>"
         "<tbody>" + "".join(trs) + "</tbody></table></div>\n"

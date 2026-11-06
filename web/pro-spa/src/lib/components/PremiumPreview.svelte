@@ -209,7 +209,7 @@
 
 	{#if top3.length > 0}
 		<div class="teaser" aria-label="Locked expected points preview">
-			<table>
+			<table class="giq-table">
 				<thead>
 					<tr>
 						<th>Player</th>

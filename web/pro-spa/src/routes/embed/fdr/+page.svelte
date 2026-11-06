@@ -91,7 +91,7 @@
 	{:else if !data}
 		<p class="muted">Loading…</p>
 	{:else}
-		<table>
+		<table class="giq-table">
 			<thead>
 				<tr><th>Team</th><th class="num">CS%</th><th class="num">FDR</th><th>Fixtures</th></tr>
 			</thead>

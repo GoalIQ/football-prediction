@@ -246,7 +246,7 @@
 			     haku on todistettu; tuotannossa optimal_proven on False. -->
 			<h3>{result.totals.optimal_proven === false ? 'Strongest XI the model found around your locks' : 'Best XI around your locks'}</h3>
 			<div class="table-wrap">
-				<table>
+				<table class="giq-table">
 					<thead>
 						<tr><th>Pos</th><th>Player</th><th>Team</th><th class="num">Price</th></tr>
 					</thead>

@@ -877,7 +877,7 @@
 {/if}
 
 <div class="table-wrap tall">
-	<table>
+	<table class="giq-table">
 		<thead>
 			<tr>
 				<th class="cmp-col"

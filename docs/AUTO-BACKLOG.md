@@ -315,6 +315,11 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   päivittyy. GW10:ssä sama ottelu on 61,0 % `/api/fantasy`:ssa ja 45 % ottelusivulla; samalla sivulla näkyvä xG 2,28-1,20 ei sovi
   45 %:iin. Erot keskittyvät nousijoihin (16, 6,5 ja 4,9 prosenttiyksikköä), muut ottelut ovat alle 3,5:n. Syy on mittaamatta:
   sovituksen päivä vai nousijoiden eri käsittely. Molemmat luvut ovat julkisia, eikä lukija näe, että ne ovat eri mallitilasta.
+- 2026-11: `tests/test_committed_pages_match_builder.py` lupaa, ettei vertailussa ole kelloa, mutta `fact_context` lukee
+  `page_gameweek()`:n kautta oikeaa kelloa. Deadlinen ja seuraavan sivurakennuksen valissa testi on punainen, vaikka sivu on
+  oikein (6.11 18:30Z: tests.yml punainen commitilla f51d45a8c9, korjaantui bottiajossa 18:37Z). Builderia ei pida muuttaa:
+  `/fpl`:n taulukko siirtyy seuraavaan kierrokseen, joten sivun ei pida enaa vaittaa samaa lukua. Testin pitaa lukea sama kello
+  kuin sivun rakennushetki.
 
 ## Avoimet
 

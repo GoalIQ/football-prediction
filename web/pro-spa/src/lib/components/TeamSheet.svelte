@@ -122,7 +122,7 @@
 				{#if panel.fixtures.length === 0}
 					<p class="muted">No fixtures left this season.</p>
 				{/if}
-				<table class="fx">
+				<table class="giq-table fx">
 					<tbody>
 						{#each panel.fixtures as g (g.gw)}
 							{#if g.items.length === 0}
@@ -149,7 +149,7 @@
 
 				<h3>Players by projected points{panel.window ? `, ${panel.window}` : ''}</h3>
 				{#if panel.players}
-					<table class="squad">
+					<table class="giq-table squad">
 						<thead>
 							<tr>
 								<th>Player</th>

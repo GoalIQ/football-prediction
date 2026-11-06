@@ -81,7 +81,7 @@
 		<details class="table">
 			<summary>Show as a table</summary>
 			<div class="table-wrap">
-				<table>
+				<table class="giq-table">
 					<thead>
 						<tr>
 							<th>GW</th>

@@ -79,7 +79,7 @@
      Sama järjestys jonka jaettava viikkokuva käyttää → screenshot ja kuva
      kertovat saman tarinan samassa muodossa. -->
 <div class="table-wrap">
-	<table>
+	<table class="giq-table">
 		<thead>
 			<tr>
 				<th class="num">#</th>

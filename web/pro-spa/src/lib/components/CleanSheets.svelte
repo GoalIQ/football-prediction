@@ -253,7 +253,7 @@
 		{/if}
 
 		<div class="table-wrap">
-			<table>
+			<table class="giq-table">
 				<thead>
 					<tr>
 						<th>Team</th>
