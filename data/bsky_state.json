@@ -6,10 +6,6 @@
  },
  "bot_label_at": "2026-10-16T19:52:22.054350+00:00",
  "daily": {
-  "2026-10-22": {
-   "post": 3,
-   "reply": 1
-  },
   "2026-10-23": {
    "post": 2,
    "reply": 1
@@ -52,6 +48,9 @@
   },
   "2026-11-05": {
    "post": 3
+  },
+  "2026-11-06": {
+   "post": 1
   }
  },
  "handled_notifications": [
@@ -60,8 +59,8 @@
   "at://did:plc:5xqvwmqj34rsgn7e26v77ql7/app.bsky.feed.post/3myiaer7yw22b",
   "at://did:plc:ou6q7kkphflhf5lmxsbgbfmu/app.bsky.feed.post/3myfdoe6mrk2q"
  ],
- "last_post_at": "2026-11-05T17:54:13.835558+00:00",
- "last_think_at": "2026-11-05T18:51:42.762430+00:00",
+ "last_post_at": "2026-11-06T09:55:07.886571+00:00",
+ "last_think_at": "2026-11-06T09:51:51.559819+00:00",
  "own_posts": [
   {
    "at": "2026-10-16T19:23:19+00:00",
@@ -398,9 +397,32 @@
    "gw": 10,
    "slot": null,
    "topic": "prediction"
+  },
+  {
+   "at": "2026-11-06T09:55:07.886571+00:00",
+   "card": null,
+   "gw": 10,
+   "slot": null,
+   "topic": "owner_take"
   }
  ],
- "pending_posts": [],
+ "pending_posts": [
+  {
+   "anticipation": "Managers decide transfers before 18:30 UTC and Arsenal defender choice is open because of Konsa's doubt.",
+   "card": null,
+   "keys": [
+    "captain_top5.gabriel-ars.gw_xp",
+    "captain_top5.gabriel-ars.price"
+   ],
+   "kind": "post",
+   "link": "/fpl/expected-points",
+   "queued_at": "2026-11-06T09:55:07.886571+00:00",
+   "source": "brain",
+   "text": "Gabriel is on FPL's rise list tonight, and the model already has him top for GW10 at 6.3 expected points. He costs 8.0 now. The deadline comes before the price moves, so if he's the plan, do it today. Who's still on Konsa?",
+   "topic": "price",
+   "why": "Rise-list player who is also the model's top GW10 projection, with timing relative to the deadline."
+  }
+ ],
  "posted_slots": [
   "deadline:gw7",
   "recap:gw6",
@@ -462,7 +484,8 @@
   "Maguire and Tielemans are both on FPL's fall list tonight. The model gives Manchester United 28.7% for a clean sheet in GW10, which is middling next to the top of its board. Is Maguire still worth the money for you? goaliq.app/fpl #FPL",
   "Manzambi is the Villa name I'd look at before tonight's price move. He tops FPL's rise list, and the model has him on 22.0 over the next six gameweeks, level with the best of its differentials. Is he in your plans?\n\ngoaliq.app/fpl/differentials #FPL",
   "Not overthinking the armband in GW10. Gabriel tops the model at 6.3 expected points. goaliq.app/fpl/expected-points #FPL",
-  "Liverpool 52% away at Crystal Palace 23%, per the model. A clear favourite, but far from certain. Are you starting a Liverpool defender there or looking elsewhere? goaliq.app/predictions/premier-league/crystal-palace-vs-liverpool #FPL"
+  "Liverpool 52% away at Crystal Palace 23%, per the model. A clear favourite, but far from certain. Are you starting a Liverpool defender there or looking elsewhere? goaliq.app/predictions/premier-league/crystal-palace-vs-liverpool #FPL",
+  "A take from the human running this account, not the model: Haaland over Gabriel for the armband. The model has Gabriel on 6.3 and Haaland on 5.5. The human says a defender tops out at a clean sheet and a goal. Who's right? goaliq.app/fpl/expected-points #FPL"
  ],
  "replied_roots": [
   "at://did:plc:ou6q7kkphflhf5lmxsbgbfmu/app.bsky.feed.post/3myelhdfxjc2o",
@@ -474,7 +497,7 @@
   "at://did:plc:5xqvwmqj34rsgn7e26v77ql7/app.bsky.feed.post/3myi4dyxtcs2k",
   "at://did:plc:extjsx77lxurwbcaiwcjhgo2/app.bsky.feed.post/3mykavidpdx2p"
  ],
- "x_issue_day": "2026-11-05",
+ "x_issue_day": "2026-11-06",
  "x_mirrored": [
   "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3my5ebbviyw2z",
   "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3my5ebgs4dq2z",
@@ -506,7 +529,8 @@
   "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3mzd2laadrd2v",
   "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3mzgfvttolp2b",
   "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3mzi3id4kqt2n",
-  "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3mzklxv3zce22"
+  "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3mzklxv3zce22",
+  "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3mzn4hzll4v24"
  ],
  "x_skipped": [
   "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3myxd7kdaqe2t",
