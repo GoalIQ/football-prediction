@@ -166,24 +166,20 @@ ALLOWED: dict[str, list[Poikkeus]] = {
         ),
     ],
     "scripts/build_fpl_page.py": [
-        # 17.10.2026 (tyokalut taakse, copy-vaihe): poistettu poikkeus
-        # "captain ranker, chip timing for the best Wildcard" (free sanoi
-        # fit-checker, joka on nyt premium). Saman FAQ-vastauksen tier-vaite
-        # on nyt alla olevassa "are free, and GoalIQ Premium adds the tools
-        # for your own team" -poikkeuksessa.
+        # 6.11.2026 (copy-kierros): FAQ-vastaus synkattu landingin WP14-tekstiin,
+        # joten aiempi pitka poikkeus "are free, and GoalIQ Premium adds the tools
+        # for your own team" korvattiin tasta lauseesta.
         Poikkeus(
-            ote="are free, and GoalIQ Premium adds the tools for your own team",
+            ote="GoalIQ Premium adds the transfer and chip calls for your own team",
             reason=(
-                "fpl.html:n FAQ 'Is GoalIQ good for FPL?' listaa ilmaisen ja "
-                "maksullisen puolen samassa kappaleessa (pitka myyntiteksti, "
-                "ei tier-listaus). 17.10 jako: rate my teamista ilmaiseksi "
-                "vain arvosana ('a rating for your squad from rate my team'), "
-                "koko analyysi ja fit checker Premiumissa. rate-my-team on "
-                "rekisterissa free koska reitti aukeaa arvosanalle (PARTIAL), "
-                "joten se kirjataan free-puolelle; analyysin lukitus on "
-                "palvelimen maskissa ja $lib/personalLockissa."
+                "fpl.html:n FAQ 'Is GoalIQ good for FPL?' on sama vastaus kuin "
+                "landingilla: ilmainen ja maksullinen puoli samassa kappaleessa "
+                "(myyntiteksti, ei tier-listaus). Ilmaiseksi arvosana ja oman XI:n "
+                "kapteeni (fp #77), loppu analyysi Premiumissa. rate-my-team on "
+                "rekisterissa free koska reitti aukeaa arvosanalle (PARTIAL); "
+                "analyysin lukitus on palvelimen maskissa ja $lib/personalLockissa."
             ),
-            premium=("fit-checker", "captain-ranker", "chip-timing", "edge-mode"),
+            premium=("captain-ranker",),
             free=("rate-my-team", "price-watch"),
         ),
         Poikkeus(

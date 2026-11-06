@@ -296,6 +296,12 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   jää arvoon `engagement` 0 ja `topic_table` laskee sen aiheen tilastoon. 6.11 poistettu postaus nosti `owner_take`-aiheen
   n:n kahteen ja laski `engaged_rate_bayes`-arvon 0,667:stä 0,5:een, ja aiheen mittari tarkistetaan 2026-11-22. Puuttuva uri
   pitää merkitä poistetuksi ja jättää taulukosta pois, mutta vain kun haku itse onnistui.
+- 2026-11: `optimal_xi` (`src/models/fpl_rate_team.py`) valitsee avauksen horisontti-xP:llä eikä kierroksen xP:llä. GW10:n
+  jäädytetyssä mallirivissä penkille jäi pelaaja, jonka kierros-xP oli 0,7 suurempi kuin aloittavan, vaikka muodostelma olisi
+  ollut laillinen. Jäädytettyyn riviin ei kosketa, koska se on julkinen loki. Avauksen pitää lukea saman kierroksen xP.
+- 2026-11: `src/marketing/public_surface.py` hakee saraketta tarkalla nimellä `6GW xP`, mutta sivujen otsikko on `{n_gw}GW xP`.
+  Kun ikkunassa on muu määrä kierroksia (6.11 mitattu `5GW xP`), `/fpl/expected-points`- ja seurasivujen luvut jäävät pois
+  reply-moduulista. Vika on turvallinen, koska luku puuttuu eikä väärää lukua synny. Sarake pitää hakea ikkunan pituudesta riippumatta.
 
 ## Avoimet
 

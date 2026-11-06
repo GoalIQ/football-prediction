@@ -68,3 +68,38 @@ def test_free_page_shows_the_note_only_mid_round():
     # Negatiivinen kontrolli: ilman sita testi lapaisisi myos silloin kun
     # varaus renderoityy AINA.
     assert "is not finished" not in between
+
+
+def _page_with_fixtures(fixtures):
+    """Vanha artefakti: next_gameweek 9, deadline jo GW10 (Understat-katko 6.11)."""
+    from datetime import datetime, timezone
+    from scripts.build_fpl_longtail import render_expected_points
+    xp = {
+        "meta": {"available": True, "next_gameweek": 9, "deadline_gameweek": 10,
+                 "completed_gameweeks": list(range(1, 9)), "season": "2026/27"},
+        "players": [{
+            "id": i, "web_name": f"P{i}", "team_short": "ARS",
+            "pos": "MID", "price": 60, "xp_horizon_total": 30.0 - i,
+            "xp_per_gw": 5.0, "xp_per_90": 5.0, "xmins": 85.0,
+            "p_start": 0.9, "gameweeks": [{"gw": 9, "xp": 5.0}, {"gw": 10, "xp": 5.0}],
+        } for i in range(1, 12)],
+    }
+    return render_expected_points(xp, datetime(2026, 11, 6, tzinfo=timezone.utc),
+                                  fixtures=fixtures) or ""
+
+
+def test_note_disappears_when_every_fixture_has_kicked_off_on_stale_artifact():
+    from datetime import datetime, timedelta, timezone
+    ohi = (datetime.now(timezone.utc) - timedelta(days=5)).timestamp() * 1000
+    assert "is not finished" not in _page_with_fixtures(
+        [{"gameweek": 9, "kickoff_ms": ohi}, {"gameweek": 9, "kickoff_ms": ohi}])
+
+
+def test_note_stays_while_a_fixture_has_not_kicked_off():
+    """Negatiivinen kontrolli: yksi alkamaton ottelu pitaa varauksen sivulla."""
+    from datetime import datetime, timedelta, timezone
+    nyt = datetime.now(timezone.utc)
+    ohi = (nyt - timedelta(hours=5)).timestamp() * 1000
+    tuleva = (nyt + timedelta(hours=5)).timestamp() * 1000
+    assert "is not finished" in _page_with_fixtures(
+        [{"gameweek": 9, "kickoff_ms": ohi}, {"gameweek": 9, "kickoff_ms": tuleva}])

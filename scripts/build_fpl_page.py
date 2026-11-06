@@ -862,23 +862,10 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
             # (tests/test_tool_tier_reader_discipline.py).
             (
                 "Yes. GoalIQ is built FPL-first: clean sheet probability, fixture "
-                "difficulty, a rating and the captain pick for your squad from rate my team, price watch and "
-                "the full xG/xA/xGI leaderboard for every player "
-                "with data, a filterable player stats table with shots, "
-                "shots in the box and key passes, "
-                "are free, and GoalIQ Premium adds the tools for your own team "
-                "(the full rate my team analysis for your "
-                "squad, a fit checker that searches for the strongest 15 around "
-                "your must-have players, mini-league head-to-head win "
-                "probability and your gameweek review), an interactive team manager "
-                "with a gameweek planner, per-gameweek expected points (xP) for every player in the projection, the "
-                "captain ranker, chip timing for the best Wildcard, Bench Boost, "
-                "Triple Captain and Free Hit windows, transfer plans that chain "
-                "1 to 2 moves with hits priced in, an edge mode with rank-aware "
-                "picks for your mini-league, a player value ranking, a DefCon "
-                "tracker and transfer suggestions you can apply "
-                "to your planned squad. Every number comes from a match model "
-                "with a published, pre-match-logged track record."
+                "difficulty, a rating and the captain pick for your squad are free, "
+                "with no sign-in. GoalIQ Premium adds the transfer and chip calls "
+                "for your own team and the captain ranker. Every number comes from "
+                "a match model with a published, pre-match-logged track record."
             ),
         ),
         (
@@ -906,7 +893,7 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
                 "against the model's own squad, head-to-head win probability "
                 "in your mini-league, the watchlist, your own players marked "
                 "in price watch and differentials filtered by your squad; an interactive team manager (formations, bench swaps, "
-                "captaincy, a six-gameweek planner with each player's "
+                "captaincy, a gameweek planner with each player's "
                 "opponent per week), per-gameweek expected points (xP) for every player in the projection, the captain "
                 "ranker, transfer suggestions with one-tap apply to your "
                 "planned squad, player value (xP per million) for the top 50 with position and team filters, showing the scoring rate per 90 minutes and expected minutes separately so a high rate on low minutes reads as a bench risk and not a bargain, a live DefCon "
@@ -2073,7 +2060,7 @@ def jsonld_blocks(c: dict, faq: list[tuple[str, str]]) -> str:
             "team (the full rate my team analysis for "
             "your squad, mini-league head-to-head win probability, the fit "
             "checker, your gameweek review and the watchlist), an interactive "
-            "team manager with a six-gameweek planner, per-gameweek "
+            "team manager with a gameweek planner, per-gameweek "
             "expected points (xP) for every player in the projection, the captain "
             "ranker, chip timing for Wildcard, Bench "
             "Boost, Triple Captain and Free Hit, transfer plans that chain 1 to "
@@ -2974,7 +2961,7 @@ log, match by match with every miss included, is on the
 <h2 id="pro">Unlock the full FPL toolkit with Premium</h2>
 <p>Premium adds the full analysis of your own team, per-gameweek expected
 points (xP) for every player in the projection, a captain ranker, transfer
-suggestions you can apply to your planned squad, a six-gameweek planner and
+suggestions you can apply to your planned squad, a gameweek planner and
 the full DefCon leaderboard, from the same match model as this page.
 The rating for your squad, the model's captain pick and the
 price watch list stay free.</p>
@@ -3045,7 +3032,7 @@ predictions and analytics. Not betting advice.</p>
      visit, not the next gameweek. Every access is wrapped because private
      mode can throw on read, and a promo bar must never break the page. -->
 <div class="sticky-cta" id="stickyCta" hidden>
-  <p>Free here: clean sheets and the six-gameweek grid. Premium: all players, every gameweek, plus the captain ranker.</p>
+  <p>Free here: clean sheets and the fixture grid. Premium: expected points for every player in the projection, plus the captain ranker.</p>
   <a class="cta" href="{PRO_TAB_URL}&amp;src=fpl-sticky&amp;srcp=fpl" data-cta="fpl-sticky">See what to do &#9656;</a>
   <button class="close" type="button" id="stickyClose" aria-label="Hide this bar">&times;</button>
 </div>
@@ -3768,7 +3755,7 @@ def xp_accuracy_html(log: dict | None,
         "was frozen for. Players outside "
         "the projection are not in these counts: FPL flagged them out (status "
         "i, s, u or n), or the model projects under 1.0 points for them "
-        "across the next six gameweeks." + fpl_note + "</p>")
+        "across the gameweeks in the projection." + fpl_note + "</p>")
 
 
 EO_TIER_LABELS = {"top1k": "top 1k", "top10k": "top 10k", "top100k": "top 100k"}
