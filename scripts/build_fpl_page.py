@@ -1022,7 +1022,7 @@ def _band_txt(lo: float, hi: float, last: bool) -> str:
     a, b = round(lo * 100), round(hi * 100)
     if last and b >= 100:
         return f"{a}% or more"
-    return f"{a}&ndash;{b}%"
+    return f"{a}-{b}%"
 
 
 def record_head_html(c: dict) -> str:
@@ -1704,7 +1704,7 @@ def _run_cell(r: dict) -> str:
     vakio."""
     v = r.get("run_cs_pct")
     if v is None:
-        return "&ndash;"
+        return "–"
     n = int(r.get("run_n") or 0)
     return (f'<span title="Average clean sheet probability over the next '
             f'{n} matches in the grid below">{fmt_fixed(v)}%</span>')
@@ -1748,7 +1748,7 @@ def cs_table_html(c: dict) -> str:
             churn = f'{t["minutes_churn_pct"]:.0f}%'
             sub = f'{t["minutes_churn_pct"]:.0f}% turnover'
         else:
-            churn = "&ndash;"
+            churn = "–"
             sub = ""
         # Sarake on .m-hide (5. sarake ei mahdu 390px:aan). "Show all columns"
         # tuo sen takaisin, mutta se on kaksi tapahtumaa liian kaukana luvusta
