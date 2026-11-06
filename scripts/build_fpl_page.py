@@ -2330,7 +2330,7 @@ CSS = """
   .toollist li{ margin:10px 0; }
   .toollist a{ font-weight:700; }
   .disclaimer{ border:1px solid var(--line); background:var(--paper); border-radius:var(--radius); padding:12px 16px; color:var(--ink-muted); font-size:14px; margin:26px 0 60px; }
-  .upsell{ border:1px solid var(--line); background:var(--paper); border-radius:var(--radius); padding:24px 26px; margin:48px 0 6px; }
+  .upsell{ margin:48px 0 6px; }
   /* Upgrade paths in context. Measured before this: the CTAs sat at y=737
      and then nothing until y=11862 on a 16680px page, so 8.6 screens of
      free data carried no way to buy. Two additions, both restrained: one
@@ -2951,7 +2951,7 @@ log, match by match with every miss included, is on the
 {gw_calls}
 {xp_accuracy}
 {eo_by_tier}
-<aside class="upsell">
+<aside class="giq-lock upsell">
 <h2 id="pro">Unlock the full FPL toolkit with Premium</h2>
 <p>Premium adds the full analysis of your own team, per-gameweek expected
 points (xP) for every player in the projection, a captain ranker, transfer

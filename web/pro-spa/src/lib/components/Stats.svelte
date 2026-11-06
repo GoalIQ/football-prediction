@@ -403,7 +403,7 @@
 				the same gameweeks are free for everyone.
 			</p>
 			{#if onUpgrade}
-				<button type="button" class="primary" onclick={onUpgrade}>See Premium</button>
+				<button type="button" class="giq-btn giq-btn--primary" onclick={onUpgrade}>See Premium</button>
 			{/if}
 		</div>
 	{/if}

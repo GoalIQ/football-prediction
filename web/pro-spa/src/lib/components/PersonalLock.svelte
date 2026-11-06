@@ -69,27 +69,22 @@
 		<strong>{copy.title}.</strong>
 		{copy.body}
 		{#if hidden}<strong>{hidden}</strong>{/if}
-		<button type="button" class="linklike" onclick={open}>See Premium</button>
+		<button type="button" class="giq-link" onclick={open}>See Premium</button>
 	</p>
 {:else}
-	<div class="plock" data-personal-lock={tool}>
+	<div class="giq-lock plock" data-personal-lock={tool}>
 		<p class="plock-title">
 			<strong>{copy.title}</strong>
-			<span class="tag" aria-hidden="true">Premium</span>
+			<span class="giq-tag" aria-hidden="true">Premium</span>
 		</p>
 		<p class="muted plock-body">{copy.body}</p>
 		{#if hidden}<p class="plock-count">{hidden}</p>{/if}
-		<button type="button" class="secondary" onclick={open}>See Premium</button>
+		<button type="button" class="giq-btn giq-btn--primary" onclick={open}>See Premium</button>
 	</div>
 {/if}
 
 <style>
 	.plock {
-		border: 1px solid var(--border);
-		border-left: 3px solid var(--accent);
-		border-radius: var(--radius);
-		background: var(--surface);
-		padding: var(--s-3) var(--s-4);
 		margin: var(--s-3) 0;
 		max-width: 680px;
 	}
@@ -110,28 +105,8 @@
 		font-size: var(--step--1);
 		font-weight: 700;
 	}
-	.tag {
-		font-family: var(--font-mono);
-		font-size: 0.75em;
-		font-weight: 700;
-		letter-spacing: 0.08em;
-		color: var(--accent);
-		border: 1px solid var(--accent);
-		padding: 0.1em 0.35em;
-	}
 	.plock-line {
 		font-size: var(--step--1);
 		margin: var(--s-2) 0;
-	}
-	.linklike {
-		background: none;
-		border: none;
-		padding: 0;
-		min-height: 0;
-		color: var(--accent);
-		font: inherit;
-		font-weight: 700;
-		text-decoration: underline;
-		cursor: pointer;
 	}
 </style>

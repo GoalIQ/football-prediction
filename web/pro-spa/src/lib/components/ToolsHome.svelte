@@ -532,7 +532,7 @@
 						Player xP per gameweek, the captain ranker and fixture swing are part of GoalIQ
 						Premium.
 					</p>
-					<button type="button" class="primary" onclick={goUpgrade}>See Premium</button>
+					<button type="button" class="giq-btn giq-btn--primary" onclick={goUpgrade}>See Premium</button>
 				</div>
 			{/if}
 			{#if show('clean-sheets')}

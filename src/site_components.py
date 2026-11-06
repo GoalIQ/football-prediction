@@ -48,8 +48,8 @@ def _color(token: str | None) -> str:
     return "transparent" if token is None else _COLORS[token]
 
 
-def btn_css() -> str:
-    """Napin koko tyyli yhtena merkkijonona, ilman <style>-elementtia."""
+def components_css() -> str:
+    """Jaettujen komponenttien tyyli yhtena merkkijonona, ilman <style>-elementtia."""
     out = [
         ".giq-btn.giq-btn{display:inline-flex;align-items:center;"
         "justify-content:center;gap:8px;box-sizing:border-box;min-height:44px;"
@@ -68,6 +68,20 @@ def btn_css() -> str:
                    f"color:{_color(fg)};font-weight:{weight};}}")
         out.append(f"{sel}:hover{{background:{_color(hbg)};"
                    f"border-color:{_color(hborder)};color:{_color(hfg)};}}")
+    # Lukko: sama tunnus kaikilla pinnoilla, amber vasen reuna = Premium.
+    out.append(f".giq-lock.giq-lock{{box-sizing:border-box;padding:16px 20px;"
+               f"background:{_COLORS['paper']};border:1px solid {_COLORS['line']};"
+               f"border-left:3px solid {_COLORS['gold']};border-radius:0;}}")
+    out.append(f".giq-tag.giq-tag{{display:inline-block;padding:.1em .35em;"
+               f"border:1px solid {_COLORS['gold']};color:{_COLORS['gold']};"
+               f"font-family:{MONO};font-size:.75em;font-weight:700;"
+               "letter-spacing:.08em;}")
+    # Tekstin sisainen myyntilinkki. Kaksoisluokka, koska SPA:n `button`
+    # antaa min-heightin ja reunan.
+    out.append(f".giq-link.giq-link{{min-height:0;padding:0;background:none;"
+               f"border:0;color:{_COLORS['gold']};font:inherit;font-weight:700;"
+               "text-decoration:underline;cursor:pointer;}")
+    out.append(f".giq-link.giq-link:hover{{color:{_COLORS['cream']};}}")
     # Puhelimella isot kirjaimet ja .1em eivat mahdu: hinta katkesi kahtia
     # ("3.99 / EUR/MO") ja landingin nuoli putosi omalle rivilleen (mitattu 6.11).
     out.append("@media (max-width:480px){.giq-btn.giq-btn{padding:13px 14px;"
@@ -79,4 +93,4 @@ def spa_css() -> str:
     """SPA:n generoitu tiedosto. Sama tyyli kuin hubissa, otsikko edessa."""
     return ("/* GENEROITU: src/site_components.py, aja "
             "python -m scripts.build_site_chrome. Ala muokkaa kasin. */\n"
-            + btn_css() + "\n")
+            + components_css() + "\n")

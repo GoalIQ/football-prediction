@@ -956,7 +956,7 @@ def _scoreline_lock(e: dict, played: bool = False) -> str:
     if played:
         return (
             _secbar("Scorelines", "teal")
-            + '<div class="card">' + top
+            + '<div class="card giq-lock">' + top
             + '<p class="lock-txt"><strong>Scorelines and expected goals for upcoming '
             "matches are in Premium.</strong></p>" + button + "</div>"
         )
@@ -968,7 +968,7 @@ def _scoreline_lock(e: dict, played: bool = False) -> str:
     what = (f"{hidden} more scorelines" if shown else f"{hidden} scorelines")
     return (
         _secbar("Scorelines", "teal")
-        + '<div class="card">' + top + grid
+        + '<div class="card giq-lock">' + top + grid
         + f'<p class="lock-txt"><strong>{what} and expected goals in Premium.</strong></p>'
         + button + "</div>"
     )
