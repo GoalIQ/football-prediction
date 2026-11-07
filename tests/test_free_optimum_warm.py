@@ -41,7 +41,7 @@ def _kielletty_laskenta(*_a, **_k):
 
 def test_lammitetty_optimi_on_se_jonka_rate_team_hakee(monkeypatch):
     mittaus = rt.warm_free_optimum()
-    assert mittaus["key"] == "test-fixture"
+    assert mittaus["key"].startswith("test-fixture|"), "ikkuna kuuluu avaimeen"
     monkeypatch.setattr(rt, "build_optimal_squad", _kielletty_laskenta)
     out = rt.rate_team(entry=424242)
     assert out["rating"]["percentile"] >= 0

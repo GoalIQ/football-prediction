@@ -39,6 +39,33 @@ def empty_phase0() -> dict:
     }
 
 
+def meta_at_clock_phase0(meta: dict, phase0: dict | None = None) -> dict:
+    """`fpl_gameweek.meta_at_clock` phase0:n deadlineilla ja kickoff-ajoilla.
+
+    Ei verkkokutsua: `/api/fantasy` ja `/api/fantasy/xp` eivat saa riippua
+    FPL:n saatavuudesta. Phase0:ssa lista on, xP-artefaktissa ei.
+    """
+    from src.models.fpl_gameweek import completed_gameweeks, meta_at_clock
+    src = load_phase0() if phase0 is None else phase0
+    return meta_at_clock(
+        meta,
+        deadlines=(src.get("meta") or {}).get("deadlines") or [],
+        done=completed_gameweeks(src.get("fixtures")),
+    )
+
+
+def phase0_api_meta(phase0: dict) -> dict:
+    """`/api/fantasy`:n meta: kierros kellon mukaan ja xP:n rakennushetki.
+
+    Tassa eika reitissa: reitti ei lue xP-poolia
+    (`tests/test_xp_horizon_total_meta_routes.py`), ja aikaleima on ainoa mita
+    siita tarvitaan.
+    """
+    from src.models.fpl_xp import xp_generated_at
+    return {**meta_at_clock_phase0(phase0["meta"], phase0),
+            "xp_generated_at": xp_generated_at()}
+
+
 def load_phase0(path: Path = PHASE0_PATH) -> dict:
     if not path.exists():
         return empty_phase0()

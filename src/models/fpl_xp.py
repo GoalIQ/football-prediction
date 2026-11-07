@@ -1616,6 +1616,26 @@ def load_xp_actionable(path: Path = XP_PATH) -> dict:
     return attach_horizon_total_actionable(data)
 
 
+_XP_BUILT: dict = {}
+
+
+def xp_generated_at(path: Path = XP_PATH) -> str | None:
+    """Artefaktin rakennushetki. Luetaan kerran tiedostoversiota kohden.
+
+    7.11: `/api/fantasy` kertoo taman, koska kutsut ovat xP:sta mutta sen oma
+    `generated_at` on phase0:n, ja phase0 voi toipua ensin. Kevyt reitti ei saa
+    jasentaa 1,8 Mt:n artefaktia joka pyynnolla.
+    """
+    try:
+        stamp = path.stat().st_mtime_ns
+    except OSError:
+        return None
+    if _XP_BUILT.get("stamp") != (str(path), stamp):
+        built = (load_xp(path).get("meta") or {}).get("generated_at")
+        _XP_BUILT.update(stamp=(str(path), stamp), built=built)
+    return _XP_BUILT.get("built")
+
+
 def load_xp(path: Path = XP_PATH) -> dict:
     if not path.exists():
         return empty_xp()
