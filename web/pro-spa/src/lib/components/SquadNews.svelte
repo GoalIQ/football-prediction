@@ -31,8 +31,21 @@
 	};
 	// `entry` sailyy propina (kutsupaikka), mutta hintarivit eivat enaa tarvitse
 	// sita: risers/fallers leikataan ruudun runkoon (sama saanto kuin saatavuudella).
-	let { players, premium = false }: { players: Row[]; entry?: number | null; premium?: boolean } =
-		$props();
+	let {
+		players,
+		premium = false,
+		updated = null,
+		onCount
+	}: {
+		players: Row[];
+		entry?: number | null;
+		premium?: boolean;
+		/** WP16: paiva jolta saatavuusliput ovat ($lib/myTeamFlow flowUpdateDay). */
+		updated?: string | null;
+		/** WP16: rivien maara virran otsikkoriville. null = ei tiedossa: nolla ei
+		 *  todista mitaan kun hintahaku on kesken tai epaonnistui. */
+		onCount?: (n: number | null) => void;
+	} = $props();
 
 	const locked = $derived(personalLock(premium));
 	let lists = $state<{ risers: PriceMove[]; fallers: PriceMove[] } | null>(null);
@@ -62,11 +75,14 @@
 	// paivasana lukijan paikallisessa ajassa ($lib/priceEta). Ennen "tonight"
 	// johdettiin eta_days-offsetista ja oli vaarin Amerikoissa joka ilta.
 	const moves = $derived(squadPriceMoves(ids, lists?.risers, lists?.fallers, clock.now));
+	$effect(() => {
+		const n = avail.length + moves.rising.length + moves.falling.length;
+		onCount?.(n === 0 && lists === null ? null : n);
+	});
 </script>
 
 {#if !locked && (avail.length || moves.rising.length || moves.falling.length)}
 	<section class="wrap squad-news">
-		<h3>Your squad before the deadline</h3>
 		<ul>
 			{#each avail as p (p.id)}
 				<li>
@@ -85,22 +101,24 @@
 		<!-- Portti k5: lahde nakyy aina, ei vain manual-moodissa. Hintaliike on
 		     FPL:n oma projektio ja paiva liikkuu myohaisten siirtojen mukana. -->
 		<p class="muted small">
-			Availability from FPL. Price moves are FPL's own projection, and the day moves with
-			late transfers.
+			Availability from our last FPL update{#if updated}&nbsp;({updated}){/if}. Price moves are
+			FPL's own projection, and the day moves with late transfers.
 		</p>
 	</section>
+{:else if !locked}
+	<!-- WP16: paneelin otsikko on kysymys, joten tyhja tila sanotaan aaneen.
+	     Vain saatavuudesta: hintahaku voi epaonnistua, joten tyhja lista ei
+	     todista etta hintaliikkeita ei ole. Paiva mukana, koska liput tulevat
+	     artefaktista: 7.11 FPL liputti 11 pelaajaa jotka artefaktissa olivat
+	     puhtaita. -->
+	<p class="muted">
+		No availability flags on your squad at our last FPL update{#if updated}&nbsp;({updated}){/if}.
+	</p>
 {/if}
 
 <style>
 	.wrap {
 		margin: 14px 0 18px;
-	}
-	h3 {
-		font-size: 0.8rem;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		margin: 0 0 6px;
-		font-family: var(--font-mono);
 	}
 	ul {
 		list-style: none;

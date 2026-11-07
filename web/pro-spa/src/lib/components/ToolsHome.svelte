@@ -16,7 +16,9 @@
 	 */
 	import { onMount } from 'svelte';
 	import { auth, refreshSubscription, FREE_PREMIUM_UNTIL_DAY, FREE_PREMIUM_UNTIL_GW } from '$lib/auth.svelte';
-	import { fetchXp, type XpResponse } from '$lib/api';
+	import { fetchFantasy, fetchXp, type XpResponse } from '$lib/api';
+	import { staleModelLine } from '$lib/myTeamFlow';
+	import { clock } from '$lib/now.svelte';
 	import { capture } from '$lib/analytics';
 	import { loadProfileEntry } from '$lib/fplEntry.svelte';
 	import Provenance from './Provenance.svelte';
@@ -316,6 +318,20 @@
 		}
 	});
 
+	// 7.11 (Villen ehto "paiva nakyvilla"): katkossa kutsut ovat vanhasta
+	// projektiosta, joten paiva on kehyksessa eika yksittaisessa tyokalussa.
+	// /api/fantasy on kaikille auki, joten rivi nakyy myos kirjautumattomalle.
+	let modelBuilt = $state<string | null>(null);
+	$effect(() => {
+		fetchFantasy().then(
+			(p) => (modelBuilt = (p?.meta?.xp_generated_at as string | undefined) ?? null),
+			() => {}
+		);
+	});
+	const modelAgeLine = $derived(
+		segment === 'matches' ? null : staleModelLine(modelBuilt, clock.now)
+	);
+
 	// 4.9: `jumpTo` ja `openToolCard` poistuivat. Kumpikin oli kiertotie
 	// samaan puutteeseen: tyokalulla ei ollut osoitetta, joten siihen
 	// paastiin vain vierittamalla tai vaihtamalla komponentin tilaa. Nyt
@@ -419,6 +435,7 @@
 	     liigabannerin ja footerin ensimmaiseen ruutuun, josta data tyonsi ne
 	     400-750 px alas (mitattu 390 px, 4G: /matches 0,30, /players/value
 	     0,22, /players/price-watch 0,34). Varaus pitaa ne ruudun alla. -->
+	{#if modelAgeLine}<p class="model-age">{modelAgeLine}</p>{/if}
 	<div class="tool-area">
 	{#if showDirectory}
 		<!-- Hakemisto renderoitiin jo yllä; ryhman pinottu sisalto jaa pois. -->
@@ -673,6 +690,14 @@
 		.team-grid > :global(.span-all) {
 			grid-column: 1 / -1;
 		}
+	}
+	.model-age {
+		margin: 0 0 var(--s-3);
+		padding: var(--s-2) var(--s-3);
+		font-size: 14px;
+		color: var(--text);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
 	}
 	.tool-area {
 		min-height: calc(100vh - var(--bar-h));

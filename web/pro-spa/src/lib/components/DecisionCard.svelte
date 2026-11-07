@@ -32,6 +32,7 @@
 	import { CHIP_NAMES } from '$lib/fantasyTools';
 	import { modelSourceLine, NO_FIXTURE, type ModelCaptainCard } from '$lib/weekRows';
 	import { xpHorizon } from '$lib/xpHorizon';
+	import { captainGwOf, captainOppOf } from '$lib/myTeamFlow';
 	import { openPlayer } from '$lib/playerSheet.svelte';
 	import { transferTag } from '$lib/transferLabel';
 	import { capture } from '$lib/analytics';
@@ -89,11 +90,7 @@
 	}
 
 	/** Kierros jolle kapteeni on laskettu (kesken kierroksen deadline-GW). */
-	const capGw = $derived(
-		capSrc
-			? (capSrc.meta.captain_gw ?? (capSrc.meta.gw_in_progress === true ? null : capSrc.meta.gw))
-			: (model?.gw ?? null)
-	);
+	const capGw = $derived(capSrc ? captainGwOf(capSrc) : (model?.gw ?? null));
 	const cap = $derived(mine ? (mine.captain?.pick ?? null) : (openCap ?? model?.captain ?? null));
 	/** Avatussa lukossa vaihtoehto on piilotettu (palvelin: alternative null). */
 	const alt = $derived(
@@ -101,15 +98,9 @@
 	);
 	/** Kapteenin vastustaja(t): oma kortti rungon pelaajarivista, mallin kortti
 	 *  lukijalta (`captain.opponents`: [] = ei ottelua, null = ei rivia). */
-	const capOpp = $derived.by(() => {
-		if (!capSrc) return model?.opp ?? null;
-		if (!cap || capGw == null) return null;
-		const row = capSrc.team?.players?.find((p) => p.id === cap.id);
-		const g = row?.gameweeks?.find((x) => x.gw === capGw);
-		if (!g) return null;
-		if (g.opponents.length === 0) return NO_FIXTURE;
-		return g.opponents.map((o) => `${o.opp} (${o.venue})`).join(', ');
-	});
+	const capOpp = $derived(
+		capSrc ? captainOppOf(capSrc, cap?.id, capGw) : (model?.opp ?? null)
+	);
 	/** Mallin kortin tarkistusreitti: lahde palvelimen `meta.source`sta. */
 	const src = $derived(
 		!ownCap && model

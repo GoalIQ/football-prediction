@@ -815,9 +815,10 @@ describe('erotteleva fikstuuri: portti kaatuu kun kutsupaikka palautetaan', () =
 	});
 	it('RateTeam: kentan oman otsakerivin ikkuna pois kaataa portin (vertailun otsakerivi ei kelpaa)', () => {
 		const src = readRaw('./components/RateTeam.svelte');
-		const from = '\t\thorizon={xpHorizon(data.meta)}\n\t\tgw={data.meta.gw}';
+		// WP16: slot A:n otsakerivi on virran snippetissa, joten sisennys on syvempi.
+		const from = '\t\t\thorizon={xpHorizon(data.meta)}\n\t\t\tgw={data.meta.gw}';
 		expect(src.includes(from)).toBe(true);
-		expect(rateTeamProblems(src.replace(from, '\t\tgw={data.meta.gw}')).length).toBeGreaterThan(0);
+		expect(rateTeamProblems(src.replace(from, '\t\t\tgw={data.meta.gw}')).length).toBeGreaterThan(0);
 	});
 	it('lukija: mallin haaran kapteeni players.find(p => p.is_captain):sta kaataa portin', () => {
 		const src = readRaw('./pitchLineup.ts');

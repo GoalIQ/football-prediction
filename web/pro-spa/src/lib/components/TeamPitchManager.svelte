@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { staleModelDay } from '$lib/myTeamFlow';
+	import { clock } from '$lib/now.svelte';
 	import { doubtFlagText } from '$lib/doubtFlag';
 	import { MODEL_SERIES_COPY } from '$lib/modelSeriesCopy';
 	import type { Snippet } from 'svelte';
@@ -36,6 +38,7 @@
 		defaultGw = null,
 		deadlineGw = null,
 		gwInProgress = false,
+		modelGeneratedAt = null,
 		onUpgrade,
 		initialCaptaincy,
 		onCaptaincyChange,
@@ -60,6 +63,9 @@
 		deadlineGw?: number | null;
 		/** 22.8: naytettava kierros on kesken -> luvut liikkuvat. */
 		gwInProgress?: boolean;
+		/** 7.11: projektion rakennushetki. Vanhalla datalla selite ei saa luvata
+		 *  paivitysta: katkossa luvut eivat liiku eivatka paivity tunneittain. */
+		modelGeneratedAt?: string | null;
 		onUpgrade?: () => void;
 		/** 29.7 (kapteeni/vice-persistointi, skeema 20260729233000): tallennettu
 		 *  pari. Ylikirjoittaa players.is_captain-fallbackin — käyttäjän tuorein
@@ -755,6 +761,7 @@
 			sharing = false;
 		}
 	}
+	const staleDay = $derived(staleModelDay(modelGeneratedAt, clock.now));
 </script>
 
 <svelte:window bind:innerWidth={winW} bind:innerHeight={winH} />
@@ -1046,9 +1053,13 @@
 			     Ja tahti sanotaan aaneen — rakennamme luvut muutaman tunnin
 			     valein, joten "live" yksin lupaisi sekuntitarkkuutta. -->
 			<p class="live-note">
-				Gameweek {defaultGw} isn't finished, so these numbers will still change. We rebuild
-				them from FPL's feed every few hours, and a player who has already kicked off gains
-				expected minutes. That's why your team xP can look different from this morning.
+				{#if staleDay}
+					These xP numbers are from the model's {staleDay} update and stay as they are until it updates again.
+				{:else}
+					Gameweek {defaultGw} isn't finished, so these numbers will still change. We rebuild
+					them from FPL's feed every few hours, and a player who has already kicked off gains
+					expected minutes. That's why your team xP can look different from this morning.
+				{/if}
 			</p>
 		{/if}
 
@@ -1361,6 +1372,28 @@
 		background: transparent;
 		border-color: var(--accent);
 		color: var(--accent-strong);
+	}
+	/* WP16: puhelimella kierros- ja muodostelmarivit yhdelle vieritettavalle
+	   riville, jotta kentta alkaa ensimmaisella ruudulla. Ne pysyvat kentan
+	   ylapuolella (Villen tarkennus 6.9); leveammalla ruudulla ennallaan. */
+	@media (max-width: 639px) {
+		.ph-gws,
+		.lineup-tools .chips {
+			flex-wrap: nowrap;
+			overflow-x: auto;
+			scrollbar-width: none;
+		}
+		.lineup-tools {
+			flex-wrap: nowrap;
+		}
+		.lineup-tools .chips {
+			flex: 1 1 auto;
+			min-width: 0;
+		}
+		.chip {
+			flex: none;
+			white-space: nowrap;
+		}
 	}
 	.xp-row {
 		display: flex;

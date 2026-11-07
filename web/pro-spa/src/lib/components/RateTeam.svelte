@@ -55,6 +55,17 @@
 		type LockablePayload
 	} from '$lib/personalLock';
 	import PersonalLock from './PersonalLock.svelte';
+	import MyTeamFlow from './MyTeamFlow.svelte';
+	import {
+		captainGwOf,
+		captainOppOf,
+		flowNotice,
+		flowUpdateDay,
+		myTeamFlowSteps
+	} from '$lib/myTeamFlow';
+	import { clock } from '$lib/now.svelte';
+	import { openPlayer } from '$lib/playerSheet.svelte';
+	import { NO_FIXTURE } from '$lib/weekRows';
 	import { formatDeadline } from '$lib/gameweek';
 	/** Siirtoikkunan pituus sanoina: verdiktin oma ikkuna, sitten siirto-
 	 *  ikkuna, viimeisena xP-summan lukija. Ei keksittya 6:ta. */
@@ -310,6 +321,9 @@
 	 * upgrade-nakyman eika kirjaa mitaan, joten klikkaus lasketaan kerran.
 	 */
 	const locked = $derived(personalLock(premium, data));
+	/** WP16: uutispaneelin rivien maara, null kunnes paneeli on laskenut sen. */
+	let newsCount = $state<number | null>(null);
+	const flowSteps = $derived(myTeamFlowSteps(data, premium, newsCount, clock.now));
 	/** Klientti uskoo Premiumiin mutta naytetty vastaus on lukittu (esim.
 	 *  kirjautui sisaan tai osti kesken istunnon): yksi tuore haku per entry.
 	 *  Vahti estaa silmukan jos palvelin lukitsee yha (fail-closed nakyma). */
@@ -1309,70 +1323,6 @@
 	     tuleva muutos ei saa kaataa nakymaa (ennen: data.captain.pick suoraan). -->
 	{@const capPick = data.captain?.pick ?? null}
 	{@const capAlt = data.captain?.alternative ?? null}
-	{@const capGap = capPick && capAlt != null ? capPick.gw_xp - capAlt.gw_xp : null}
-	{@const capClose = capGap != null && capGap < 0.15}
-	<!-- 11.9 DRAFT-COMPARE-OTSIKKORIVI: rating-luku siirtyi SquadHeaderRow'hun
-	     (kentan ylle). Nauha pitaa sen mita se yksin osaa sanoa: kapteeni ja
-	     siirtoverdikti. Sama luku kahdessa lohkossa allekkain olisi kaksi
-	     vaitetta yhdesta, ja vain toinen olisi portin nakyvissa. -->
-	<div class="verdict-strip">
-		{#if capPick}
-		<span
-			class="strip-item"
-			title={capClose && capGap != null
-				? capGap < 0.005
-					? `${capAlt?.web_name} is level on xP this GW.`
-					: `${capAlt?.web_name} is only ${capGap.toFixed(2)} xP behind, so this one is close.`
-				: 'The model pick for the armband this gameweek.'}
-		>
-			Captain <strong>{capPick.web_name}</strong
-			>{#if capClose}<span class="strip-note">close call</span>{/if}
-		</span>
-		{/if}
-		{#if premium}
-			{@const stripHold = data.transfers.hold_verdict?.verdict
-				? data.transfers.hold_verdict.verdict === 'hold'
-				: data.transfers.hold}
-			<span
-				class="strip-item"
-				title={data.transfers.hold_verdict?.message ??
-					(stripHold
-						? `No move the model checked improves your team over the ${transferSpan(data)}.`
-						: 'The model found a move worth making.')}
-			>
-				<!-- 5.9 (Villen kysymys: "mika my teamissa on se ykkosasia mika
-				     tulee kayttajan nahda"). Tassa luki ennen vain "Move", eli
-				     nauha kertoi ETTA jotain kannattaa tehda muttei mita. Se
-				     mita kayttaja tulee hakemaan on itse siirto, ja se oli
-				     koko rating-kortin JALKEEN. Nimi ja tuotto tulevat samasta
-				     `suggestions[0]`-rivista jota alempi lista kayttaa, joten
-				     tassa ei ole uutta vaitetta eivatka luvut voi erota. -->
-				{#if stripHold || data.transfers.suggestions.length === 0}
-					Before the deadline <strong>Hold your transfer</strong>
-				{:else}
-					{@const top = data.transfers.suggestions[0]}
-					Before the deadline
-					<strong>{transferPairText(top.out, top.in, top.pos, ' → ')}</strong>
-					<!-- Ikkuna mukana: luku on delta_xp_horizon eli koko jaljella oleva
-					     horisontti, ja "Before the deadline" -kehys saisi sen lukemaan
-					     taman kierroksen tuottona (portti 5.9). -->
-					{@const win = data.transfers.window_gws ?? []}
-					{@const wFrom = data.transfers.hold_verdict?.gw_from ?? win[0]}
-					{@const wTo = data.transfers.hold_verdict?.gw_to ?? win[win.length - 1]}
-					<!-- Ikkuna luetaan transfers-lohkosta (window_gws / hold_verdict),
-					     EI metasta: portti 5.9 mittasi ettei metassa ole gw_from/gw_to
-					     -avaimia, joten edellinen versio renderoi "GW-". Jos ikkunaa ei
-					     ole, se jatetaan pois kokonaan. -->
-					<span class="strip-gain"
-						>+{top.delta_xp_horizon.toFixed(2)} xP{#if wFrom != null && wTo != null}
-							GW{wFrom}-{wTo}{/if}</span
-					>
-				{/if}
-			</span>
-		{/if}
-		<!-- 17.10: ilmaisen nauhan haara ("The transfer the model would make
-		     Premium") poistui: lukittu nakyma ei tule tanne lainkaan (`locked`). -->
-	</div>
 	<!-- 14.8: TULOS JA SILMUKKA VIERELLE, EI ALLE.
 	     `.rating` on tarkoituksella `max-width: 680px` (lukumitta), joten
 	     kortin leventaminen olisi vaara korjaus — pitka tekstipalsta on
@@ -1440,89 +1390,10 @@
 				</details>
 		</div>
 	{/snippet}
-	<div class="result-grid">
-	<!-- 6.9 (Villen tilaus, Solio-kuva): projektiotaulukko kentan viereen
-	     leveilla ruuduilla, sen alle kapeilla. Sama xP-pooli jonka ToolsHome
-	     jo haki, ei uutta kutsua. -->
-	{#if xp && xp.players.length > 0}
-	<aside class="result-side" style={pitchCore > 0 ? `--core: ${pitchCore}px` : ''}>
-		<ProjectionsPanel data={xp} {ownIds} {onUpgrade} defaultGw={data.meta.gw} />
-	</aside>
-	{/if}
-	<!-- 22.8 (Villen kuvahavainto): sivupalkin kolme korttia ovat selvasti
-	     rating-korttia korkeammat, joten vasen sarake jatti ison tyhjan
-	     alueen ja pitch alkoi vasta gridin jalkeen. Kentta kuuluu ratingin
-	     alle samaan sarakkeeseen — silloin vasen sarake tayttyy sisallolla
-	     eika tyhjalla. -->
-	<div class="result-main" bind:this={mainEl}>
-	<!-- 5.9 (Villen pyynto): "haluaisin ensimmaisena nahda joukkueeni pitchin
-	     kun avaan My team -valilehden". Kentta ensin, rating ja luvut sen
-	     alla. Sama komponentti, vain jarjestys vaihtui. -->
-	<!-- #113: pitch + kitit + what-if-manager (pariteetti mobiilin #106+#112:lle;
-	     free = staattinen pitch + lukko, premium = editointi). #121: manageri
-	     saa PLANNED-rosterin (sovelletut siirrot mukana); #123: default-GW.
-	     22.8: siirretty result-gridin vasempaan sarakkeeseen (ks. yllä). -->
-	<!-- 11.9 DRAFT-COMPARE-OTSIKKORIVI: yksi rivi kentan ylle. GW-xP VAIN kun
-	     pitchin oma otsikkonauha ei nayta sita alapuolella (premium renderoi
-	     elavan GW-xP:n): sama luku kahdesti parinsadan pikselin sisalla
-	     lukisi kahtena eri lukuna. ITB ja FT siirtyivat tanne nauhasta. -->
-	<SquadHeaderRow
-		gap={ratingGap(data.rating)}
-		teamXpGw={data.rating.team_xp_gw}
-		captainName={data.team.players.find((pl) => pl.is_captain)?.web_name ?? null}
-		teamXpHorizon={data.rating.team_xp_horizon}
-		horizon={xpHorizon(data.meta)}
-		gw={data.meta.gw}
-		bank={data.team.bank}
-		freeTransfers={data.meta.free_transfers ?? null}
-		chips={data.meta.chips}
-		weakestLine={data.rating.weakest_line}
-		ratingBasis={ratingBasisOf(data)}
-		showGwXp={!premium}
-	/>
-	<TeamPitchManager
-		players={plannedPlayers}
-		modelPlayers={data.team.players}
-		{premium}
-		belowPitch={ratingTiles}
-		defaultGw={data.meta.gw}
-		deadlineGw={data.meta.deadline_gameweek ?? null}
-		gwInProgress={data.meta.gw_in_progress === true}
-		lastFinished={data.last_finished ?? null}
-		picksGw={data.meta.picks_gw ?? null}
-		horizon={xpHorizon(data.meta)}
-		modelCaptain={modelCaptainOf(data)}
-		{onUpgrade}
-		initialCaptaincy={captaincy}
-		onCaptaincyChange={handleCaptaincyChange}
-	/>
-	</div>
-
-	<!-- 5.9 (Villen pyynto): oman rungon uutiset heti kentan alle - kuka on
-	     poissa, kenen hinta liikkuu tanaan. Portti k4: lahde on RUUDUN runko
-	     (plannedPlayers) + price watchin omat rivit, ei gw-review'n viimeisen
-	     paattyneen kierroksen pickit. -->
-	<SquadNews players={plannedPlayers} entry={currentEntryId()} {premium} />
-
-	<!-- MP-14 (26.9): kausi jaadytettya projektiota vastaan, vain FPL-entrylle
-	     (draftilla ei ole FPL-historiaa). Luvut: $lib/ledger. -->
-	<SeasonLedger entry={data.meta.mode === 'entry' ? (data.meta.entry ?? null) : null} {premium} />
-
-	<!-- #50: hero-luku = Team xP horisontilla (FPL-natiivi mittari); rating
-	     sen alla = "% of the best possible budget team" (uusi semantiikka,
-	     gap_to_optimal_xp defensiivisesti jos backend jo tarjoaa sen) -->
-	<!-- 6.9 (Villen tilaus): Team xP -kortti korvattiin laatoilla jotka
-	     renderoituvat kentan alle (ratingTiles-snippet TeamPitchManagerille). -->
-
-	<!-- 🔴 4.9: viikkosilmukka (WeeklyActions + BeatTheModel + SeasonRace) oli
-	     tassa sivusarakkeena JA kokonaisuudessaan This week -sivulla. Kun
-	     ryhmat saivat omat reittinsa, sama kolme lohkoa renderoityi kahdella
-	     sivulla, eika kumpikaan kertonut kumpi on se oikea paikka. Villen
-	     tilaus: "my team nakyma pitaa saada selkeammaksi ja reilusti".
-	     My team vastaa yhteen kysymykseen: onko joukkueeni hyva ja mika sita
-	     parantaa. Viikon tekeminen on This weekin kysymys. -->
-	</div>
-
+	<!-- WP16 (7.11): paatosvirta kentan alle. Lohkot ovat tassa snippeteina, jotta
+	     data, suunnitelma ja kirjaus pysyvat tassa instanssissa; MyTeamFlow
+	     vastaa vain siita, mika kysymys on auki. -->
+	{#snippet flowTransfer(data: RateTeamResponse)}
 	{#if premium}
 		<!-- #63: HOLD-verdikti HERO-kantana siirtolistan yläpuolella; backendin
 		     hold_verdict on hit-tietoinen. Fallback #50-riviin jos kenttä puuttuu. -->
@@ -1556,7 +1427,7 @@
 		<h3>Transfer suggestions</h3>
 		{#if data.transfers.suggestions.length > 0}
 			<div class="table-wrap">
-				<table class="giq-table">
+				<table class="giq-table moves">
 					<thead>
 						<tr>
 							<th>Out</th>
@@ -1583,8 +1454,8 @@
 									<span class="muted">({s.in.team_short}, {s.in.price.toFixed(1)})</span></td
 								>
 								<td>{s.pos}</td>
-								<td class="num">{s.delta_cost > 0 ? '+' : ''}{s.delta_cost.toFixed(1)}</td>
-								<td class="num gain">+{s.delta_xp_horizon.toFixed(2)}</td>
+								<td class="num" data-label="Δ cost">{s.delta_cost > 0 ? '+' : ''}{s.delta_cost.toFixed(1)}</td>
+								<td class="num gain" data-label="Δ xP">+{s.delta_xp_horizon.toFixed(2)}</td>
 								<td class="num">
 									<!-- #121: Apply → planned-pitch päivittyy heti (lokaali) -->
 									{#if s.in.xp_per_gw != null}
@@ -1639,6 +1510,134 @@
 			<p class="muted">{data.transfers.note}</p>
 		{/if}
 	{/if}
+	{/snippet}
+	{#snippet flowCaptain(data: RateTeamResponse)}
+		{@const capGw = captainGwOf(data)}
+		{@const capOpp = captainOppOf(data, capPick?.id, capGw)}
+		{#if capPick}
+			<p class="flow-k">Suggested captain{#if capGw != null}, GW{capGw}{/if}</p>
+			<p class="flow-pick">
+				<button type="button" class="linklike" onclick={() => openPlayer(capPick.id, 'my_team_flow')}
+					>{capPick.web_name}</button
+				>
+				<span class="muted">{capPick.team_short}</span>
+				{#if capPick.gw_xp != null}<span class="oc-xp">{capPick.gw_xp.toFixed(1)} xP</span>{/if}
+			</p>
+			{#if capOpp}<p class="muted">{capOpp === NO_FIXTURE ? `No fixture in GW${capGw}` : `vs ${capOpp}`}</p>{/if}
+			{#if capAlt}
+				<p class="muted">
+					Next: {capAlt.web_name} {capAlt.team_short}{#if capAlt.gw_xp != null}, {capAlt.gw_xp.toFixed(1)} xP{/if}.
+					Close call.
+				</p>
+			{/if}
+		{/if}
+	{/snippet}
+	{#snippet flowNews(data: RateTeamResponse)}
+		<!-- 5.9 (Villen pyynto): oman rungon uutiset. Portti k4: lahde on RUUDUN
+		     runko (plannedPlayers) + price watchin omat rivit, ei gw-review'n
+		     viimeisen paattyneen kierroksen pickit. -->
+		<SquadNews
+			players={plannedPlayers}
+			entry={currentEntryId()}
+			{premium}
+			updated={flowUpdateDay(data.meta.generated_at)}
+			onCount={(n) => (newsCount = n)}
+		/>
+	{/snippet}
+	{#snippet flowSquad(data: RateTeamResponse)}
+		<!-- 11.9 DRAFT-COMPARE-OTSIKKORIVI: GW-xP VAIN kun pitchin oma otsikkonauha
+		     ei nayta sita (premium renderoi elavan GW-xP:n). -->
+		<SquadHeaderRow
+			gap={ratingGap(data.rating)}
+			teamXpGw={data.rating.team_xp_gw}
+			captainName={data.team.players.find((pl) => pl.is_captain)?.web_name ?? null}
+			teamXpHorizon={data.rating.team_xp_horizon}
+			horizon={xpHorizon(data.meta)}
+			gw={data.meta.gw}
+			bank={data.team.bank}
+			freeTransfers={data.meta.free_transfers ?? null}
+			chips={data.meta.chips}
+			weakestLine={data.rating.weakest_line}
+			ratingBasis={ratingBasisOf(data)}
+			showGwXp={!premium}
+		/>
+		{@render ratingTiles()}
+	{/snippet}
+	{#snippet decisionFlow()}
+		{#if data}
+		<MyTeamFlow
+			{data}
+			steps={flowSteps}
+			notice={flowNotice(data, clock.now)}
+			panels={{
+				transfer: flowTransfer,
+				captain: flowCaptain,
+				news: flowNews,
+				squad: flowSquad
+			}}
+		/>
+		{/if}
+	{/snippet}
+	<div class="result-grid">
+	<!-- 6.9 (Villen tilaus, Solio-kuva): projektiotaulukko kentan viereen
+	     leveilla ruuduilla, sen alle kapeilla. Sama xP-pooli jonka ToolsHome
+	     jo haki, ei uutta kutsua. -->
+	{#if xp && xp.players.length > 0}
+	<aside class="result-side" style={pitchCore > 0 ? `--core: ${pitchCore}px` : ''}>
+		<ProjectionsPanel data={xp} {ownIds} {onUpgrade} defaultGw={data.meta.gw} />
+	</aside>
+	{/if}
+	<!-- 22.8 (Villen kuvahavainto): sivupalkin kolme korttia ovat selvasti
+	     rating-korttia korkeammat, joten vasen sarake jatti ison tyhjan
+	     alueen ja pitch alkoi vasta gridin jalkeen. Kentta kuuluu ratingin
+	     alle samaan sarakkeeseen — silloin vasen sarake tayttyy sisallolla
+	     eika tyhjalla. -->
+	<div class="result-main" bind:this={mainEl}>
+	<!-- 5.9 (Villen pyynto): "haluaisin ensimmaisena nahda joukkueeni pitchin
+	     kun avaan My team -valilehden". Kentta ensin, rating ja luvut sen
+	     alla. Sama komponentti, vain jarjestys vaihtui. -->
+	<!-- #113: pitch + kitit + what-if-manager (pariteetti mobiilin #106+#112:lle;
+	     free = staattinen pitch + lukko, premium = editointi). #121: manageri
+	     saa PLANNED-rosterin (sovelletut siirrot mukana); #123: default-GW.
+	     22.8: siirretty result-gridin vasempaan sarakkeeseen (ks. yllä). -->
+	<TeamPitchManager
+		players={plannedPlayers}
+		modelPlayers={data.team.players}
+		{premium}
+		belowPitch={decisionFlow}
+		defaultGw={data.meta.gw}
+		deadlineGw={data.meta.deadline_gameweek ?? null}
+		gwInProgress={data.meta.gw_in_progress === true}
+		modelGeneratedAt={data.meta.generated_at ?? null}
+		lastFinished={data.last_finished ?? null}
+		picksGw={data.meta.picks_gw ?? null}
+		horizon={xpHorizon(data.meta)}
+		modelCaptain={modelCaptainOf(data)}
+		{onUpgrade}
+		initialCaptaincy={captaincy}
+		onCaptaincyChange={handleCaptaincyChange}
+	/>
+	</div>
+
+	<!-- MP-14 (26.9): kausi jaadytettya projektiota vastaan, vain FPL-entrylle
+	     (draftilla ei ole FPL-historiaa). Luvut: $lib/ledger. -->
+	<SeasonLedger entry={data.meta.mode === 'entry' ? (data.meta.entry ?? null) : null} {premium} />
+
+	<!-- #50: hero-luku = Team xP horisontilla (FPL-natiivi mittari); rating
+	     sen alla = "% of the best possible budget team" (uusi semantiikka,
+	     gap_to_optimal_xp defensiivisesti jos backend jo tarjoaa sen) -->
+	<!-- 6.9 (Villen tilaus): Team xP -kortti korvattiin laatoilla jotka
+	     renderoituvat kentan alle (ratingTiles-snippet TeamPitchManagerille). -->
+
+	<!-- 🔴 4.9: viikkosilmukka (WeeklyActions + BeatTheModel + SeasonRace) oli
+	     tassa sivusarakkeena JA kokonaisuudessaan This week -sivulla. Kun
+	     ryhmat saivat omat reittinsa, sama kolme lohkoa renderoityi kahdella
+	     sivulla, eika kumpikaan kertonut kumpi on se oikea paikka. Villen
+	     tilaus: "my team nakyma pitaa saada selkeammaksi ja reilusti".
+	     My team vastaa yhteen kysymykseen: onko joukkueeni hyva ja mika sita
+	     parantaa. Viikon tekeminen on This weekin kysymys. -->
+	</div>
+
 	<!-- 17.10: teaser-rivi ("Transfer suggestions ... Unlock with Premium")
 	     poistui; lukittu nakyma on `locked`-haarassa ylla. -->
 	{/if}
@@ -1789,6 +1788,7 @@
 			defaultGw={dataB.meta.gw}
 			deadlineGw={dataB.meta.deadline_gameweek ?? null}
 			gwInProgress={dataB.meta.gw_in_progress === true}
+			modelGeneratedAt={dataB.meta.generated_at ?? null}
 			lastFinished={dataB.last_finished ?? null}
 			picksGw={dataB.meta.picks_gw ?? null}
 			horizon={xpHorizon(dataB.meta)}
@@ -2108,16 +2108,74 @@
 			max-height: var(--core, none);
 		}
 	}
-	/* 5.9: siirron tuotto ja PRO-tunniste verdict-stripissa. Positiivinen
-	   delta kayttaa --positivea kuten muutkin tuotot; tunniste on amber
-	   outline kuten tyokalunavissa, jotta lukko lukee samana kaikkialla. */
-	.strip-gain {
-		color: var(--positive);
-		font-family: var(--font-mono);
-		font-weight: 700;
-		margin-left: 0.35em;
+	/* WP16: kapeassa palstassa siirtorivi kahdelle riville. Kuusi saraketta ei
+	   mahdu, ja vaakavieritys piilotti Apply-napin reunan taakse. Raja on palstan
+	   eika ruudun: 1 280 px:lla virta on 650 px:n sarakkeessa ja nappi leikkautui
+	   samalla tavalla. Otsikot jaavat ruudunlukijalle, luvut kantavat nimensa
+	   data-labelista. */
+	@container flow (max-width: 720px) {
+		.table-wrap {
+			margin-inline: 0;
+			padding-inline: 0;
+		}
+		.moves thead {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+		}
+		.moves tbody tr {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+			align-items: center;
+			gap: var(--s-1) var(--s-2);
+			padding: var(--s-2) 0;
+			border-bottom: 1px solid var(--border);
+		}
+		.moves td {
+			display: block;
+			padding: 0;
+			border: 0;
+			text-align: left;
+		}
+		.moves td[data-label]::before {
+			content: attr(data-label) ' ';
+			font-size: 12px;
+			font-weight: 400;
+			color: var(--text-muted);
+		}
 	}
-
+	/* WP16: kapteenipaneeli, sama rakenne kuin This weekin paatoskortilla. */
+	.flow-k {
+		margin: 0 0 var(--s-1);
+		font-family: var(--font-mono);
+		font-size: 12px;
+		font-weight: 700;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+	}
+	.flow-pick {
+		display: flex;
+		align-items: baseline;
+		flex-wrap: wrap;
+		gap: var(--s-2);
+		margin: 0 0 var(--s-1);
+		font-size: 20px;
+		font-weight: 700;
+	}
+	.flow-pick .muted {
+		font-size: 14px;
+		font-weight: 400;
+	}
+	.flow-pick .linklike {
+		font-size: inherit;
+		font-weight: 700;
+	}
+	.flow-pick .oc-xp {
+		font-size: 16px;
+	}
 	/* 28.7: mittaperusta omalle rivilleen, jotta /100-luku ei jaa selittamatta */
 	/* Hero-luvun peruste samalla rivilla, pienempana */
 	/* 26.7: metodologia auki, oletuksena kiinni (ei vie tilaa herolta) */
@@ -2206,33 +2264,6 @@
 
 	/* SOLIO-OPPI (19.8): yhteenvetonauha. Sama pintakieli kuin muissa
 	   korteissa (surface-alt + ohut reunus), pallot semanttisilla vareilla. */
-	.verdict-strip {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--s-2) var(--s-4);
-		margin: 0 0 var(--s-3);
-		padding: 6px var(--s-3);
-		background: var(--surface-2);
-		border: 1px solid var(--border-soft);
-		font-size: 13px;
-	}
-	.strip-item {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		color: var(--text-muted);
-		cursor: help;
-	}
-	.strip-item strong {
-		color: var(--text);
-	}
-	.strip-note {
-		margin-left: 6px;
-		font-size: 11px;
-		color: var(--accent);
-		border: 1px solid rgba(245, 197, 66, 0.4);
-		padding: 1px 5px;
-	}
 
 	/* 11.9: `.tiles`-laatat poistettiin (luvut ovat SquadHeaderRow'lla).
 	   `.tiles-notes` jaa: se kantaa "How this rating is calculated" -lohkon. */
