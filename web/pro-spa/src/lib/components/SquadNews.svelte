@@ -101,8 +101,9 @@
 		<!-- Portti k5: lahde nakyy aina, ei vain manual-moodissa. Hintaliike on
 		     FPL:n oma projektio ja paiva liikkuu myohaisten siirtojen mukana. -->
 		<p class="muted small">
-			Availability from our last FPL update{#if updated}&nbsp;({updated}){/if}. Price moves are
-			FPL's own projection, and the day moves with late transfers.
+			{#if updated}Availability as of the model's {updated} update.{:else}Availability as of the
+				model's last update.{/if} Price moves are FPL's own projection, and the day moves with
+			late transfers.
 		</p>
 	</section>
 {:else if !locked}
@@ -112,7 +113,8 @@
 	     artefaktista: 7.11 FPL liputti 11 pelaajaa jotka artefaktissa olivat
 	     puhtaita. -->
 	<p class="muted">
-		No availability flags on your squad at our last FPL update{#if updated}&nbsp;({updated}){/if}.
+		{#if updated}No availability flags on your squad as of the model's {updated} update.{:else}No
+			availability flags on your squad as of the model's last update.{/if}
 	</p>
 {/if}
 
