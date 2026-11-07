@@ -34,13 +34,17 @@
 	let {
 		players,
 		premium = false,
+		updated = null,
 		onCount
 	}: {
 		players: Row[];
 		entry?: number | null;
 		premium?: boolean;
-		/** WP16: rivien maara virran otsikkoriville. */
-		onCount?: (n: number) => void;
+		/** WP16: paiva jolta saatavuusliput ovat ($lib/myTeamFlow flowUpdateDay). */
+		updated?: string | null;
+		/** WP16: rivien maara virran otsikkoriville. null = ei tiedossa: nolla ei
+		 *  todista mitaan kun hintahaku on kesken tai epaonnistui. */
+		onCount?: (n: number | null) => void;
 	} = $props();
 
 	const locked = $derived(personalLock(premium));
@@ -72,7 +76,8 @@
 	// johdettiin eta_days-offsetista ja oli vaarin Amerikoissa joka ilta.
 	const moves = $derived(squadPriceMoves(ids, lists?.risers, lists?.fallers, clock.now));
 	$effect(() => {
-		onCount?.(avail.length + moves.rising.length + moves.falling.length);
+		const n = avail.length + moves.rising.length + moves.falling.length;
+		onCount?.(n === 0 && lists === null ? null : n);
 	});
 </script>
 
@@ -103,8 +108,12 @@
 {:else if !locked}
 	<!-- WP16: paneelin otsikko on kysymys, joten tyhja tila sanotaan aaneen.
 	     Vain saatavuudesta: hintahaku voi epaonnistua, joten tyhja lista ei
-	     todista etta hintaliikkeita ei ole. -->
-	<p class="muted">FPL has no availability flags on your squad.</p>
+	     todista etta hintaliikkeita ei ole. Paiva mukana, koska liput tulevat
+	     artefaktista: 7.11 FPL liputti 11 pelaajaa jotka artefaktissa olivat
+	     puhtaita. -->
+	<p class="muted">
+		No availability flags on your squad at our last FPL update{#if updated}&nbsp;({updated}){/if}.
+	</p>
 {/if}
 
 <style>

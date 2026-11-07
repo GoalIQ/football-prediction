@@ -14,6 +14,13 @@
  * vastauksen, se ei keksi sita.
  *
  * Luvut ovat palvelimen. Tama ei laske eika lajittele mitaan uutta.
+ *
+ * AIKA (julkaisutarkistaja k1, mitattu 7.11). Vastaus voi kuvata kierrosta,
+ * jonka deadline on jo mennyt: Understat-katkossa xP jai 1.11:n versioon, ja
+ * API sanoi GW10:n deadlinen jalkeen yha `gw_in_progress: false`,
+ * `captain_gw: 10` ja siirtoikkuna GW10-14. `gw_in_progress` ei siis riita,
+ * vaan kellonaika ratkaisee: siirto ja kapteeni syntyvat vain kun
+ * `meta.deadline_time` on edessa. Sama koskee GW38:n jalkeista aikaa.
  */
 import type { RateTeamResponse } from './fantasyTools';
 import { personalLock } from './personalLock';
@@ -30,6 +37,38 @@ export interface FlowStep {
 	question: string;
 	/** Lyhyt vastaus otsikkorivilla. null = ei vaitetta, vain nimi. */
 	answer: string | null;
+}
+
+/** Vastauksen tuoreusraja: rakennamme datan useita kertoja paivassa. */
+export const FRESH_MS = 24 * 60 * 60 * 1000;
+/** Kauden viimeinen kierros: sen jalkeen ei tule paivitysta, jota odottaa. */
+const LAST_GW = 38;
+
+type FlowMeta = Pick<RateTeamResponse, 'meta'>;
+
+/** Onko vastauksen deadline edessa. Puuttuva tai rikkinainen aika = ei, koska
+ *  paatosta ei saa esittaa kierrokselle jonka tilaa ei tiedeta. */
+export function deadlineAhead(d: FlowMeta, now: number): boolean {
+	const t = Date.parse(d.meta.deadline_time ?? '');
+	return Number.isFinite(t) && t > now;
+}
+
+/** Rivi virran ylapuolelle kun deadline on mennyt. null kun aika on edessa, ei
+ *  tiedossa (ei voi vaittaa menneeksi) tai kausi on lopussa (ei tule paivitysta). */
+export function flowNotice(d: FlowMeta, now: number): string | null {
+	const t = Date.parse(d.meta.deadline_time ?? '');
+	const gw = d.meta.deadline_gameweek;
+	if (!Number.isFinite(t) || t > now) return null;
+	if (typeof gw !== 'number' || gw >= LAST_GW) return null;
+	return `GW${gw}'s deadline has passed and the model hasn't updated yet.`;
+}
+
+/** Paiva jolta rungon saatavuusliput ovat. Liput tulevat projektioartefaktista,
+ *  eivat FPL:sta suoraan, joten paiva kuuluu lauseeseen. Lukijan aikavyohyke. */
+export function flowUpdateDay(generatedAt: string | null | undefined): string | null {
+	const t = Date.parse(generatedAt ?? '');
+	if (!Number.isFinite(t)) return null;
+	return new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
 /** Kierros jolle kapteeni on laskettu. Kesken kierroksen ilman `captain_gw`:ta
@@ -67,9 +106,11 @@ function transferAnswer(d: RateTeamResponse): string | null {
 	return 'Move';
 }
 
-function newsAnswer(count: number | null): string | null {
+/** "None" vain tuoreesta datasta: vanha artefakti ei todista etta FPL ei liputa
+ *  ketaan (mitattu 7.11: 11 FPL:n liputtamaa pelaajaa oli artefaktissa puhtaita). */
+function newsAnswer(count: number | null, fresh: boolean): string | null {
 	if (count == null) return null;
-	if (count === 0) return 'None';
+	if (count === 0) return fresh ? 'None' : null;
 	return count === 1 ? '1 item' : `${count} items`;
 }
 
@@ -78,16 +119,22 @@ function newsAnswer(count: number | null): string | null {
  * tulee hakemaan on itse siirto"), kapteeni sen jalkeen, koska siirto voi
  * muuttaa kapteenia.
  *
- * `newsCount`: rivien maara uutispaneelissa, null = ei viela tiedossa.
+ * `newsCount`: rivien maara uutispaneelissa, null = ei tiedossa.
+ * `now`: kello millisekunteina ($lib/now.svelte), jotta deadlinen ylitys
+ * poistaa askeleet ilman uutta hakua.
  */
 export function myTeamFlowSteps(
 	d: RateTeamResponse | null | undefined,
 	premium: boolean,
-	newsCount: number | null = null
+	newsCount: number | null = null,
+	now: number = Date.now()
 ): FlowStep[] {
 	if (!d || personalLock(premium, d)) return [];
 	const steps: FlowStep[] = [];
-	if (d.transfers) {
+	const ahead = deadlineAhead(d, now);
+	const generated = Date.parse(d.meta.generated_at ?? '');
+	const fresh = Number.isFinite(generated) && now - generated < FRESH_MS;
+	if (ahead && d.transfers) {
 		steps.push({
 			id: 'transfer',
 			label: 'Transfer',
@@ -96,7 +143,7 @@ export function myTeamFlowSteps(
 		});
 	}
 	const cap = d.captain?.pick ?? null;
-	if (cap) {
+	if (ahead && cap) {
 		steps.push({
 			id: 'captain',
 			label: 'Captain',
@@ -108,7 +155,7 @@ export function myTeamFlowSteps(
 		id: 'news',
 		label: 'News',
 		question: 'Anything to watch in your squad?',
-		answer: newsAnswer(newsCount)
+		answer: newsAnswer(newsCount, fresh)
 	});
 	steps.push({
 		id: 'squad',

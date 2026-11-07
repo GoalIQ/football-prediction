@@ -287,6 +287,8 @@ export interface RateTeamResponse {
 		deadline_gameweek?: number | null;
 		/** Deadline-GW:n deadline ISO-aikana (UTC), esitysta varten. */
 		deadline_time?: string | null;
+		/** WP16: artefaktin rakennushetki. Rungon saatavuusliput ovat tasta hetkesta. */
+		generated_at?: string | null;
 		horizon_gw?: number;
 		note?: string;
 		/** 22.8: naytettava kierros on parhaillaan kaynnissa, eli luvut

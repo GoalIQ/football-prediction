@@ -5,16 +5,38 @@ import {
 	activeStepId,
 	captainGwOf,
 	captainOppOf,
-	myTeamFlowSteps,
+	deadlineAhead,
+	flowNotice,
+	flowUpdateDay,
+	FRESH_MS,
+	myTeamFlowSteps as stepsAt,
 	nextStep,
 	type FlowStep
 } from './myTeamFlow';
 import { NO_FIXTURE } from './weekRows';
 
+/** Testien kello. Deadline edessa, data tuoretta, ellei vaihe muuta niita. */
+const NOW = Date.parse('2026-11-20T12:00:00Z');
+const HOUR = 3_600_000;
+const at = (ms: number) => new Date(ms).toISOString();
+const myTeamFlowSteps = (
+	d: RateTeamResponse | null,
+	premium: boolean,
+	news: number | null = null,
+	now = NOW
+) => stepsAt(d, premium, news, now);
+
 /** Vain kentat joita lukija koskee. Vaiheet rakennetaan tasta (6a mekanismi 3). */
 function payload(over: Record<string, unknown> = {}, meta: Record<string, unknown> = {}) {
 	return {
-		meta: { gw: 11, deadline_gameweek: 11, gw_in_progress: false, ...meta },
+		meta: {
+			gw: 11,
+			deadline_gameweek: 11,
+			gw_in_progress: false,
+			deadline_time: at(NOW + 23 * HOUR),
+			generated_at: at(NOW - 2 * HOUR),
+			...meta
+		},
 		team: {
 			players: [
 				{ id: 7, gameweeks: [{ gw: 11, opponents: [{ opp: 'TOT', venue: 'H' }] }, { gw: 12, opponents: [] }] }
@@ -68,6 +90,14 @@ describe('myTeamFlowSteps', () => {
 		expect(answer(s, 'squad')).toBeNull();
 	});
 
+	it('"None" vain tuoreesta datasta: vanha artefakti ei todista etta lippuja ei ole', () => {
+		const stale = payload({}, { generated_at: at(NOW - FRESH_MS - HOUR) });
+		expect(answer(myTeamFlowSteps(stale, true, 0), 'news')).toBeNull();
+		expect(answer(myTeamFlowSteps(stale, true, 2), 'news')).toBe('2 items');
+		const none = payload({}, { generated_at: null });
+		expect(answer(myTeamFlowSteps(none, true, 0), 'news')).toBeNull();
+	});
+
 	it('uutisvastaus: tuntematon ei ole nolla', () => {
 		expect(answer(myTeamFlowSteps(payload(), true, null), 'news')).toBeNull();
 		expect(answer(myTeamFlowSteps(payload(), true, 0), 'news')).toBe('None');
@@ -91,6 +121,49 @@ describe('vaiheet (6a mekanismi 3)', () => {
 			expect(ids(myTeamFlowSteps(payload({}, meta), true))).toContain('transfer');
 		});
 	}
+});
+
+describe('deadlinen ylitys (k1 B1, mitattu 7.11)', () => {
+	// Tila 7.11: Understat-katko, GW10:n deadline mennyt, API yha gw_in_progress false.
+	const passed = payload(
+		{},
+		{ gw: 10, deadline_gameweek: 10, captain_gw: 10, deadline_time: at(NOW - HOUR) }
+	);
+	it('mennyt deadline: ei siirtoa eika kapteenia, vain mita voi yha sanoa', () => {
+		expect(ids(myTeamFlowSteps(passed, true))).toEqual(['news', 'squad']);
+		expect(flowNotice(passed, NOW)).toBe(
+			"GW10's deadline has passed and the model hasn't updated yet."
+		);
+	});
+	it('deadlinen ylitys kesken istunnon poistaa askeleet ilman uutta hakua', () => {
+		const d = payload({}, { deadline_time: at(NOW + HOUR) });
+		expect(ids(myTeamFlowSteps(d, true, null, NOW))).toContain('transfer');
+		expect(ids(myTeamFlowSteps(d, true, null, NOW + 2 * HOUR))).not.toContain('transfer');
+	});
+	it('puuttuva aika: ei paatosta, mutta ei myoskaan vaitetta menneesta', () => {
+		for (const t of [null, undefined, 'ei-aika']) {
+			const d = payload({}, { deadline_time: t });
+			expect(deadlineAhead(d, NOW)).toBe(false);
+			expect(ids(myTeamFlowSteps(d, true))).toEqual(['news', 'squad']);
+			expect(flowNotice(d, NOW)).toBeNull();
+		}
+	});
+	it('GW38:n jalkeen ei luvata paivitysta', () => {
+		const end = payload({}, { deadline_gameweek: 38, deadline_time: at(NOW - HOUR) });
+		expect(ids(myTeamFlowSteps(end, true))).toEqual(['news', 'squad']);
+		expect(flowNotice(end, NOW)).toBeNull();
+	});
+	it('terve vaihe: ei rivia', () => {
+		expect(flowNotice(payload(), NOW)).toBeNull();
+	});
+});
+
+describe('flowUpdateDay', () => {
+	it('paiva lauseeseen, ilman aikaa ei paivaa', () => {
+		expect(flowUpdateDay('2026-11-01T12:00:00+00:00')).toBe('1 Nov');
+		expect(flowUpdateDay(null)).toBeNull();
+		expect(flowUpdateDay('ei-aika')).toBeNull();
+	});
 });
 
 describe('captainOppOf', () => {
@@ -120,6 +193,19 @@ describe('activeStepId ja nextStep', () => {
 	});
 });
 
+/** SquadNews ei saa kertoa nollaa kun hintahaku on kesken tai epaonnistui (k1 B2). */
+describe('SquadNews: rivimaara ja tyhja tila', () => {
+	const raw = readFileSync(new URL('./components/SquadNews.svelte', import.meta.url), 'utf-8');
+	const code = raw.replace(/<!--[\s\S]*?-->/g, '');
+	it('nolla ilman hintalistaa on tuntematon', () => {
+		expect(code).toContain('onCount?.(n === 0 && lists === null ? null : n);');
+	});
+	it('tyhja tila ei vaita FPL:n tilaa vaan meidan paivityksemme (k1 B3)', () => {
+		expect(code).not.toContain('FPL has no availability flags');
+		expect(code).toContain('at our last FPL update');
+	});
+});
+
 /** Rakenneportti: kentta ensin, paatokset heti sen alla, ei mitaan kentan edessa. */
 describe('RateTeam: kentta ensin (Villen 5.9)', () => {
 	const raw = readFileSync(new URL('./components/RateTeam.svelte', import.meta.url), 'utf-8');
@@ -135,6 +221,21 @@ describe('RateTeam: kentta ensin (Villen 5.9)', () => {
 	it('virta renderoityy kentan alle, ei projektioiden jalkeen', () => {
 		expect(grid).toContain('belowPitch={decisionFlow}');
 		expect(code).toMatch(/\{#snippet decisionFlow\(\)\}[\s\S]*?<MyTeamFlow/);
+	});
+
+	it('lukitun nakyman kapteeni pitaa oman tyylinsa (k1: luokat vaihtuivat keskenaan)', () => {
+		expect(code).toMatch(/rating-preview open-cap[\s\S]{0,60}<p class="k">Suggested captain/);
+		expect(code).toMatch(/\{#snippet flowCaptain[\s\S]*?<p class="flow-k">Suggested captain/);
+	});
+
+	it('Close call on sama kanta kuin This weekilla (k1 B4)', () => {
+		expect(code).not.toContain('capClose');
+		expect(code).toMatch(/Next: \{capAlt\.web_name\}[\s\S]{0,120}Close call\./);
+	});
+
+	it('kello kulkee lukijalle ja rivi virralle (k1 B1)', () => {
+		expect(code).toContain('myTeamFlowSteps(data, premium, newsCount, clock.now)');
+		expect(code).toContain('notice={flowNotice(data, clock.now)}');
 	});
 
 	it('jokaisella askeleella on paneeli', () => {

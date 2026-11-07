@@ -56,7 +56,14 @@
 	} from '$lib/personalLock';
 	import PersonalLock from './PersonalLock.svelte';
 	import MyTeamFlow from './MyTeamFlow.svelte';
-	import { captainGwOf, captainOppOf, myTeamFlowSteps } from '$lib/myTeamFlow';
+	import {
+		captainGwOf,
+		captainOppOf,
+		flowNotice,
+		flowUpdateDay,
+		myTeamFlowSteps
+	} from '$lib/myTeamFlow';
+	import { clock } from '$lib/now.svelte';
 	import { openPlayer } from '$lib/playerSheet.svelte';
 	import { NO_FIXTURE } from '$lib/weekRows';
 	import { formatDeadline } from '$lib/gameweek';
@@ -316,7 +323,7 @@
 	const locked = $derived(personalLock(premium, data));
 	/** WP16: uutispaneelin rivien maara, null kunnes paneeli on laskenut sen. */
 	let newsCount = $state<number | null>(null);
-	const flowSteps = $derived(myTeamFlowSteps(data, premium, newsCount));
+	const flowSteps = $derived(myTeamFlowSteps(data, premium, newsCount, clock.now));
 	/** Klientti uskoo Premiumiin mutta naytetty vastaus on lukittu (esim.
 	 *  kirjautui sisaan tai osti kesken istunnon): yksi tuore haku per entry.
 	 *  Vahti estaa silmukan jos palvelin lukitsee yha (fail-closed nakyma). */
@@ -1301,7 +1308,7 @@
 			     kuin sovelluksen Rate my team, WP9). Vaihtoehto ja perustelu
 			     jaavat lukkoon. -->
 			<div class="rating-preview open-cap">
-				<p class="flow-k">Suggested captain{#if openCapGw != null}, GW{openCapGw}{/if}</p>
+				<p class="k">Suggested captain{#if openCapGw != null}, GW{openCapGw}{/if}</p>
 				<p class="oc-pick">
 					<strong>{openCap.web_name}</strong>
 					<span class="muted">{openCap.team_short}</span>
@@ -1316,8 +1323,6 @@
 	     tuleva muutos ei saa kaataa nakymaa (ennen: data.captain.pick suoraan). -->
 	{@const capPick = data.captain?.pick ?? null}
 	{@const capAlt = data.captain?.alternative ?? null}
-	{@const capGap = capPick && capAlt != null ? capPick.gw_xp - capAlt.gw_xp : null}
-	{@const capClose = capGap != null && capGap < 0.15}
 	<!-- 14.8: TULOS JA SILMUKKA VIERELLE, EI ALLE.
 	     `.rating` on tarkoituksella `max-width: 680px` (lukumitta), joten
 	     kortin leventaminen olisi vaara korjaus — pitka tekstipalsta on
@@ -1510,7 +1515,7 @@
 		{@const capGw = captainGwOf(data)}
 		{@const capOpp = captainOppOf(data, capPick?.id, capGw)}
 		{#if capPick}
-			<p class="k">Suggested captain{#if capGw != null}, GW{capGw}{/if}</p>
+			<p class="flow-k">Suggested captain{#if capGw != null}, GW{capGw}{/if}</p>
 			<p class="flow-pick">
 				<button type="button" class="linklike" onclick={() => openPlayer(capPick.id, 'my_team_flow')}
 					>{capPick.web_name}</button
@@ -1518,16 +1523,16 @@
 				<span class="muted">{capPick.team_short}</span>
 				{#if capPick.gw_xp != null}<span class="oc-xp">{capPick.gw_xp.toFixed(1)} xP</span>{/if}
 			</p>
-			{#if capOpp}<p class="muted">{capOpp === NO_FIXTURE ? 'No fixture this gameweek' : `vs ${capOpp}`}</p>{/if}
+			{#if capOpp}<p class="muted">{capOpp === NO_FIXTURE ? `No fixture in GW${capGw}` : `vs ${capOpp}`}</p>{/if}
 			{#if capAlt}
 				<p class="muted">
-					Next: {capAlt.web_name} {capAlt.team_short}{#if capAlt.gw_xp != null}, {capAlt.gw_xp.toFixed(1)} xP{/if}.{#if capClose}
-						Close call.{/if}
+					Next: {capAlt.web_name} {capAlt.team_short}{#if capAlt.gw_xp != null}, {capAlt.gw_xp.toFixed(1)} xP{/if}.
+					Close call.
 				</p>
 			{/if}
 		{/if}
 	{/snippet}
-	{#snippet flowNews(_data: RateTeamResponse)}
+	{#snippet flowNews(data: RateTeamResponse)}
 		<!-- 5.9 (Villen pyynto): oman rungon uutiset. Portti k4: lahde on RUUDUN
 		     runko (plannedPlayers) + price watchin omat rivit, ei gw-review'n
 		     viimeisen paattyneen kierroksen pickit. -->
@@ -1535,6 +1540,7 @@
 			players={plannedPlayers}
 			entry={currentEntryId()}
 			{premium}
+			updated={flowUpdateDay(data.meta.generated_at)}
 			onCount={(n) => (newsCount = n)}
 		/>
 	{/snippet}
@@ -1562,6 +1568,7 @@
 		<MyTeamFlow
 			{data}
 			steps={flowSteps}
+			notice={flowNotice(data, clock.now)}
 			panels={{
 				transfer: flowTransfer,
 				captain: flowCaptain,

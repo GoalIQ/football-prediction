@@ -16,12 +16,15 @@
 	let {
 		data,
 		steps,
-		panels
+		panels,
+		notice = null
 	}: {
 		/** Vain valitetaan paneeleille, jotta niissa `data` ei ole null. */
 		data: RateTeamResponse;
 		steps: FlowStep[];
 		panels: Record<FlowStepId, Snippet<[RateTeamResponse]>>;
+		/** Rivi otsikkorivin ylapuolelle ($lib/myTeamFlow flowNotice). */
+		notice?: string | null;
 	} = $props();
 
 	let chosen = $state<FlowStepId | null>(null);
@@ -47,6 +50,7 @@
 
 {#if steps.length > 0}
 	<section class="flow" bind:this={root} aria-label="Your decisions">
+		{#if notice}<p class="notice">{notice}</p>{/if}
 		<div class="steps" role="tablist" aria-label="Decisions" style="--n: {steps.length}">
 			{#each steps as s (s.id)}
 				<button
@@ -93,6 +97,13 @@
 		border-radius: var(--radius);
 		background: var(--surface);
 		scroll-margin-top: var(--s-3);
+	}
+	.notice {
+		margin: 0;
+		padding: var(--s-3) var(--s-4);
+		font-size: 14px;
+		color: var(--text);
+		border-bottom: 1px solid var(--border);
 	}
 	.steps {
 		display: grid;
