@@ -16,9 +16,8 @@
 	 */
 	import { onMount } from 'svelte';
 	import { auth, refreshSubscription, FREE_PREMIUM_UNTIL_DAY, FREE_PREMIUM_UNTIL_GW } from '$lib/auth.svelte';
-	import { fetchFantasy, fetchXp, type XpResponse } from '$lib/api';
-	import { staleModelLine } from '$lib/myTeamFlow';
-	import { clock } from '$lib/now.svelte';
+	import { fetchXp, type XpResponse } from '$lib/api';
+	import { modelAge } from '$lib/modelAge.svelte';
 	import { capture } from '$lib/analytics';
 	import { loadProfileEntry } from '$lib/fplEntry.svelte';
 	import Provenance from './Provenance.svelte';
@@ -321,16 +320,8 @@
 	// 7.11 (Villen ehto "paiva nakyvilla"): katkossa kutsut ovat vanhasta
 	// projektiosta, joten paiva on kehyksessa eika yksittaisessa tyokalussa.
 	// /api/fantasy on kaikille auki, joten rivi nakyy myos kirjautumattomalle.
-	let modelBuilt = $state<string | null>(null);
-	$effect(() => {
-		fetchFantasy().then(
-			(p) => (modelBuilt = (p?.meta?.xp_generated_at as string | undefined) ?? null),
-			() => {}
-		);
-	});
-	const modelAgeLine = $derived(
-		segment === 'matches' ? null : staleModelLine(modelBuilt, clock.now)
-	);
+	// Lahde $lib/modelAge: sama lukija kuin jakopainikkeilla.
+	const modelAgeLine = $derived(segment === 'matches' ? null : modelAge.line);
 
 	// 4.9: `jumpTo` ja `openToolCard` poistuivat. Kumpikin oli kiertotie
 	// samaan puutteeseen: tyokalulla ei ollut osoitetta, joten siihen

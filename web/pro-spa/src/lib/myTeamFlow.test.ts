@@ -239,9 +239,10 @@ describe('vanhan datan rivit pinnoilla', () => {
 		readFileSync(new URL(u, import.meta.url), 'utf-8').replace(/<!--[\s\S]*?-->/g, '');
 	it('ToolsHome nayttaa rivin xP:n paivasta, ei phase0:n', () => {
 		const c = strip('./components/ToolsHome.svelte');
-		expect(c).toContain('staleModelLine(modelBuilt, clock.now)');
-		expect(c).toContain('xp_generated_at');
-		expect(c).not.toMatch(/modelBuilt\s*=.*meta\??\.generated_at/);
+		expect(c).toContain('modelAge.line');
+		const store = strip('./modelAge.svelte.ts');
+		expect(store).toContain('xp_generated_at');
+		expect(store).not.toMatch(/meta\??\.generated_at/);
 	});
 	it('kentan selite ei lupaa paivitysta vanhalla datalla', () => {
 		const c = strip('./components/TeamPitchManager.svelte');

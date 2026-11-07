@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { modelAge } from '$lib/modelAge.svelte';
 	import { draftPool, type XpResponse } from '$lib/api';
 	import {
 		fetchComparePlayers,
@@ -168,9 +169,11 @@
 {:else if data && data.verdict}
 	<div class="verdict-row">
 		<p class="verdict">{data.verdict.text}</p>
+		{#if !modelAge.stale}
 		<button type="button" class="share-chip" onclick={shareImage} disabled={sharing}>
 			{sharing ? 'Rendering…' : shareButtonLabel()}
 		</button>
+		{/if}
 	</div>
 	{#if data.meta.unprojected_note}
 		<p class="muted">{data.meta.unprojected_note}</p>
