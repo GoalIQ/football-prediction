@@ -311,13 +311,6 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   `deadlines`-listaa, joten se palauttaa None. Hub-sivut ja reply-moduuli ovat kunnossa (phase0:ssa lista on, moduuli kieltäytyy
   deadlinen jälkeen). Ensimmäinen kerta 6.11 18:30Z, koska edellinen deadline meni ennen katkoa. Vaihetesti puuttuu tältä tilalta:
   vanhentunut artefakti deadlinen jälkeen (`tests/test_gameweek_phase_invariants.py`).
-- 2026-11: Sama vikaluokka kuin `load_xp_actionable`-rivi, mutta pinnoilla. `src/models/fpl_rate_team.py` lukee `_dl_gw`:n
-  xP-artefaktista ja `/api/fantasy` phase0:sta, joten katkossa kierros ei vaihdu deadlinen kohdalla. Mitattu 7.11: rate-team
-  `deadline_time` 6.11, `gw_in_progress` false, `captain_gw` 10, `window_gws` 10-14; `/api/fantasy` `next_gameweek` 9,
-  `deadline_gameweek` 10; `/api/fantasy/model-captain` sanoo 11. This week näyttää "GW9 in progress. Next deadline: GW10, Fri 6 Nov"
-  ja oman kortin kapteenin GW10:lle, vaikka sama kortti sanoo "This gameweek is locked". Planner alkaa GW10:stä (`start_gw` 10).
-  My team on suojattu kellolla (`deadlineAhead`, `web/pro-spa/src/lib/myTeamFlow.ts`), muut pinnat eivät. Korjaus: deadline ja
-  seuraava kierros FPL:stä kuten `model-captain`, jolloin artefakti kattaa GW11-14 ja kutsut voi näyttää rakennuspäivän kanssa.
 - 2026-11: Understat-katkon aikana `/fpl`:n GW-taulukon projected goals ja CS-% ovat 1.11:n sovituksesta, ottelusivujen voitto-%
   päivittyy. GW10:ssä sama ottelu on 61,0 % `/api/fantasy`:ssa ja 45 % ottelusivulla; samalla sivulla näkyvä xG 2,28-1,20 ei sovi
   45 %:iin. Erot keskittyvät nousijoihin (16, 6,5 ja 4,9 prosenttiyksikköä), muut ottelut ovat alle 3,5:n. Syy on mittaamatta:

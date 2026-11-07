@@ -156,6 +156,18 @@ describe('deadlinen ylitys (k1 B1, mitattu 7.11)', () => {
 	it('terve vaihe: ei rivia', () => {
 		expect(flowNotice(payload(), NOW)).toBeNull();
 	});
+	it('deadline edessa, data vanhaa: askeleet nakyvat ja paiva on niiden vieressa', () => {
+		// Tila backend-korjauksen jalkeen: API siirsi kierroksen, luvut ovat 1.11:lta.
+		const old = payload({}, { generated_at: '2026-11-01T12:00:00+00:00' });
+		expect(ids(myTeamFlowSteps(old, true))).toContain('transfer');
+		expect(flowNotice(old, NOW)).toBe(
+			'The model last updated on 1 Nov, so these calls may miss recent news.'
+		);
+	});
+	it('vanha data ilman paivaa: ei rivia, koska paivaa ei voi sanoa', () => {
+		const none = payload({}, { generated_at: null });
+		expect(flowNotice(none, NOW)).toBeNull();
+	});
 });
 
 describe('flowUpdateDay', () => {

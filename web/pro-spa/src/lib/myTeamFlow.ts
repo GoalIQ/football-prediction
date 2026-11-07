@@ -53,12 +53,22 @@ export function deadlineAhead(d: FlowMeta, now: number): boolean {
 	return Number.isFinite(t) && t > now;
 }
 
-/** Rivi virran ylapuolelle kun deadline on mennyt. null kun aika on edessa, ei
- *  tiedossa (ei voi vaittaa menneeksi) tai kausi on lopussa (ei tule paivitysta). */
+/** Rivi virran ylapuolelle.
+ *  - Deadline mennyt: kutsut ovat tauolla. Ei kun aika on tuntematon (ei voi
+ *    vaittaa menneeksi) tai kausi on lopussa (ei tule paivitysta).
+ *  - Deadline edessa mutta data vanhaa: kutsut nakyvat, ja paiva kuuluu niiden
+ *    viereen. Katkossa API siirtaa kierroksen kellon mukaan, mutta luvut ovat
+ *    yha viimeisesta rakennuksesta (7.11: GW11-kutsut 1.11:n projektiosta). */
 export function flowNotice(d: FlowMeta, now: number): string | null {
 	const t = Date.parse(d.meta.deadline_time ?? '');
 	const gw = d.meta.deadline_gameweek;
-	if (!Number.isFinite(t) || t > now) return null;
+	if (t > now) {
+		const built = Date.parse(d.meta.generated_at ?? '');
+		const day = flowUpdateDay(d.meta.generated_at);
+		if (!day || now - built < FRESH_MS) return null;
+		return `The model last updated on ${day}, so these calls may miss recent news.`;
+	}
+	if (!Number.isFinite(t)) return null;
 	if (typeof gw !== 'number' || gw >= LAST_GW) return null;
 	return `GW${gw}'s deadline has passed and the model hasn't updated yet, so transfer and captain calls are paused here.`;
 }
