@@ -39,6 +39,21 @@ def empty_phase0() -> dict:
     }
 
 
+def meta_at_clock_phase0(meta: dict, phase0: dict | None = None) -> dict:
+    """`fpl_gameweek.meta_at_clock` phase0:n deadlineilla ja kickoff-ajoilla.
+
+    Ei verkkokutsua: `/api/fantasy` ja `/api/fantasy/xp` eivat saa riippua
+    FPL:n saatavuudesta. Phase0:ssa lista on, xP-artefaktissa ei.
+    """
+    from src.models.fpl_gameweek import completed_gameweeks, meta_at_clock
+    src = load_phase0() if phase0 is None else phase0
+    return meta_at_clock(
+        meta,
+        deadlines=(src.get("meta") or {}).get("deadlines") or [],
+        done=completed_gameweeks(src.get("fixtures")),
+    )
+
+
 def load_phase0(path: Path = PHASE0_PATH) -> dict:
     if not path.exists():
         return empty_phase0()

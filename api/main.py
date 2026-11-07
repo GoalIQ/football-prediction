@@ -5860,6 +5860,11 @@ def fantasy_phase0(
     if lg not in PHASE0_PATHS:
         raise HTTPException(status_code=404, detail=f"Unknown fantasy league '{league}'.")
     data = load_phase0(PHASE0_PATHS[lg])
+    # 7.11: kierrokset kellon mukaan, koska builder voi olla kaatunut. Tassa
+    # ennen rajausta: alla oleva `actionable_gameweek` lukee taman metan.
+    if lg == "fpl" and isinstance(data.get("meta"), dict):
+        from src.models.fpl_phase0 import meta_at_clock_phase0
+        data = {**data, "meta": meta_at_clock_phase0(data["meta"], data)}
     # 22.9 (Villen paatos "poista"): ottelua edeltava xG ei lahde ulos
     # tickerissa. TASSA eika return-lauseissa: funktiossa on kolme paluuta
     # (available=False -runko, next_gw None, rajattu vastaus) ja yksi
@@ -5987,6 +5992,11 @@ def fantasy_xp(
     # tests/test_no_uefa_fetch.py.
     if lg == "ucl":
         payload = empty_xp()
+    # 7.11: sama kierros kuin rate-teamilla, muuten paneeli ja kentta sanoisivat
+    # eri ikkunan. Ennen summaa, koska se lukee `deadline_gameweek`:n.
+    if lg == "fpl" and isinstance(payload.get("meta"), dict):
+        from src.models.fpl_phase0 import meta_at_clock_phase0
+        payload["meta"] = meta_at_clock_phase0(payload["meta"])
     # XP-HORIZON-ALKANUT-KIERROS (17.9): `xp_horizon_total` lasketaan
     # SERVE-TIMESSA vain kierroksilta joihin voi viela vaikuttaa
     # (meta.horizon_total_from = actionable gameweek), rivit `gameweeks[]`

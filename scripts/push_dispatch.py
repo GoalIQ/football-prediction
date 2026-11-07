@@ -242,6 +242,10 @@ def personal_body(rt: dict, gw: int, is_premium: bool, enforced: bool) -> str | 
     hv = tr.get("hold_verdict") or {}
     if hv.get("gw_from") != gw or meta.get("captain_gw") != gw:
         return None
+    # 7.11: katkossa kierros tulee kellosta ja luvut vanhasta rakennuksesta. Sivu nayttaa
+    # rakennuspaivan, push ei voi, joten viesti pysyy yleisena kuten ennen tata lippua.
+    if meta.get("clock_rolled_from") is not None:
+        return None
     if meta.get("freehit_reverted_from") is not None:
         return None
     src_gw = meta.get("picks_gw")

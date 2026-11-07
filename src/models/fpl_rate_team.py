@@ -167,6 +167,22 @@ def get_bootstrap() -> dict:
     return _fetch_fpl("/bootstrap-static/")
 
 
+def _meta_from_events(meta: dict, bootstrap: dict) -> dict:
+    """xP-artefaktin meta FPL:n eventeista (`fpl_gameweek.meta_at_clock`).
+
+    Artefaktissa ei ole `deadlines`-listaa, ja bootstrap on tassa jo haettu.
+    `finished` laahaa tunteja (ks. `completed_gameweeks`), mutta silloin
+    kierros vain nakyy kesken vahan pidempaan, mika on turvallinen suunta.
+    """
+    from src.models.fpl_gameweek import meta_at_clock
+    events = [e for e in (bootstrap.get("events") or []) if isinstance(e, dict)]
+    return meta_at_clock(
+        meta,
+        deadlines=[{"gw": e.get("id"), "utc": e.get("deadline_time")} for e in events],
+        done=[e.get("id") for e in events if e.get("finished")],
+    )
+
+
 def season_started(bootstrap: dict) -> bool:
     """Onko kausi alkanut: jokin kierros on kaynnissa tai pelattu. Esikaudella
     kaikki eventit ovat is_current=False ja GW1 on is_next."""
@@ -1537,11 +1553,16 @@ def build_context(as_of_projection: bool = False
     `projection_bootstrap`in tilannekuva eika elava FPL-haku, joten tulos ei
     riipu siita milloin sita kutsutaan. API kayttaa aina elavaa.
     """
-    xp_data = attach_horizon_total_actionable(load_xp())
+    xp_data = load_xp()
     if not xp_data.get("meta", {}).get("available") or not xp_data.get("players"):
         raise RateTeamError(503, "xP projections are not available yet.")
     bootstrap = (projection_bootstrap(xp_data) if as_of_projection
                  else get_bootstrap())
+    # 7.11: kierrokset kellon mukaan ENNEN summia, koska horisontti lukee
+    # `deadline_gameweek`:n. Staattiset sivut eivat saa riippua kellosta.
+    if not as_of_projection:
+        xp_data["meta"] = _meta_from_events(xp_data["meta"], bootstrap)
+    attach_horizon_total_actionable(xp_data)
     price_by_id = {e["id"]: e for e in bootstrap.get("elements") or []}
     pool = _projection_pool(xp_data, price_by_id)
     return xp_data, bootstrap, pool, {p["id"]: p for p in pool}
@@ -2452,6 +2473,9 @@ def rate_team(entry: int | None = None, gw: int | None = None,
             # Kentat ovat vakaita tunnisteita/arvoja, teksti klienttien i18n:sta.
             "deadline_gameweek": _dl_gw,
             "deadline_time": deadline_time_for(bootstrap, _dl_gw),
+            # 7.11: kierros tuli kellosta eika artefaktista, eli luvut ovat
+            # vanhemmalta rakennukselta. Pinnan pitaa nayttaa `generated_at`.
+            "clock_rolled_from": xp_data["meta"].get("clock_rolled_from"),
             "picks_outdated": (picks_outdated(picks_gw, _dl_gw)
                                if mode == "entry" else False),
             # RATE-TEAM-FREEHIT-PALAUTUS (25.9): FH-kierros jonka joukkue

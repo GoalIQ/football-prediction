@@ -119,6 +119,78 @@ def _parse_utc(s) -> _dt.datetime | None:
     return t if t.tzinfo else t.replace(tzinfo=_dt.timezone.utc)
 
 
+def _deadline_rows(deadlines) -> list[tuple[int, _dt.datetime]]:
+    """`[{"gw", "utc"}]` -> [(kierros, aika)]. Rikkinainen rivi jaa pois."""
+    rows = []
+    for d in deadlines or []:
+        if not isinstance(d, dict):
+            continue
+        t = _parse_utc(d.get("utc"))
+        try:
+            gw = int(d.get("gw"))
+        except (TypeError, ValueError):
+            continue
+        if t is not None:
+            rows.append((gw, t))
+    return rows
+
+
+def meta_at_clock(meta: dict, deadlines=None, done=None,
+                  now: _dt.datetime | None = None) -> dict:
+    """Payloadin meta sellaisena kuin builder olisi sen nyt kirjoittanut.
+
+    🔴 MIKSI (7.11.2026). `deadline_gameweek`, `next_gameweek` ja
+    `completed_gameweeks` ovat RAKENNUSHETKEN arvoja. Kun builder kaatuu
+    (Understat-katko 1.11 alkaen), ne jaavat kuvaamaan vanhaa kierrosta
+    deadlinen yli. Mitattu 7.11, paiva GW10:n deadlinen jalkeen: rate-team
+    `captain_gw` 10 ja siirtoikkuna GW10-14, `/api/fantasy` `next_gameweek` 9,
+    This week "Next deadline: GW10, Fri 6 Nov", planner `start_gw` 10. Vain
+    `model-captain` oli oikein, koska se lukee deadlinen FPL:n eventeista.
+
+    Kutsuja antaa deadlinet (`[{"gw", "utc"}]`, oletus `meta.deadlines`) ja
+    halutessaan valmiit kierrokset. Jos payloadin oma deadline on mennyt ja
+    edessa on seuraava, palautetaan KOPIO jossa kentat vastaavat kelloa.
+    Muuten sama olio takaisin, eli terve tila on bittitarkasti entinen.
+
+    `next_gameweek`: uutta deadlinea edeltava kierros on alkanut, joten se on
+    kuluva, ellei se ole valmis. Vanhempaa ei voi olla, koska edellinen
+    deadline on mennyt. Isompi arvo sailyy.
+
+    Kauden lopussa ei ole seuraavaa deadlinea, eika kierrosta keksita: meta
+    palautuu sellaisenaan.
+
+    🔴 EI `load_xp_actionable`IIN. Reply-moduuli lukee sita ja vaikenee
+    luvuista deadlinen jalkeen, ja juuri niin kuuluu: botti ei saa julkaista
+    lukuja vanhasta artefaktista. Tama on tarjoilupintojen lukija.
+    """
+    if not isinstance(meta, dict):
+        return meta
+    now = now or _dt.datetime.now(_dt.timezone.utc)
+    rows = _deadline_rows(meta.get("deadlines") if deadlines is None else deadlines)
+    dl = meta.get("deadline_gameweek")
+    if not rows or not isinstance(dl, int) or isinstance(dl, bool):
+        return meta
+    own = dict(rows).get(dl) or _parse_utc(meta.get("deadline_utc"))
+    if own is None or own > now:
+        return meta
+    ahead = sorted((gw, t) for gw, t in rows if gw > dl and t > now)
+    if not ahead:
+        return meta
+    gw, t = ahead[0]
+    finished = {g for g in (meta.get("completed_gameweeks") or []) if isinstance(g, int)}
+    finished |= {g for g in (done or []) if isinstance(g, int)}
+    cur = gw if gw - 1 in finished else gw - 1
+    nxt = meta.get("next_gameweek")
+    out = dict(meta)
+    out["deadline_gameweek"] = gw
+    out["deadline_utc"] = t.isoformat()
+    out["next_gameweek"] = max(nxt, cur) if isinstance(nxt, int) else cur
+    if "completed_gameweeks" in meta or done is not None:
+        out["completed_gameweeks"] = sorted(finished)
+    out["clock_rolled_from"] = dl
+    return out
+
+
 def open_gameweek(meta: dict, now: _dt.datetime | None = None) -> int | None:
     """Ensimmainen kierros jonka deadline on viela EDESSA hetkella `now`.
 
@@ -137,17 +209,7 @@ def open_gameweek(meta: dict, now: _dt.datetime | None = None) -> int | None:
     meta = meta or {}
     now = now or _dt.datetime.now(_dt.timezone.utc)
     act = actionable_gameweek(meta)
-    rows = []
-    for d in meta.get("deadlines") or []:
-        if not isinstance(d, dict):
-            continue
-        t = _parse_utc(d.get("utc"))
-        try:
-            gw = int(d.get("gw"))
-        except (TypeError, ValueError):
-            continue
-        if t is not None:
-            rows.append((gw, t))
+    rows = _deadline_rows(meta.get("deadlines"))
     if rows:
         fut = sorted(gw for gw, t in rows if t > now and (act is None or gw >= act))
         return fut[0] if fut else None
