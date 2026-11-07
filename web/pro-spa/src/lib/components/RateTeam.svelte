@@ -1608,6 +1608,7 @@
 		defaultGw={data.meta.gw}
 		deadlineGw={data.meta.deadline_gameweek ?? null}
 		gwInProgress={data.meta.gw_in_progress === true}
+		modelGeneratedAt={data.meta.generated_at ?? null}
 		lastFinished={data.last_finished ?? null}
 		picksGw={data.meta.picks_gw ?? null}
 		horizon={xpHorizon(data.meta)}
@@ -1787,6 +1788,7 @@
 			defaultGw={dataB.meta.gw}
 			deadlineGw={dataB.meta.deadline_gameweek ?? null}
 			gwInProgress={dataB.meta.gw_in_progress === true}
+			modelGeneratedAt={dataB.meta.generated_at ?? null}
 			lastFinished={dataB.last_finished ?? null}
 			picksGw={dataB.meta.picks_gw ?? null}
 			horizon={xpHorizon(dataB.meta)}

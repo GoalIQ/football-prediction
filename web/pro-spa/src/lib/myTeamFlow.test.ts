@@ -9,6 +9,8 @@ import {
 	flowNotice,
 	flowUpdateDay,
 	FRESH_MS,
+	staleModelDay,
+	staleModelLine,
 	myTeamFlowSteps as stepsAt,
 	nextStep,
 	type FlowStep
@@ -156,17 +158,35 @@ describe('deadlinen ylitys (k1 B1, mitattu 7.11)', () => {
 	it('terve vaihe: ei rivia', () => {
 		expect(flowNotice(payload(), NOW)).toBeNull();
 	});
-	it('deadline edessa, data vanhaa: askeleet nakyvat ja paiva on niiden vieressa', () => {
-		// Tila backend-korjauksen jalkeen: API siirsi kierroksen, luvut ovat 1.11:lta.
-		const old = payload({}, { generated_at: '2026-11-01T12:00:00+00:00' });
-		expect(ids(myTeamFlowSteps(old, true))).toContain('transfer');
-		expect(flowNotice(old, NOW)).toBe(
-			'The model last updated on 1 Nov, so these calls may miss recent news.'
+	it('kutsu vain deadlinen kierrokselle (k3: artefakti loppuu GW14:aan)', () => {
+		const d = payload(
+			{ transfers: { ...payload().transfers, window_gws: [14] } },
+			{ deadline_gameweek: 15, captain_gw: 14 }
+		);
+		expect(ids(myTeamFlowSteps(d, true))).toEqual(['news', 'squad']);
+		const ok = payload(
+			{ transfers: { ...payload().transfers, window_gws: [11, 12] } },
+			{ deadline_gameweek: 11, captain_gw: 11 }
+		);
+		expect(ids(myTeamFlowSteps(ok, true))).toContain('captain');
+		expect(ids(myTeamFlowSteps(ok, true))).toContain('transfer');
+	});
+});
+
+describe('vanha projektio (k3)', () => {
+	const built = '2026-11-01T12:00:00+00:00';
+	it('rivi kertoo paivan ja mita siita puuttuu', () => {
+		expect(staleModelLine(built, NOW)).toBe(
+			"These calls use the model's 1 Nov projection. Results and injuries since then aren't in it."
 		);
 	});
-	it('vanha data ilman paivaa: ei rivia, koska paivaa ei voi sanoa', () => {
-		const none = payload({}, { generated_at: null });
-		expect(flowNotice(none, NOW)).toBeNull();
+	it('tuore data ei saa rivia', () => {
+		expect(staleModelDay(at(NOW - HOUR), NOW)).toBeNull();
+		expect(staleModelLine(at(NOW - FRESH_MS + HOUR), NOW)).toBeNull();
+	});
+	it('ilman aikaa ei voi vaittaa kumpaankaan suuntaan', () => {
+		expect(staleModelLine(null, NOW)).toBeNull();
+		expect(staleModelLine('ei-aika', NOW)).toBeNull();
 	});
 });
 
@@ -202,6 +222,23 @@ describe('activeStepId ja nextStep', () => {
 		expect(nextStep(steps, 'transfer')?.id).toBe('captain');
 		expect(nextStep(steps, 'squad')).toBeNull();
 		expect(nextStep(steps, null)).toBeNull();
+	});
+});
+
+/** Paiva jokaisen tyokalun kehyksessa ja kentan vieressa (k3 K3 + K4). */
+describe('vanhan datan rivit pinnoilla', () => {
+	const strip = (u: string) =>
+		readFileSync(new URL(u, import.meta.url), 'utf-8').replace(/<!--[\s\S]*?-->/g, '');
+	it('ToolsHome nayttaa rivin xP:n paivasta, ei phase0:n', () => {
+		const c = strip('./components/ToolsHome.svelte');
+		expect(c).toContain('staleModelLine(modelBuilt, clock.now)');
+		expect(c).toContain('xp_generated_at');
+		expect(c).not.toMatch(/modelBuilt\s*=.*meta\??\.generated_at/);
+	});
+	it('kentan selite ei lupaa paivitysta vanhalla datalla', () => {
+		const c = strip('./components/TeamPitchManager.svelte');
+		expect(c).toContain('staleModelDay(modelGeneratedAt, clock.now)');
+		expect(c).toMatch(/\{#if staleDay\}[\s\S]{0,160}stay as they are until it updates again/);
 	});
 });
 

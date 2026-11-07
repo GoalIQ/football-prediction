@@ -53,22 +53,12 @@ export function deadlineAhead(d: FlowMeta, now: number): boolean {
 	return Number.isFinite(t) && t > now;
 }
 
-/** Rivi virran ylapuolelle.
- *  - Deadline mennyt: kutsut ovat tauolla. Ei kun aika on tuntematon (ei voi
- *    vaittaa menneeksi) tai kausi on lopussa (ei tule paivitysta).
- *  - Deadline edessa mutta data vanhaa: kutsut nakyvat, ja paiva kuuluu niiden
- *    viereen. Katkossa API siirtaa kierroksen kellon mukaan, mutta luvut ovat
- *    yha viimeisesta rakennuksesta (7.11: GW11-kutsut 1.11:n projektiosta). */
+/** Rivi virran ylapuolelle kun deadline on mennyt. null kun aika on edessa, ei
+ *  tiedossa (ei voi vaittaa menneeksi) tai kausi on lopussa (ei tule paivitysta). */
 export function flowNotice(d: FlowMeta, now: number): string | null {
 	const t = Date.parse(d.meta.deadline_time ?? '');
 	const gw = d.meta.deadline_gameweek;
-	if (t > now) {
-		const built = Date.parse(d.meta.generated_at ?? '');
-		const day = flowUpdateDay(d.meta.generated_at);
-		if (!day || now - built < FRESH_MS) return null;
-		return `The model last updated on ${day}, so these calls may miss recent news.`;
-	}
-	if (!Number.isFinite(t)) return null;
+	if (!Number.isFinite(t) || t > now) return null;
 	if (typeof gw !== 'number' || gw >= LAST_GW) return null;
 	return `GW${gw}'s deadline has passed and the model hasn't updated yet, so transfer and captain calls are paused here.`;
 }
@@ -79,6 +69,24 @@ export function flowUpdateDay(generatedAt: string | null | undefined): string | 
 	const t = Date.parse(generatedAt ?? '');
 	if (!Number.isFinite(t)) return null;
 	return new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
+/** Rakennuspaiva kun projektio on yli vuorokauden vanha, muuten null.
+ *  Katkossa API siirtaa kierroksen kellon mukaan, mutta luvut ovat viimeisesta
+ *  rakennuksesta (7.11: GW11-kutsut 1.11:n projektiosta), joten paiva kuuluu
+ *  jokaisen kutsun viereen. Ilman aikaa ei voi vaittaa kumpaankaan suuntaan. */
+export function staleModelDay(generatedAt: string | null | undefined, now: number): string | null {
+	const t = Date.parse(generatedAt ?? '');
+	if (!Number.isFinite(t) || now - t < FRESH_MS) return null;
+	return flowUpdateDay(generatedAt);
+}
+
+/** Rivi tyokalujen yhteiseen kehykseen. Lahde on xP:n rakennushetki, koska kutsut
+ *  ovat siita: phase0 voi toipua ensin. */
+export function staleModelLine(xpGeneratedAt: string | null | undefined, now: number): string | null {
+	const day = staleModelDay(xpGeneratedAt, now);
+	if (!day) return null;
+	return `These calls use the model's ${day} projection. Results and injuries since then aren't in it.`;
 }
 
 /** Kierros jolle kapteeni on laskettu. Kesken kierroksen ilman `captain_gw`:ta
@@ -142,9 +150,14 @@ export function myTeamFlowSteps(
 	if (!d || personalLock(premium, d)) return [];
 	const steps: FlowStep[] = [];
 	const ahead = deadlineAhead(d, now);
+	// Artefakti voi loppua ennen deadlinen kierrosta (k3: GW14:n jalkeen deadline 15,
+	// kapteeni ja ikkuna yha 14). Silloin kutsu olisi lukitulle kierrokselle.
+	const dlGw = d.meta.deadline_gameweek;
+	const onDeadline = (gw: number | null | undefined) =>
+		typeof gw !== 'number' || typeof dlGw !== 'number' || gw === dlGw;
 	const generated = Date.parse(d.meta.generated_at ?? '');
 	const fresh = Number.isFinite(generated) && now - generated < FRESH_MS;
-	if (ahead && d.transfers) {
+	if (ahead && d.transfers && onDeadline(d.transfers.window_gws?.[0])) {
 		steps.push({
 			id: 'transfer',
 			label: 'Transfer',
@@ -153,7 +166,7 @@ export function myTeamFlowSteps(
 		});
 	}
 	const cap = d.captain?.pick ?? null;
-	if (ahead && cap) {
+	if (ahead && cap && onDeadline(d.meta.captain_gw)) {
 		steps.push({
 			id: 'captain',
 			label: 'Captain',
