@@ -295,6 +295,42 @@ _TR_DECISIVE = re.compile(r"In the (\d[\d,]*) club matches that did not end in a
                           r"\((\d[\d,]*) of (\d[\d,]*)\)")
 
 
+_REC_ALL = re.compile(r"All club matches (\d[\d.]*%) (\d+) of (\d+)"
+                      r"(?: (?:(\d[\d.]*%) when the match had a winner \((\d+) of (\d+)\)"
+                      r"|(\d+) of (\d+) when the match had a winner) · (\d+) draws?)?")
+_REC_BASE = re.compile(r"GoalIQ model \d[\d.]*% (\d+) of (\d+) "
+                       r"Always pick the home side (\d[\d.]*%) (\d+) of (\d+)")
+_REC_MORE = re.compile(r"The model got (\d+) more results right")
+
+
+def record_table(html: str) -> dict | None:
+    """goaliq.app/predictions#record: build_fpl_page.record_head_html + by-comp-summarivi.
+
+    7.11.2026: botin ohje linkittaa track record -postauksen tanne, joten
+    luvut varmennetaan tasta sivusta (bsky_gate: luku nakyy linkin sivulla).
+    Portti: tests/test_bot_track_record_route.py ajaa builderin HTML:n taman lapi.
+    """
+    text = visible_text(html)
+    m = _REC_ALL.search(text)
+    if not m:
+        return None
+    out = {"pct_1x2": m.group(1), "correct": m.group(2), "n": m.group(3)}
+    if m.group(4):
+        out.update({"pct_decisive": m.group(4), "decisive_correct": m.group(5),
+                    "decisive_n": m.group(6)})
+    elif m.group(7):
+        out.update({"decisive_correct": m.group(7), "decisive_n": m.group(8)})
+    if m.group(9):
+        out["draws"] = m.group(9)
+    b = _REC_BASE.search(text)
+    if b and b.group(2) == out["n"] == b.group(5):
+        out.update({"baseline_home_pct": b.group(3), "baseline_home_correct": b.group(4)})
+        more = _REC_MORE.search(text)
+        if more:
+            out["more_than_home"] = more.group(1)
+    return out
+
+
 def track_record_sentence(html: str) -> dict | None:
     """/fpl#track-record: build_fpl_page.track_record_sentences -lauseet.
 
