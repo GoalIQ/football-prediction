@@ -164,6 +164,14 @@ describe('deadlinen ylitys (k1 B1, mitattu 7.11)', () => {
 			{ deadline_gameweek: 15, captain_gw: 14 }
 		);
 		expect(ids(myTeamFlowSteps(d, true))).toEqual(['news', 'squad']);
+		// GW14 pelattu, GW15 edessa: kapteeni on 15, mutta ikkuna on tyhja.
+		const tyhja = payload(
+			{ transfers: { ...payload().transfers, window_gws: [] } },
+			{ deadline_gameweek: 15, captain_gw: 15 }
+		);
+		expect(ids(myTeamFlowSteps(tyhja, true))).toEqual(['news', 'squad']);
+		// Vanhan deployn vastaus ilman ikkunaa: ei paateta sen perusteella.
+		expect(ids(myTeamFlowSteps(payload(), true))).toContain('transfer');
 		const ok = payload(
 			{ transfers: { ...payload().transfers, window_gws: [11, 12] } },
 			{ deadline_gameweek: 11, captain_gw: 11 }
@@ -177,7 +185,7 @@ describe('vanha projektio (k3)', () => {
 	const built = '2026-11-01T12:00:00+00:00';
 	it('rivi kertoo paivan ja mita siita puuttuu', () => {
 		expect(staleModelLine(built, NOW)).toBe(
-			"These calls use the model's 1 Nov projection. Results and injuries since then aren't in it."
+			"The model's projection is from 1 Nov. Results and injuries since then aren't in it."
 		);
 	});
 	it('tuore data ei saa rivia', () => {

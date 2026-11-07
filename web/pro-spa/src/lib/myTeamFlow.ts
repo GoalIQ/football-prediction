@@ -86,7 +86,7 @@ export function staleModelDay(generatedAt: string | null | undefined, now: numbe
 export function staleModelLine(xpGeneratedAt: string | null | undefined, now: number): string | null {
 	const day = staleModelDay(xpGeneratedAt, now);
 	if (!day) return null;
-	return `These calls use the model's ${day} projection. Results and injuries since then aren't in it.`;
+	return `The model's projection is from ${day}. Results and injuries since then aren't in it.`;
 }
 
 /** Kierros jolle kapteeni on laskettu. Kesken kierroksen ilman `captain_gw`:ta
@@ -150,14 +150,17 @@ export function myTeamFlowSteps(
 	if (!d || personalLock(premium, d)) return [];
 	const steps: FlowStep[] = [];
 	const ahead = deadlineAhead(d, now);
-	// Artefakti voi loppua ennen deadlinen kierrosta (k3: GW14:n jalkeen deadline 15,
-	// kapteeni ja ikkuna yha 14). Silloin kutsu olisi lukitulle kierrokselle.
+	// Artefakti voi loppua ennen deadlinen kierrosta (k3: GW14:n jalkeen deadline 15).
+	// Kesken GW14:n kapteeni ja ikkuna ovat yha 14, ja kun GW14 on pelattu, ikkuna on
+	// tyhja ja kapteeni saisi 0 xP:ta. Ikkunan alku ratkaisee molemmat. Vanhalta
+	// deploylta tallennetussa vastauksessa ikkunaa ei ole, joten silloin ei paateta.
 	const dlGw = d.meta.deadline_gameweek;
-	const onDeadline = (gw: number | null | undefined) =>
-		typeof gw !== 'number' || typeof dlGw !== 'number' || gw === dlGw;
+	const win = d.transfers?.window_gws;
+	const onDeadline =
+		!Array.isArray(win) || typeof dlGw !== 'number' || win[0] === dlGw;
 	const generated = Date.parse(d.meta.generated_at ?? '');
 	const fresh = Number.isFinite(generated) && now - generated < FRESH_MS;
-	if (ahead && d.transfers && onDeadline(d.transfers.window_gws?.[0])) {
+	if (ahead && onDeadline && d.transfers) {
 		steps.push({
 			id: 'transfer',
 			label: 'Transfer',
@@ -166,7 +169,7 @@ export function myTeamFlowSteps(
 		});
 	}
 	const cap = d.captain?.pick ?? null;
-	if (ahead && cap && onDeadline(d.meta.captain_gw)) {
+	if (ahead && onDeadline && cap) {
 		steps.push({
 			id: 'captain',
 			label: 'Captain',
