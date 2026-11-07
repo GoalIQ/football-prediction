@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { modelAge } from '$lib/modelAge.svelte';
 	import { staleModelDay } from '$lib/myTeamFlow';
 	import { clock } from '$lib/now.svelte';
 	import { doubtFlagText } from '$lib/doubtFlag';
@@ -864,9 +865,11 @@
 					<p class="label xi-title" style="margin:0">{pitchHeading}</p>
 				{/if}
 				<!-- #9a: pitch-kortti (XI + penkki) — sama kortti draftille ja ID-ratelle -->
+				{#if !modelAge.stale}
 				<button type="button" class="chip share" onclick={shareImage} disabled={sharing}>
 					{sharing ? 'Rendering…' : shareButtonLabel()}
 				</button>
+				{/if}
 			</div>
 		{:else if pitchHeading}
 			<!-- 22.9 (M1 + M2): otsikko kokoonpanon LAHTEESTA. "Starting XI" vain

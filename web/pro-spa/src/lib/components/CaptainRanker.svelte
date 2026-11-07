@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { modelAge } from '$lib/modelAge.svelte';
 	import { actionableGameweek } from '$lib/gameweek';
 	import { onMount } from 'svelte';
 	import type { XpResponse } from '$lib/api';
@@ -60,9 +61,11 @@
 <div class="head-row">
 	<h2>Captain ranker: top xP for GW{nextGw}</h2>
 	<!-- Desktopilla label lupaa latauksen, mobiilissa share-arkin (31.7) -->
+	{#if !modelAge.stale}
 	<button type="button" class="share-chip" onclick={shareImage} disabled={sharing}>
 		{sharing ? 'Rendering…' : shareButtonLabel()}
 	</button>
+	{/if}
 </div>
 <p class="muted">
 	The ten highest projected scores for the next gameweek only, a captaincy shortlist,
