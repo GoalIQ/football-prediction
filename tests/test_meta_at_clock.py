@@ -217,15 +217,29 @@ def test_tarjoilupinnat_kayttavat_lukijaa(name):
     assert "meta_at_clock_phase0" in _kutsut(inspect.unwrap(getattr(main, name)))
 
 
-def test_rate_team_kertoo_vanhan_rakennuksen():
-    src = inspect.getsource(fpl_rate_team.rate_team)
-    assert '"clock_rolled_from": xp_data["meta"].get("clock_rolled_from")' in src
-    assert '"generated_at"' in src, "pinta nayttaa rakennuspaivan tasta kentasta"
+def test_rate_team_kertoo_rakennushetken():
+    assert '"generated_at"' in inspect.getsource(fpl_rate_team.rate_team)
+
+
+def test_optimin_avain_seuraa_ikkunaa(ctx):
+    """k3 K1: sama `generated_at`, kierros siirtyy kellolla. Vanha avain antoi
+    optimin vanhasta ikkunasta: ero -58,5 oikean -4,9:n sijaan."""
+    xp = ctx()[0]
+    ennen = {"meta": {"generated_at": xp["meta"]["generated_at"], "horizon_total_from": 10}}
+    assert fpl_rate_team.free_optimum_key(ennen) != fpl_rate_team.free_optimum_key(xp)
+    assert fpl_rate_team.free_optimum_key(xp) == fpl_rate_team.free_optimum_key(ctx()[0])
 
 
 def _push_rt(**meta):
+    built = dt.datetime.now(UTC).isoformat()
     return {
-        "meta": {"captain_gw": 11, "picks_gw": 10, "picks_outdated": True, **meta},
+        "meta": {
+            "captain_gw": 11,
+            "picks_gw": 10,
+            "picks_outdated": True,
+            "generated_at": built,
+            **meta,
+        },
         "transfers": {
             "hold": True,
             "hold_verdict": {"gw_from": 11, "gw_to": 14, "verdict": "hold"},
@@ -240,7 +254,19 @@ def test_push_pysyy_yleisena_vanhalla_rakennuksella():
     from scripts.push_dispatch import personal_body
 
     assert personal_body(_push_rt(), 11, True, True) is not None
-    assert personal_body(_push_rt(clock_rolled_from=10), 11, True, True) is None
+    vanha = (dt.datetime.now(UTC) - dt.timedelta(hours=25)).isoformat()
+    assert personal_body(_push_rt(generated_at=vanha), 11, True, True) is None
+    assert personal_body(_push_rt(generated_at=None), 11, True, True) is None
+
+
+def test_katko_ennen_deadlinea_ei_paasta_numeroita():
+    """k3: kierros ei siirry, mutta luvut ovat vanhoja."""
+    from scripts.push_dispatch import model_is_fresh
+
+    now = dt.datetime(2026, 11, 20, 12, tzinfo=UTC)
+    assert model_is_fresh({"generated_at": "2026-11-20T00:00:00+00:00"}, now) is True
+    assert model_is_fresh({"generated_at": "2026-11-18T00:00:00+00:00"}, now) is False
+    assert model_is_fresh({}, now) is False
 
 
 def test_botin_lukija_ei_siirry():

@@ -127,6 +127,39 @@ def _xp_with_deadline(dl_gw: int) -> dict:
     return d
 
 
+def _ei_kelloa(monkeypatch) -> None:
+    """Nama testit mittaavat ETagia, joten ikkuna tulee fikstuurista. Ilman tata
+    kello siirtaisi jokaisen menneen `deadline_gameweek`in samaan kierrokseen."""
+    monkeypatch.setattr("src.models.fpl_phase0.meta_at_clock_phase0",
+                        lambda meta, phase0=None: meta)
+
+
+def test_kellon_siirto_muuttaa_etagin(monkeypatch) -> None:
+    """7.11: `actionable_gameweek`in lahde muuttui serve-timeksi, eli tasan se
+    tilanne jota 18.9:n kommentti varoi. Sama artefakti ja `generated_at`, mutta
+    kello siirtaa ikkunan: vanhan tagin ei saa validoida uutta vastausta."""
+    import src.models.fpl_phase0 as p0
+    import src.models.fpl_xp as fx
+
+    alku = _ensimmainen_gw()
+    monkeypatch.setattr(fx, "load_xp", lambda _p=None: _xp_with_deadline(alku))
+
+    monkeypatch.setattr(p0, "load_phase0", lambda *_a: {"meta": {}, "fixtures": []})
+    vanha = client.get("/api/fantasy/xp")
+    assert vanha.status_code == 200
+
+    monkeypatch.setattr(p0, "load_phase0", lambda *_a: {
+        "meta": {"deadlines": [
+            {"gw": alku, "utc": "2020-01-01T00:00:00+00:00"},
+            {"gw": alku + 1, "utc": "2099-01-01T00:00:00+00:00"},
+        ]},
+        "fixtures": [],
+    })
+    uusi = client.get("/api/fantasy/xp", headers={"If-None-Match": vanha.headers["etag"]})
+    assert uusi.status_code == 200, "kello siirsi ikkunan, mutta vanha ETag validoi vastauksen"
+    assert uusi.headers["etag"] != vanha.headers["etag"]
+
+
 def test_ikkunan_arvo_on_etagissa_ei_vain_skeemaversio(monkeypatch) -> None:
     """🔴 EROTTELEVA FIKSTUURI: vaara haara oikeasti onnistuisi ilman tata.
 
@@ -144,6 +177,7 @@ def test_ikkunan_arvo_on_etagissa_ei_vain_skeemaversio(monkeypatch) -> None:
     """
     import src.models.fpl_xp as fx
 
+    _ei_kelloa(monkeypatch)
     tagit, summat, ikkunat = [], [], []
     ens = _ensimmainen_gw()
     for dl in (ens, ens + 1, ens + 2):
@@ -166,6 +200,7 @@ def test_vanha_ikkuna_ei_validoi_uutta_vastausta(monkeypatch) -> None:
     """Positiivinen kontrolli 304-polulle: tagi ei ole koriste."""
     import src.models.fpl_xp as fx
 
+    _ei_kelloa(monkeypatch)
     ens = _ensimmainen_gw()
     monkeypatch.setattr(fx, "load_xp", lambda path=None: _xp_with_deadline(ens))
     vanha = client.get("/api/fantasy/xp").headers["etag"]

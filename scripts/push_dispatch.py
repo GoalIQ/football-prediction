@@ -228,6 +228,16 @@ def deadline_message(gw: int, remaining_h: float) -> tuple[str, str]:
 # Premiumille siirto ja kapteeni. Kaikki virheet -> yleinen viesti: henkilokohtainen on lisa, se ei saa estaa muistutusta.
 PERSONAL_KINDS = frozenset({"deadline_24h"})
 PERSONAL_MAX_ENTRIES = 300   # ajoaika: yksi FPL-haku entrya kohden
+PERSONAL_MAX_MODEL_AGE = _dt.timedelta(hours=24)
+
+
+def model_is_fresh(meta: dict, now=None) -> bool:
+    """Onko projektio alle PERSONAL_MAX_MODEL_AGE vanha. Puuttuva aika = ei."""
+    from src.models.fpl_gameweek import _parse_utc
+    built = _parse_utc(meta.get("generated_at"))
+    if built is None:
+        return False
+    return (now or _dt.datetime.now(_dt.timezone.utc)) - built < PERSONAL_MAX_MODEL_AGE
 
 
 def personal_body(rt: dict, gw: int, is_premium: bool, enforced: bool) -> str | None:
@@ -243,8 +253,9 @@ def personal_body(rt: dict, gw: int, is_premium: bool, enforced: bool) -> str | 
     if hv.get("gw_from") != gw or meta.get("captain_gw") != gw:
         return None
     # 7.11: katkossa kierros tulee kellosta ja luvut vanhasta rakennuksesta. Sivu nayttaa
-    # rakennuspaivan, push ei voi, joten viesti pysyy yleisena kuten ennen tata lippua.
-    if meta.get("clock_rolled_from") is not None:
+    # rakennuspaivan, push ei voi. Ehto on datan ika eika kierroksen siirto, koska ennen
+    # deadlinea alkanut katko ei siirra kierrosta mutta luvut ovat silti vanhoja.
+    if not model_is_fresh(meta):
         return None
     if meta.get("freehit_reverted_from") is not None:
         return None

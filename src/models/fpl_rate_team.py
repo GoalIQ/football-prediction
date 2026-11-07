@@ -1051,7 +1051,11 @@ def free_optimum_key(xp_data: dict) -> str:
     hakee. Jos kutsuja muodostaisi avaimen itse, lammitys voisi osua eri
     avaimeen ja jokainen deploy olisi taas kylma (tests/
     test_free_optimum_warm.py kaataa sellaisen kutsupaikan)."""
-    return str((xp_data.get("meta") or {}).get("generated_at"))
+    # 7.11: ikkuna mukaan, koska se voi vaihtua kellon mukaan samalla rakennuksella.
+    # Pelkalla `generated_at`illa optimi jai vanhasta ikkunasta: oma XI GW11-14
+    # (204,4) vs paras GW10-14 (262,9), ero -58,5 oikean -4,9:n sijaan.
+    m = xp_data.get("meta") or {}
+    return f"{m.get('generated_at')}|{m.get('horizon_total_from')}"
 
 
 def warm_free_optimum() -> dict:
@@ -1561,7 +1565,7 @@ def build_context(as_of_projection: bool = False
     # 7.11: kierrokset kellon mukaan ENNEN summia, koska horisontti lukee
     # `deadline_gameweek`:n. Staattiset sivut eivat saa riippua kellosta.
     if not as_of_projection:
-        xp_data["meta"] = _meta_from_events(xp_data["meta"], bootstrap)
+        xp_data = {**xp_data, "meta": _meta_from_events(xp_data["meta"], bootstrap)}
     attach_horizon_total_actionable(xp_data)
     price_by_id = {e["id"]: e for e in bootstrap.get("elements") or []}
     pool = _projection_pool(xp_data, price_by_id)
@@ -2473,9 +2477,6 @@ def rate_team(entry: int | None = None, gw: int | None = None,
             # Kentat ovat vakaita tunnisteita/arvoja, teksti klienttien i18n:sta.
             "deadline_gameweek": _dl_gw,
             "deadline_time": deadline_time_for(bootstrap, _dl_gw),
-            # 7.11: kierros tuli kellosta eika artefaktista, eli luvut ovat
-            # vanhemmalta rakennukselta. Pinnan pitaa nayttaa `generated_at`.
-            "clock_rolled_from": xp_data["meta"].get("clock_rolled_from"),
             "picks_outdated": (picks_outdated(picks_gw, _dl_gw)
                                if mode == "entry" else False),
             # RATE-TEAM-FREEHIT-PALAUTUS (25.9): FH-kierros jonka joukkue

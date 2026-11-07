@@ -5996,7 +5996,7 @@ def fantasy_xp(
     # eri ikkunan. Ennen summaa, koska se lukee `deadline_gameweek`:n.
     if lg == "fpl" and isinstance(payload.get("meta"), dict):
         from src.models.fpl_phase0 import meta_at_clock_phase0
-        payload["meta"] = meta_at_clock_phase0(payload["meta"])
+        payload = {**payload, "meta": meta_at_clock_phase0(payload["meta"])}
     # XP-HORIZON-ALKANUT-KIERROS (17.9): `xp_horizon_total` lasketaan
     # SERVE-TIMESSA vain kierroksilta joihin voi viela vaikuttaa
     # (meta.horizon_total_from = actionable gameweek), rivit `gameweeks[]`
