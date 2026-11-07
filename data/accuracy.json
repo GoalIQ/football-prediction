@@ -1,37 +1,37 @@
 {
-  "updated_at": "2026-11-07T18:53:52+00:00",
+  "updated_at": "2026-11-07T19:23:06+00:00",
   "logged_total": 3334,
   "logged_with_timestamp": 3286,
-  "pending": 2186,
+  "pending": 2185,
   "voided": 58,
   "all_time": {
-    "n": 1090,
-    "correct_1x2": 583,
-    "pct_1x2": 0.5349,
+    "n": 1091,
+    "correct_1x2": 584,
+    "pct_1x2": 0.5353,
     "draw_n": 258,
-    "pct_draw": 0.2367,
-    "decisive_n": 832,
-    "decisive_correct": 583,
-    "pct_decisive": 0.7007,
-    "exact_n": 1090,
+    "pct_draw": 0.2365,
+    "decisive_n": 833,
+    "decisive_correct": 584,
+    "pct_decisive": 0.7011,
+    "exact_n": 1091,
     "exact_correct": 124,
-    "pct_exact": 0.1138,
-    "brier": 0.5811,
-    "brier_n": 1090
+    "pct_exact": 0.1137,
+    "brier": 0.5809,
+    "brier_n": 1091
   },
   "rolling": {
     "n": 100,
-    "correct_1x2": 62,
-    "pct_1x2": 0.62,
+    "correct_1x2": 63,
+    "pct_1x2": 0.63,
     "draw_n": 16,
     "pct_draw": 0.16,
     "decisive_n": 84,
-    "decisive_correct": 62,
-    "pct_decisive": 0.7381,
+    "decisive_correct": 63,
+    "pct_decisive": 0.75,
     "exact_n": 100,
     "exact_correct": 12,
     "pct_exact": 0.12,
-    "brier": 0.5451,
+    "brier": 0.5414,
     "brier_n": 100,
     "window": 100
   },
@@ -172,19 +172,19 @@
       "brier_n": 80
     },
     "SA": {
-      "n": 103,
-      "correct_1x2": 63,
-      "pct_1x2": 0.6117,
+      "n": 104,
+      "correct_1x2": 64,
+      "pct_1x2": 0.6154,
       "draw_n": 17,
-      "pct_draw": 0.165,
-      "decisive_n": 86,
-      "decisive_correct": 63,
-      "pct_decisive": 0.7326,
-      "exact_n": 103,
+      "pct_draw": 0.1635,
+      "decisive_n": 87,
+      "decisive_correct": 64,
+      "pct_decisive": 0.7356,
+      "exact_n": 104,
       "exact_correct": 10,
-      "pct_exact": 0.0971,
-      "brier": 0.5271,
-      "brier_n": 103
+      "pct_exact": 0.0962,
+      "brier": 0.5254,
+      "brier_n": 104
     },
     "WC": {
       "n": 56,
@@ -204,24 +204,24 @@
   },
   "by_model": {
     "club": {
-      "n": 1034,
-      "correct_1x2": 548,
-      "pct_1x2": 0.53,
+      "n": 1035,
+      "correct_1x2": 549,
+      "pct_1x2": 0.5304,
       "draw_n": 243,
-      "pct_draw": 0.235,
-      "decisive_n": 791,
-      "decisive_correct": 548,
-      "pct_decisive": 0.6928,
-      "exact_n": 1034,
+      "pct_draw": 0.2348,
+      "decisive_n": 792,
+      "decisive_correct": 549,
+      "pct_decisive": 0.6932,
+      "exact_n": 1035,
       "exact_correct": 113,
-      "pct_exact": 0.1093,
-      "brier": 0.586,
-      "brier_n": 1034,
+      "pct_exact": 0.1092,
+      "brier": 0.5858,
+      "brier_n": 1035,
       "logged_with_timestamp": 3230,
       "baseline_home": {
-        "n": 1034,
+        "n": 1035,
         "correct": 464,
-        "pct": 0.4487
+        "pct": 0.4483
       },
       "pick_calibration": [
         {
@@ -243,10 +243,10 @@
         {
           "lo": 0.5,
           "hi": 0.6,
-          "n": 253,
-          "won": 136,
-          "pct_won": 0.5375,
-          "mean_p": 0.5469
+          "n": 254,
+          "won": 137,
+          "pct_won": 0.5394,
+          "mean_p": 0.5467
         },
         {
           "lo": 0.6,
@@ -317,19 +317,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 951,
-      "correct_1x2": 522,
-      "pct_1x2": 0.5489,
+      "n": 952,
+      "correct_1x2": 523,
+      "pct_1x2": 0.5494,
       "draw_n": 207,
-      "pct_draw": 0.2177,
-      "decisive_n": 744,
-      "decisive_correct": 522,
-      "pct_decisive": 0.7016,
-      "exact_n": 951,
+      "pct_draw": 0.2174,
+      "decisive_n": 745,
+      "decisive_correct": 523,
+      "pct_decisive": 0.702,
+      "exact_n": 952,
       "exact_correct": 102,
-      "pct_exact": 0.1073,
-      "brier": 0.5762,
-      "brier_n": 951
+      "pct_exact": 0.1071,
+      "brier": 0.5759,
+      "brier_n": 952
     },
     "stale": {
       "n": 139,
@@ -379,8 +379,8 @@
     {
       "bin_mid": 0.2537,
       "predicted": 0.2537,
-      "actual": 0.2557,
-      "n": 1228
+      "actual": 0.2553,
+      "n": 1230
     },
     {
       "bin_mid": 0.3422,
@@ -395,10 +395,10 @@
       "n": 399
     },
     {
-      "bin_mid": 0.5464,
-      "predicted": 0.5464,
-      "actual": 0.5441,
-      "n": 261
+      "bin_mid": 0.5463,
+      "predicted": 0.5463,
+      "actual": 0.5458,
+      "n": 262
     },
     {
       "bin_mid": 0.648,
@@ -426,6 +426,21 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-11-07",
+      "home_team": "Parma Calcio 1913",
+      "away_team": "Bologna FC 1909",
+      "predicted_winner": "away",
+      "p_winner": 0.5162,
+      "lead_h": 1.1,
+      "most_likely_score": "0-1",
+      "actual_score": "1-2",
+      "actual_outcome": "away",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-11-07",
       "home_team": "For Sittard",
@@ -708,21 +723,6 @@
       "actual_outcome": "draw",
       "hit_1x2": false,
       "exact_hit": true,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-11-07",
-      "home_team": "Bristol City",
-      "away_team": "Norwich",
-      "predicted_winner": "away",
-      "p_winner": 0.4716,
-      "lead_h": 2.6,
-      "most_likely_score": "1-1",
-      "actual_score": "0-5",
-      "actual_outcome": "away",
-      "hit_1x2": true,
-      "exact_hit": false,
       "duration": null,
       "regular_score": null
     }
