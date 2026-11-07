@@ -1,23 +1,23 @@
 {
-  "updated_at": "2026-11-06T23:02:01+00:00",
+  "updated_at": "2026-11-07T00:54:54+00:00",
   "logged_total": 3334,
   "logged_with_timestamp": 3286,
-  "pending": 2212,
+  "pending": 2211,
   "voided": 57,
   "all_time": {
-    "n": 1065,
-    "correct_1x2": 571,
-    "pct_1x2": 0.5362,
+    "n": 1066,
+    "correct_1x2": 572,
+    "pct_1x2": 0.5366,
     "draw_n": 251,
-    "pct_draw": 0.2357,
-    "decisive_n": 814,
-    "decisive_correct": 571,
-    "pct_decisive": 0.7015,
-    "exact_n": 1065,
-    "exact_correct": 119,
-    "pct_exact": 0.1117,
-    "brier": 0.5807,
-    "brier_n": 1065
+    "pct_draw": 0.2355,
+    "decisive_n": 815,
+    "decisive_correct": 572,
+    "pct_decisive": 0.7018,
+    "exact_n": 1066,
+    "exact_correct": 120,
+    "pct_exact": 0.1126,
+    "brier": 0.5805,
+    "brier_n": 1066
   },
   "rolling": {
     "n": 100,
@@ -29,9 +29,9 @@
     "decisive_correct": 68,
     "pct_decisive": 0.7816,
     "exact_n": 100,
-    "exact_correct": 8,
-    "pct_exact": 0.08,
-    "brier": 0.5197,
+    "exact_correct": 9,
+    "pct_exact": 0.09,
+    "brier": 0.5203,
     "brier_n": 100,
     "window": 100
   },
@@ -157,19 +157,19 @@
       "brier_n": 91
     },
     "PPL": {
-      "n": 79,
-      "correct_1x2": 48,
-      "pct_1x2": 0.6076,
+      "n": 80,
+      "correct_1x2": 49,
+      "pct_1x2": 0.6125,
       "draw_n": 14,
-      "pct_draw": 0.1772,
-      "decisive_n": 65,
-      "decisive_correct": 48,
-      "pct_decisive": 0.7385,
-      "exact_n": 79,
-      "exact_correct": 11,
-      "pct_exact": 0.1392,
-      "brier": 0.5282,
-      "brier_n": 79
+      "pct_draw": 0.175,
+      "decisive_n": 66,
+      "decisive_correct": 49,
+      "pct_decisive": 0.7424,
+      "exact_n": 80,
+      "exact_correct": 12,
+      "pct_exact": 0.15,
+      "brier": 0.5272,
+      "brier_n": 80
     },
     "SA": {
       "n": 101,
@@ -204,24 +204,24 @@
   },
   "by_model": {
     "club": {
-      "n": 1009,
-      "correct_1x2": 536,
-      "pct_1x2": 0.5312,
+      "n": 1010,
+      "correct_1x2": 537,
+      "pct_1x2": 0.5317,
       "draw_n": 236,
-      "pct_draw": 0.2339,
-      "decisive_n": 773,
-      "decisive_correct": 536,
-      "pct_decisive": 0.6934,
-      "exact_n": 1009,
-      "exact_correct": 108,
-      "pct_exact": 0.107,
-      "brier": 0.5856,
-      "brier_n": 1009,
+      "pct_draw": 0.2337,
+      "decisive_n": 774,
+      "decisive_correct": 537,
+      "pct_decisive": 0.6938,
+      "exact_n": 1010,
+      "exact_correct": 109,
+      "pct_exact": 0.1079,
+      "brier": 0.5855,
+      "brier_n": 1010,
       "logged_with_timestamp": 3230,
       "baseline_home": {
-        "n": 1009,
-        "correct": 451,
-        "pct": 0.447
+        "n": 1010,
+        "correct": 452,
+        "pct": 0.4475
       },
       "pick_calibration": [
         {
@@ -235,10 +235,10 @@
         {
           "lo": 0.4,
           "hi": 0.5,
-          "n": 374,
-          "won": 171,
-          "pct_won": 0.4572,
-          "mean_p": 0.4464
+          "n": 375,
+          "won": 172,
+          "pct_won": 0.4587,
+          "mean_p": 0.4465
         },
         {
           "lo": 0.5,
@@ -317,19 +317,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 927,
-      "correct_1x2": 510,
-      "pct_1x2": 0.5502,
+      "n": 928,
+      "correct_1x2": 511,
+      "pct_1x2": 0.5506,
       "draw_n": 201,
-      "pct_draw": 0.2168,
-      "decisive_n": 726,
-      "decisive_correct": 510,
-      "pct_decisive": 0.7025,
-      "exact_n": 927,
-      "exact_correct": 98,
-      "pct_exact": 0.1057,
-      "brier": 0.5758,
-      "brier_n": 927
+      "pct_draw": 0.2166,
+      "decisive_n": 727,
+      "decisive_correct": 511,
+      "pct_decisive": 0.7029,
+      "exact_n": 928,
+      "exact_correct": 99,
+      "pct_exact": 0.1067,
+      "brier": 0.5757,
+      "brier_n": 928
     },
     "stale": {
       "n": 138,
@@ -379,8 +379,8 @@
     {
       "bin_mid": 0.2537,
       "predicted": 0.2537,
-      "actual": 0.2533,
-      "n": 1196
+      "actual": 0.2529,
+      "n": 1198
     },
     {
       "bin_mid": 0.3421,
@@ -391,8 +391,8 @@
     {
       "bin_mid": 0.4469,
       "predicted": 0.4469,
-      "actual": 0.4643,
-      "n": 392
+      "actual": 0.4656,
+      "n": 393
     },
     {
       "bin_mid": 0.5467,
@@ -438,6 +438,21 @@
       "actual_outcome": "home",
       "hit_1x2": false,
       "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-11-06",
+      "home_team": "Famalicao",
+      "away_team": "Arouca",
+      "predicted_winner": "home",
+      "p_winner": 0.4559,
+      "lead_h": 2.2,
+      "most_likely_score": "1-0",
+      "actual_score": "1-0",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": true,
       "duration": null,
       "regular_score": null
     },
@@ -707,21 +722,6 @@
       "actual_score": "1-2",
       "actual_outcome": "away",
       "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-11-04",
-      "home_team": "RB Leipzig",
-      "away_team": "Manchester City FC",
-      "predicted_winner": "home",
-      "p_winner": 0.458,
-      "lead_h": 1.1,
-      "most_likely_score": "2-1",
-      "actual_score": "2-3",
-      "actual_outcome": "away",
-      "hit_1x2": false,
       "exact_hit": false,
       "duration": null,
       "regular_score": null
