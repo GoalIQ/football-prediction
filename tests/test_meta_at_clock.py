@@ -201,6 +201,34 @@ def test_phase0_lukija_ilman_listaa_ei_liiku():
     assert fpl_phase0.meta_at_clock_phase0(STALE, {"meta": {}, "fixtures": []}) is STALE
 
 
+def test_xp_generated_at_luetaan_kerran_versiota_kohden(tmp_path, monkeypatch):
+    from src.models import fpl_xp
+
+    p = tmp_path / "xp.json"
+    p.write_text('{"meta": {"generated_at": "A"}, "players": []}', encoding="utf-8")
+    fpl_xp._XP_BUILT.clear()
+    assert fpl_xp.xp_generated_at(p) == "A"
+    monkeypatch.setattr(fpl_xp, "load_xp", lambda _p: pytest.fail("luettiin uudelleen"))
+    assert fpl_xp.xp_generated_at(p) == "A"
+    monkeypatch.undo()
+    p.write_text('{"meta": {"generated_at": "B"}, "players": []}', encoding="utf-8")
+    import os
+
+    os.utime(p, ns=(1, 1))
+    assert fpl_xp.xp_generated_at(p) == "B", "uusi tiedostoversio luetaan"
+    assert fpl_xp.xp_generated_at(tmp_path / "puuttuu.json") is None
+
+
+def test_api_fantasy_kertoo_xpn_paivan():
+    from fastapi.testclient import TestClient
+
+    from api import main
+    from src.models import fpl_xp
+
+    meta = TestClient(main.app).get("/api/fantasy").json()["meta"]
+    assert meta["xp_generated_at"] == (fpl_xp.load_xp().get("meta") or {}).get("generated_at")
+
+
 def _kutsut(func) -> list[str]:
     tree = ast.parse(textwrap.dedent(inspect.getsource(func)))
     return [

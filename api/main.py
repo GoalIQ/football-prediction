@@ -5864,7 +5864,9 @@ def fantasy_phase0(
     # ennen rajausta: alla oleva `actionable_gameweek` lukee taman metan.
     if lg == "fpl" and isinstance(data.get("meta"), dict):
         from src.models.fpl_phase0 import meta_at_clock_phase0
-        data = {**data, "meta": meta_at_clock_phase0(data["meta"], data)}
+        from src.models.fpl_xp import xp_generated_at
+        data = {**data, "meta": {**meta_at_clock_phase0(data["meta"], data),
+                                 "xp_generated_at": xp_generated_at()}}
     # 22.9 (Villen paatos "poista"): ottelua edeltava xG ei lahde ulos
     # tickerissa. TASSA eika return-lauseissa: funktiossa on kolme paluuta
     # (available=False -runko, next_gw None, rajattu vastaus) ja yksi
