@@ -101,8 +101,8 @@
 		<!-- Portti k5: lahde nakyy aina, ei vain manual-moodissa. Hintaliike on
 		     FPL:n oma projektio ja paiva liikkuu myohaisten siirtojen mukana. -->
 		<p class="muted small">
-			Availability from FPL. Price moves are FPL's own projection, and the day moves with
-			late transfers.
+			Availability from our last FPL update{#if updated}&nbsp;({updated}){/if}. Price moves are
+			FPL's own projection, and the day moves with late transfers.
 		</p>
 	</section>
 {:else if !locked}

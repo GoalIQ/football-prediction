@@ -60,7 +60,7 @@ export function flowNotice(d: FlowMeta, now: number): string | null {
 	const gw = d.meta.deadline_gameweek;
 	if (!Number.isFinite(t) || t > now) return null;
 	if (typeof gw !== 'number' || gw >= LAST_GW) return null;
-	return `GW${gw}'s deadline has passed and the model hasn't updated yet.`;
+	return `GW${gw}'s deadline has passed and the model hasn't updated yet, so transfer and captain calls are paused here.`;
 }
 
 /** Paiva jolta rungon saatavuusliput ovat. Liput tulevat projektioartefaktista,

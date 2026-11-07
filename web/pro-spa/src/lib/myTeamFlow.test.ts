@@ -132,7 +132,7 @@ describe('deadlinen ylitys (k1 B1, mitattu 7.11)', () => {
 	it('mennyt deadline: ei siirtoa eika kapteenia, vain mita voi yha sanoa', () => {
 		expect(ids(myTeamFlowSteps(passed, true))).toEqual(['news', 'squad']);
 		expect(flowNotice(passed, NOW)).toBe(
-			"GW10's deadline has passed and the model hasn't updated yet."
+			"GW10's deadline has passed and the model hasn't updated yet, so transfer and captain calls are paused here."
 		);
 	});
 	it('deadlinen ylitys kesken istunnon poistaa askeleet ilman uutta hakua', () => {
@@ -203,6 +203,10 @@ describe('SquadNews: rivimaara ja tyhja tila', () => {
 	it('tyhja tila ei vaita FPL:n tilaa vaan meidan paivityksemme (k1 B3)', () => {
 		expect(code).not.toContain('FPL has no availability flags');
 		expect(code).toContain('at our last FPL update');
+	});
+	it('taytetty tila kantaa saman paivan (k2: lista nayttaa taydelta mutta ei ole sita)', () => {
+		expect(code).not.toContain('Availability from FPL.');
+		expect(code).toContain('Availability from our last FPL update{#if updated}');
 	});
 });
 
