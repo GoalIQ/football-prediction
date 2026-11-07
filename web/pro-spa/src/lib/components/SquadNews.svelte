@@ -31,8 +31,17 @@
 	};
 	// `entry` sailyy propina (kutsupaikka), mutta hintarivit eivat enaa tarvitse
 	// sita: risers/fallers leikataan ruudun runkoon (sama saanto kuin saatavuudella).
-	let { players, premium = false }: { players: Row[]; entry?: number | null; premium?: boolean } =
-		$props();
+	let {
+		players,
+		premium = false,
+		onCount
+	}: {
+		players: Row[];
+		entry?: number | null;
+		premium?: boolean;
+		/** WP16: rivien maara virran otsikkoriville. */
+		onCount?: (n: number) => void;
+	} = $props();
 
 	const locked = $derived(personalLock(premium));
 	let lists = $state<{ risers: PriceMove[]; fallers: PriceMove[] } | null>(null);
@@ -62,11 +71,13 @@
 	// paivasana lukijan paikallisessa ajassa ($lib/priceEta). Ennen "tonight"
 	// johdettiin eta_days-offsetista ja oli vaarin Amerikoissa joka ilta.
 	const moves = $derived(squadPriceMoves(ids, lists?.risers, lists?.fallers, clock.now));
+	$effect(() => {
+		onCount?.(avail.length + moves.rising.length + moves.falling.length);
+	});
 </script>
 
 {#if !locked && (avail.length || moves.rising.length || moves.falling.length)}
 	<section class="wrap squad-news">
-		<h3>Your squad before the deadline</h3>
 		<ul>
 			{#each avail as p (p.id)}
 				<li>
@@ -89,18 +100,16 @@
 			late transfers.
 		</p>
 	</section>
+{:else if !locked}
+	<!-- WP16: paneelin otsikko on kysymys, joten tyhja tila sanotaan aaneen.
+	     Vain saatavuudesta: hintahaku voi epaonnistua, joten tyhja lista ei
+	     todista etta hintaliikkeita ei ole. -->
+	<p class="muted">FPL has no availability flags on your squad.</p>
 {/if}
 
 <style>
 	.wrap {
 		margin: 14px 0 18px;
-	}
-	h3 {
-		font-size: 0.8rem;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		margin: 0 0 6px;
-		font-family: var(--font-mono);
 	}
 	ul {
 		list-style: none;

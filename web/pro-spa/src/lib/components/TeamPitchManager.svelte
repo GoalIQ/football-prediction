@@ -1362,6 +1362,28 @@
 		border-color: var(--accent);
 		color: var(--accent-strong);
 	}
+	/* WP16: puhelimella kierros- ja muodostelmarivit yhdelle vieritettavalle
+	   riville, jotta kentta alkaa ensimmaisella ruudulla. Ne pysyvat kentan
+	   ylapuolella (Villen tarkennus 6.9); leveammalla ruudulla ennallaan. */
+	@media (max-width: 639px) {
+		.ph-gws,
+		.lineup-tools .chips {
+			flex-wrap: nowrap;
+			overflow-x: auto;
+			scrollbar-width: none;
+		}
+		.lineup-tools {
+			flex-wrap: nowrap;
+		}
+		.lineup-tools .chips {
+			flex: 1 1 auto;
+			min-width: 0;
+		}
+		.chip {
+			flex: none;
+			white-space: nowrap;
+		}
+	}
 	.xp-row {
 		display: flex;
 		align-items: baseline;
