@@ -412,16 +412,33 @@ def last_gw(entry_event: dict | None, events: list[dict], gw_calls: dict | None,
 
 
 def track_record(acc: dict | None, xp_acc: dict | None) -> dict:
+    """1X2-luvut samasta lukijasta kuin sivut (accuracy.public_headline).
+
+    7.11.2026: ennen tama luki `all_time`a (sis. MM-kisojen maajoukkuemallin),
+    eli 53.7 % / 1067, kun jokainen sivu nayttaa seuramallin 53.2 % / 1011.
+    Luvulla ei ollut julkista reittia, joten botti ei voinut kayttaa sita.
+    Vain seuramallin rajaus: /fpl#track-record nimeaa luvut "club matches".
+    """
+    from src.models.accuracy import public_headline
     from src.models.fmt import fmt_pct
     out = {"available": False, "values": {}}
-    at = (acc or {}).get("all_time") or {}
-    if at.get("n"):
-        n = int(at["n"])
-        p = float(at.get("pct_1x2") or 0.0) * 100
+    head = public_headline(acc or {})
+    if head and head["scope"] == "club":
+        n = head["n"]
         out["values"]["matches_graded"] = val(n, str(n), "matches", "accuracy",
                                               [("track_record", ("n",))])
-        out["values"]["pct_1x2"] = val(round(p, 1), fmt_pct(p), "%", "accuracy",
+        out["values"]["pct_1x2"] = val(round(head["pct"], 1), head["pct_text"], "%", "accuracy",
                                        [("track_record", ("pct_1x2",))])
+        club = ((acc or {}).get("by_model") or {}).get("club") or {}
+        dn, dc = club.get("decisive_n"), club.get("decisive_correct")
+        if dn and dc is not None and club.get("pct_decisive") is not None:
+            pd = float(club["pct_decisive"]) * 100
+            out["values"]["decisive_n"] = val(int(dn), str(int(dn)), "matches", "accuracy",
+                                              [("track_record", ("decisive_n",))])
+            out["values"]["decisive_correct"] = val(int(dc), str(int(dc)), "matches", "accuracy",
+                                                    [("track_record", ("decisive_correct",))])
+            out["values"]["pct_decisive"] = val(round(pd, 1), fmt_pct(pd), "%", "accuracy",
+                                                [("track_record", ("pct_decisive",))])
         out["available"] = True
     gws = [g for g in (xp_acc or {}).get("gameweeks") or [] if g.get("mae") is not None]
     if gws:

@@ -288,13 +288,32 @@ def eo_table(html: str) -> tuple[int | None, dict]:
     return None, {}
 
 
+_TR_HEAD = re.compile(r"Across the (\d[\d,]*) completed club matches, it called the "
+                      r"result correctly in (\d[\d.]*%) of them")
+_TR_DECISIVE = re.compile(r"In the (\d[\d,]*) club matches that did not end in a draw, it "
+                          r"called the result right (\d[\d.]*%) of the time "
+                          r"\((\d[\d,]*) of (\d[\d,]*)\)")
+
+
 def track_record_sentence(html: str) -> dict | None:
-    """/fpl#track-record: "Across the N completed matches, ... correctly in P of matches."""
-    m = re.search(r"Across the (\d[\d,]*) completed matches, the model called the "
-                  r"result correctly in ([\d.]+%) of matches", visible_text(html))
+    """/fpl#track-record: build_fpl_page.track_record_sentences -lauseet.
+
+    7.11.2026: vanha lauseke ("completed matches, the model called ... of
+    matches") ei vastannut sivua 26.9 jalkeen, joten botin 1X2-luvuilla ei
+    ollut julkista reittia ja `track_record` postasi vain xP-virhetta. Nyt
+    lukija ja kirjoittaja ovat saman testin alla
+    (tests/test_bot_track_record_route.py ajaa builderin lauseet taman lapi).
+    """
+    text = visible_text(html)
+    m = _TR_HEAD.search(text)
     if not m:
         return None
-    return {"n": m.group(1).replace(",", ""), "pct_1x2": m.group(2)}
+    out = {"n": m.group(1).replace(",", ""), "pct_1x2": m.group(2)}
+    d = _TR_DECISIVE.search(text)
+    if d and d.group(1) == d.group(4):
+        out.update({"decisive_n": d.group(1).replace(",", ""), "pct_decisive": d.group(2),
+                    "decisive_correct": d.group(3).replace(",", "")})
+    return out
 
 
 # ---------------------------------------------------------------------------
