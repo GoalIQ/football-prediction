@@ -238,11 +238,14 @@ def _kutsut(func) -> list[str]:
     ]
 
 
-@pytest.mark.parametrize("name", ["fantasy_phase0", "fantasy_xp"])
-def test_tarjoilupinnat_kayttavat_lukijaa(name):
+@pytest.mark.parametrize(
+    "name, lukija",
+    [("fantasy_phase0", "phase0_api_meta"), ("fantasy_xp", "meta_at_clock_phase0")],
+)
+def test_tarjoilupinnat_kayttavat_lukijaa(name, lukija):
     from api import main
 
-    assert "meta_at_clock_phase0" in _kutsut(inspect.unwrap(getattr(main, name)))
+    assert lukija in _kutsut(inspect.unwrap(getattr(main, name)))
 
 
 def test_rate_team_kertoo_rakennushetken():

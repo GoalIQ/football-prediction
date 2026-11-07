@@ -54,6 +54,18 @@ def meta_at_clock_phase0(meta: dict, phase0: dict | None = None) -> dict:
     )
 
 
+def phase0_api_meta(phase0: dict) -> dict:
+    """`/api/fantasy`:n meta: kierros kellon mukaan ja xP:n rakennushetki.
+
+    Tassa eika reitissa: reitti ei lue xP-poolia
+    (`tests/test_xp_horizon_total_meta_routes.py`), ja aikaleima on ainoa mita
+    siita tarvitaan.
+    """
+    from src.models.fpl_xp import xp_generated_at
+    return {**meta_at_clock_phase0(phase0["meta"], phase0),
+            "xp_generated_at": xp_generated_at()}
+
+
 def load_phase0(path: Path = PHASE0_PATH) -> dict:
     if not path.exists():
         return empty_phase0()

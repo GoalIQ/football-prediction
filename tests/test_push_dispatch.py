@@ -385,7 +385,8 @@ def _rt(gw=8, verdict="transfer", hold=False, delta=6.77, out="Rogers", inn="Mbe
     """Tuotannon rate-teamin muoto (fpl_rate_team.rate_team, mitattu 19.10 entryilla 4089628 ja 116920)."""
     return {
         "meta": {"captain_gw": captain_gw or gw, "picks_gw": picks_gw, "picks_outdated": outdated,
-                 "freehit_reverted_from": fh},
+                 "freehit_reverted_from": fh,
+                 "generated_at": _dt.datetime.now(_dt.timezone.utc).isoformat()},
         "transfers": {
             "hold": hold,
             "hold_verdict": {"verdict": verdict, "gw_from": gw, "gw_to": gw_to, "best_move_gain_xp": delta},
