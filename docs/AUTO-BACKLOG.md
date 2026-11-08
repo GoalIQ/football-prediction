@@ -320,6 +320,29 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   oikein (6.11 18:30Z: tests.yml punainen commitilla f51d45a8c9, korjaantui bottiajossa 18:37Z). Builderia ei pida muuttaa:
   `/fpl`:n taulukko siirtyy seuraavaan kierrokseen, joten sivun ei pida enaa vaittaa samaa lukua. Testin pitaa lukea sama kello
   kuin sivun rakennushetki.
+- 2026-11: xP hävisi FPL:n ep_nextille GW9:llä (MAE 1,467 vs 1,383), ja koko ero tulee pelaamattomista (0,953 vs 0,511, n 184 eli noin
+  38 % jäädytetyistä riveistä). Pelanneilla GoalIQ voitti (1,777 vs 1,910), samoin MID (1,211 vs 1,251) ja blank-luokassa (1,129 vs 1,298).
+  Maalivahdit (1,467 vs 0,919) ja isot pisteet (8,217 vs 6,986, n 7) häviävät yhä. Kolmella seitsemästä vertailukierroksesta GoalIQ
+  häviää (GW4, GW5, GW9). Mallin muutos on ylläpitäjän päätös. (lähde: data/fpl_xp_gw_accuracy.json)
+- 2026-11: Konversiovälin keskipiste on ennallaan (1,22-1,63 % vs 1,23-1,65 %, vertailukelpoinen, ei tarkka). Ostopolulla webin
+  napautus lukosta nousi (33,3 % vs 14,3 %), mutta nousu tulee "muu"-luokan lukoista (40,7 % vs 12,5 %); FPL-lukot napauttavat 0,0 %
+  sekä mobiilissa (2,1 % edellisellä jaksolla) että webissä (10,0 %), ja ennustelukot mobiilissa 21,9 % (13,6 %). Ostoja ei ole
+  yhdelläkään tuotteella. → backlog 2026-11-08 (ennustelukko)
+  (lähde: mittausdata konversio ja ostopolku.tuotteittain, docs/BENCHMARK.md Muutokset 8.11.2026)
+- 2026-11: Search Console 9.10.-5.11.: näyttöjen päivämediaani +42,9 %, klikkien +50,0 %. Tulkinta sanatarkasti: "Vertailujakson
+  näytöistä 43.5 % tuli kolmena päivänä (2026-09-11, 2026-09-12, 2026-09-14). Kokonaismuutos mittaa piikin loppumista, ei tason
+  muutosta: käytä mediaanimuutosta." Kokonaisnäytöt -28,8 % on siis piikin loppu. Haku "rate this team out of 100" on sijalla 1 ja
+  CTR 0 % (näytöt 1-9), eikä hub-sivuilla ole sivua, joka vastaisi siihen: rate my team on vain pro.goaliq.app:ssa. → backlog 2026-11-08
+  (lähde: Search Console https://goaliq.app/fpl , https://goaliq.app/llms.txt)
+- 2026-11: Kilpailijat myyvät miniliigan ja eliitin päätöksiä maksullisena: FPL Pulse Pro antaa kapteenipoiminnat "Future"- ja
+  "Mini-League"-välilehdillä, Fixin Premium Plus eliittimanagerien live-siirtohälytykset ja kapteenidatan ennen deadlinea. GoalIQ:n
+  miniliiganäkymä antaa H2H-voittotodennäköisyyden mutta ei sitä, mitä liigan muut kapteenoivat. → backlog 2026-11-08
+  (lähde: https://www.fplpulse.com/ , https://www.fantasyfootballfix.com/premium/)
+- 2026-11: Bluesky-botin ennusteaihe (kokeilu GW10-katsaukseen asti) ei herätä reaktioita: `by_topic.prediction` n 5, engaged 0,
+  `engaged_rate_bayes` 0,143, kun muiden aiheiden mediaani on noin 0,29. Kokeilun mittari ❌ 8.11. Kokeilun jatko on ylläpitäjän päätös.
+  (lähde: data/bsky_performance.json)
+- 2026-11: X-jonon päiväkatto ei pitänyt kahtena päivänä: 3.11. syntyi kaksi issueta (#89, #90) ja 26.10. kolme (#54-#56), muut
+  päivät yksi. Syy on mittaamatta. (lähde: https://github.com/GoalIQ/football-prediction/issues?q=label%3Ax-jono)
 
 ## Avoimet
 
@@ -355,6 +378,7 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   Signaalit) (PR, 2026-10-26)
       Pisteet: (lukittu) arvo 1/3 · kiire 2/3 · työ S · myynti 1/3 · uutuus 1/2 = 7
       Mittari: label x-jono -issueita enintään yksi päivässä 2026-10-26 alkaen, ja jokaisen rungossa on x.com/intent-linkki (github.com/GoalIQ/football-prediction/issues?q=label:x-jono) · tarkistus 2026-11-08
+      Tulos 2026-11-08: ❌ GitHubin x-jono-issuelista (julkinen sivu): 26.10. syntyi kolme issueta ja 3.11. kaksi, eli enintään yksi päivässä ei täyttynyt kahtena päivänä (27.10.-2.11. ja 4.-5.11. yksi päivässä); x.com/intent-linkin esiintymistä rungoissa ei voinut varmistaa, koska sivu näyttää vain otsikot
 - [x] Ottelusivu pysyy kickoffin jälkeen tulossivuna (ylläpitäjän päätös 2026-10-19): `scripts/build_prediction_pages.py` (PR, 2026-10-28)
   ei enää poista ottelusivua, vaan sivu jää samaan URL:iin ja näyttää ennen kickoffia kirjatun ennusteen
   (`data/prediction_log.json`, sama rivi kuin track recordissa, lukuja ei lasketa uudelleen), toteuman kun rivillä on
@@ -384,6 +408,7 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   2026-10-20, lähde: Signaalit)
       Pisteet: (lukittu) arvo 2/3 · kiire 3/3 · työ M · myynti 3/3 · uutuus 1/2 = 13
       Mittari: data/bsky_performance.json by_topic.prediction n vähintään 3 ja engaged_rate_bayes vähintään muiden aiheiden mediaani · tarkistus 2026-11-08
+      Tulos 2026-11-08: ❌ data/bsky_performance.json by_topic.prediction: n täyttää rajan (vähintään 3), mutta engaged_rate_bayes 0,143 on alle muiden aiheiden mediaanin (noin 0,29; 12 muuta aihetta), eikä yhtään postausta ole herättänyt reaktiota
 - [x] Bluesky-botin omat postaukset noin 3 h välein ja #FPL-tunniste tag-facetilla, kokeilu (ylläpitäjän päätös 2026-10-22, tehty
   käsin PR #36 ja tunnisteen PR): 16.-21.10 viitenä päivänä kaksi omaa postausta 0-5 s välein. Mitattu 22.10: suosituimman
   FPL-syötteen 180 postauksesta 114 kantaa #fpl:n, omista 18:sta ei yksikään. Avainsanasyötteet löytävät botin jo linkin
@@ -392,6 +417,7 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   tunnisteen yhdessä.
       Pisteet: (lukittu) arvo 1/3 · kiire 2/3 · työ S · myynti 1/3 · uutuus 1/2 = 7
       Mittari: data/bsky_performance.json followers viimeisin vähintään 10 (2026-10-22: 5) tai omien postausten tykkäyksiä keskimäärin yli 0,25 per postaus 2026-10-23 alkaen (16.-22.10: 4 tykkäystä 16 postauksesta) · tarkistus 2026-11-06
+      Tulos 2026-11-08: ✅ data/bsky_performance.json followers: viimeisin merkintä (8.11. klo 09.54 UTC) on 10 eli täyttää rajan "vähintään 10" (22.10.: 5), kasvu noin kaksinkertainen; tykkäysehtoa ei tarvittu
 - [x] Automaattinen kierrosrecap goaliq.app/fpl/notes-sivulle (ylläpitäjän päätös 2026-10-17): muistioita ei enää (PR #6, 2026-10-21, osittain: kutsut ja tarkkuus; tulos-kappale Signaaleissa)
   kirjoiteta käsin, joten sivustolle ei tule uutta sisältöä. Uusi `scripts/build_fpl_recap_note.py` lisää
   `data/fpl_notes.json`:iin yhden recap-muistion kierrosta kohden samaan muotoon kuin nykyiset (slug, date, title,
@@ -608,5 +634,36 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   sanatarkasti. (aallonharja 2026-11-01, lähde: https://scoregpt.app/ , data/accuracy.json)
       Pisteet: arvo 2/3 · kiire 1/3 · työ M · myynti 2/3 · uutuus 2/2 = 10
       Mittari: /predictions näyttää kolme luokkaa ja niiden osuudet samalla n:llä kuin /api/accuracy (testi) · tarkistus 2026-12-06
+- [ ] Sarjan oma track record ennustelukkoon: SPA:n ennusteiden lukot (scoreline, Predict ja Fixtures-lukko) näyttävät yhden
+  todisterivin ottelun sarjasta: kuinka suuri osa sarjan gradatuista ennusteista osui ja n, luettuna `/api/accuracy`n
+  `by_competition`-kohdasta (`data/accuracy.json`, ei lasketa selaimessa), ja linkin /predictions#record-osioon. Luku näytetään
+  sellaisenaan myös, kun se on heikko (Championship 45 %, Premier League 45 %): testi kaatuu, jos rivin näkyminen riippuu luvusta.
+  Sarja ilman gradattuja ennusteita tai puuttuva luku tarkoittaa, ettei riviä näytetä (ei nollaa). Premium-lupauksen teksti, hinnat ja
+  ostopainikkeet eivät muutu. Yksi lukija, jota kaikki kolme lukkoa käyttävät; testi kaatuu, jos todisterivi puuttuu yhdestäkin
+  lukosta. Mobiilin vastaava kohta on ihmisen työ (OTA). PR:n Julkinen teksti -osioon rivi sanatarkasti. Ennustelukot ovat ainoat,
+  jotka tuottavat napautuksia (mobiili 21,9 % lukon näkijöistä, FPL-lukot 0,0 %), joten todiste ostohetkeen tehdään sinne, missä
+  kiinnostus on. (aallonharja 2026-11-08, lähde: mittausdata ostopolku.tuotteittain, data/accuracy.json)
+      Pisteet: arvo 2/3 · kiire 1/3 · työ M · myynti 3/3 · uutuus 1/2 = 11
+      Mittari: ostopolku.tuotteittain ennuste (web) ei ole pieni_otos ja napautus_lukosta_pct on yli 0 % (8.11.: pieni otos, 0,0 %), ja todisterivitesti on vihreä · tarkistus 2026-12-06
+- [ ] Rate my team -hubisivu hakuun: uusi staattinen sivu goaliq.app/fpl/rate-my-team, joka kertoo ilmaiseksi ja ilman tiliä, mitä
+  joukkuearvio mittaa (miten XI:n projektio vertautuu mallin löytämään vahvimpaan joukkueeseen 100,0 m budjetilla), esimerkkituloksen
+  ja syöttökentän entry ID:lle, joka avaa pro.goaliq.app:n työkalun (`ref-bridge.js` kuljettaa lähteen). Sivun luvut luetaan samasta
+  lukijasta kuin työkalu, ei kovakoodattuja arvoja; jos arviota ei esitetä asteikolla 100, sivu ei väitä niin. Search Consolen
+  mukaan haku "rate this team out of 100" on sijalla 1 ja CTR 0 %, eikä hubissa ole sivua, joka vastaisi siihen. Builder
+  (`scripts/build_fpl_longtail.py`-tyyliin), regeneroitu sivu, sitemap ja llms.txt samassa PR:ssä; Premium-lupaus ei muutu
+  (täysi analyysi pysyy lukon takana). PR:n Julkinen teksti -osioon otsikko, kuvaus ja lauseet sanatarkasti. (aallonharja
+  2026-11-08, lähde: Search Console https://goaliq.app/fpl , https://fplxi.com/)
+      Pisteet: arvo 2/3 · kiire 1/3 · työ M · myynti 3/3 · uutuus 1/2 = 11
+      Mittari: gsc.json:n sivut-listalla goaliq.app/fpl/rate-my-team näkyy tai haun "rate this team out of 100" CTR on yli 0 % · tarkistus 2026-12-06
+- [ ] Miniliigan kapteenit deadlinen jälkeen: miniliiganäkymään lista siitä, ketä liigan managerit kapteenoivat kuluvalla
+  kierroksella (kapteeni ja varakapteeni, osuus liigasta), kun kierroksen deadline on mennyt ja FPL:n picks-data on julkista;
+  ennen deadlinea "ei dataa". Luku haetaan samasta entry-lähteestä kuin miniliigan standings-haku, enintään liigan 50 ensimmäistä
+  rivin managerista (sama raja kuin standingsissa) ja tulos välimuistiin, ettei API-pyyntö kasva (Render 512 Mi); jos raja
+  ylittyy, otoskoko näkyy lukijalle. Yksi lukija API:ssa ja SPA:ssa. Vaihetesti: ennen deadlinea ei dataa, deadlinen jälkeen näkyy,
+  uusi kierros nollaa; testi kaatuu, jos deadline-ehto poistetaan. Free/Premium-sijoitus ehdotetaan PR:n rungossa (ehdotus:
+  Premium, koska miniliigan H2H-analyysi on Premiumia), ihminen päättää. (aallonharja 2026-11-08, lähde:
+  https://www.fplpulse.com/ , https://www.fantasyfootballfix.com/premium/)
+      Pisteet: arvo 2/3 · kiire 1/3 · työ M · myynti 2/3 · uutuus 2/2 = 10
+      Mittari: PostHog-tapahtuma miniliigan kapteeninäkymän avauksista näkyy mittausdatan tapahtumissa · tarkistus 2026-12-06
 
 ## Tehdyt
