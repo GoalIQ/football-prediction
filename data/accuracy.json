@@ -1,23 +1,23 @@
 {
-  "updated_at": "2026-11-08T00:05:36+00:00",
+  "updated_at": "2026-11-08T00:26:04+00:00",
   "logged_total": 3334,
   "logged_with_timestamp": 3286,
-  "pending": 2174,
+  "pending": 2173,
   "voided": 59,
   "all_time": {
-    "n": 1101,
-    "correct_1x2": 591,
-    "pct_1x2": 0.5368,
+    "n": 1102,
+    "correct_1x2": 592,
+    "pct_1x2": 0.5372,
     "draw_n": 260,
-    "pct_draw": 0.2361,
-    "decisive_n": 841,
-    "decisive_correct": 591,
-    "pct_decisive": 0.7027,
-    "exact_n": 1101,
+    "pct_draw": 0.2359,
+    "decisive_n": 842,
+    "decisive_correct": 592,
+    "pct_decisive": 0.7031,
+    "exact_n": 1102,
     "exact_correct": 125,
-    "pct_exact": 0.1135,
-    "brier": 0.5796,
-    "brier_n": 1101
+    "pct_exact": 0.1134,
+    "brier": 0.5797,
+    "brier_n": 1102
   },
   "rolling": {
     "n": 100,
@@ -31,7 +31,7 @@
     "exact_n": 100,
     "exact_correct": 10,
     "pct_exact": 0.1,
-    "brier": 0.5436,
+    "brier": 0.5454,
     "brier_n": 100,
     "window": 100
   },
@@ -82,19 +82,19 @@
       "brier_n": 63
     },
     "DED": {
-      "n": 91,
-      "correct_1x2": 50,
-      "pct_1x2": 0.5495,
+      "n": 92,
+      "correct_1x2": 51,
+      "pct_1x2": 0.5543,
       "draw_n": 27,
-      "pct_draw": 0.2967,
-      "decisive_n": 64,
-      "decisive_correct": 50,
-      "pct_decisive": 0.7812,
-      "exact_n": 91,
+      "pct_draw": 0.2935,
+      "decisive_n": 65,
+      "decisive_correct": 51,
+      "pct_decisive": 0.7846,
+      "exact_n": 92,
       "exact_correct": 7,
-      "pct_exact": 0.0769,
-      "brier": 0.6211,
-      "brier_n": 91
+      "pct_exact": 0.0761,
+      "brier": 0.6208,
+      "brier_n": 92
     },
     "ELC": {
       "n": 177,
@@ -204,32 +204,32 @@
   },
   "by_model": {
     "club": {
-      "n": 1045,
-      "correct_1x2": 556,
-      "pct_1x2": 0.5321,
+      "n": 1046,
+      "correct_1x2": 557,
+      "pct_1x2": 0.5325,
       "draw_n": 245,
-      "pct_draw": 0.2344,
-      "decisive_n": 800,
-      "decisive_correct": 556,
-      "pct_decisive": 0.695,
-      "exact_n": 1045,
+      "pct_draw": 0.2342,
+      "decisive_n": 801,
+      "decisive_correct": 557,
+      "pct_decisive": 0.6954,
+      "exact_n": 1046,
       "exact_correct": 114,
-      "pct_exact": 0.1091,
+      "pct_exact": 0.109,
       "brier": 0.5844,
-      "brier_n": 1045,
+      "brier_n": 1046,
       "logged_with_timestamp": 3230,
       "baseline_home": {
-        "n": 1045,
+        "n": 1046,
         "correct": 470,
-        "pct": 0.4498
+        "pct": 0.4493
       },
       "pick_calibration": [
         {
           "lo": 0.3,
           "hi": 0.4,
-          "n": 175,
-          "won": 69,
-          "pct_won": 0.3943,
+          "n": 176,
+          "won": 70,
+          "pct_won": 0.3977,
           "mean_p": 0.3774
         },
         {
@@ -317,19 +317,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 961,
-      "correct_1x2": 530,
-      "pct_1x2": 0.5515,
+      "n": 962,
+      "correct_1x2": 531,
+      "pct_1x2": 0.552,
       "draw_n": 209,
-      "pct_draw": 0.2175,
-      "decisive_n": 752,
-      "decisive_correct": 530,
-      "pct_decisive": 0.7048,
-      "exact_n": 961,
+      "pct_draw": 0.2173,
+      "decisive_n": 753,
+      "decisive_correct": 531,
+      "pct_decisive": 0.7052,
+      "exact_n": 962,
       "exact_correct": 103,
-      "pct_exact": 0.1072,
+      "pct_exact": 0.1071,
       "brier": 0.574,
-      "brier_n": 961
+      "brier_n": 962
     },
     "stale": {
       "n": 140,
@@ -379,14 +379,14 @@
     {
       "bin_mid": 0.2537,
       "predicted": 0.2537,
-      "actual": 0.2548,
-      "n": 1240
+      "actual": 0.2546,
+      "n": 1241
     },
     {
-      "bin_mid": 0.3422,
-      "predicted": 0.3422,
-      "actual": 0.3196,
-      "n": 607
+      "bin_mid": 0.3423,
+      "predicted": 0.3423,
+      "actual": 0.3202,
+      "n": 609
     },
     {
       "bin_mid": 0.4471,
@@ -451,6 +451,21 @@
       "most_likely_score": "2-0",
       "actual_score": "1-0",
       "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-11-07",
+      "home_team": "Excelsior",
+      "away_team": "Go Ahead Eagles",
+      "predicted_winner": "away",
+      "p_winner": 0.3712,
+      "lead_h": 0.6,
+      "most_likely_score": "1-1",
+      "actual_score": "0-1",
+      "actual_outcome": "away",
       "hit_1x2": true,
       "exact_hit": false,
       "duration": null,
@@ -706,21 +721,6 @@
       "most_likely_score": "1-1",
       "actual_score": "0-0",
       "actual_outcome": "draw",
-      "hit_1x2": false,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-11-07",
-      "home_team": "Charlton",
-      "away_team": "Sheffield United",
-      "predicted_winner": "away",
-      "p_winner": 0.4596,
-      "lead_h": 2.1,
-      "most_likely_score": "0-1",
-      "actual_score": "2-1",
-      "actual_outcome": "home",
       "hit_1x2": false,
       "exact_hit": false,
       "duration": null,
