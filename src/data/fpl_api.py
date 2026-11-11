@@ -143,7 +143,20 @@ def fetch_all_summaries(boot: dict, force: bool = False,
         out[eid] = s.get("history", [])
         if progress_every and i % progress_every == 0:
             print(f"      element-summary {i}/{len(ids)}")
+    if force:
+        _TUOREENA_HAETUT.add(season_key)
     return out
+
+
+# Kaudet joiden summaryt on haettu tuoreina (force=True) TASSA prosessissa.
+# xP-builder hakee ne ensin itse ja sovittaa sitten PL-fitin; Understat-katkossa
+# fitti lukee samat summaryt (src/data/fpl_match_xg.season_match_frame), eika
+# toista ~700 pyynnon hakua tarvita.
+_TUOREENA_HAETUT: set[str] = set()
+
+
+def haettu_tuoreena(season_key: str) -> bool:
+    return season_key in _TUOREENA_HAETUT
 
 
 def parse_kickoff(s: str | None) -> _dt.datetime | None:

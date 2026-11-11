@@ -140,7 +140,7 @@ jobs:
 
       # 22.10.2026: Understatin TLS-kirjasto tunnistautuneena ENNEN rakentajia. Ilman tata tls_requests haki
       # kirjaston tunnistautumatta, raja tayttyi ajoittain ja 15:41 phase0 sai varalahteen datan (neljasta
-      # vakiintuneesta seurasta nousijoita julkiselle sivulle). Fail-open: vaadi_understat kieltaytyy itse.
+      # vakiintuneesta seurasta nousijoita julkiselle sivulle). Fail-open: src/data/loader.vaadi_yksi_xg_lahde kieltaytyy itse.
       - name: TLS library for Understat (authenticated)
         if: steps.guard.outputs.proceed == 'true'
         continue-on-error: true

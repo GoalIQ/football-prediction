@@ -342,21 +342,66 @@ def lataa_otteludata(liigat: Iterable[str], kaudet: Iterable[str]) -> pd.DataFra
     return tulos.data
 
 
-def vaadi_understat(df: pd.DataFrame, kuvaus: str) -> pd.DataFrame:
-    """Julkinen PL-malli on Understatin xG-fitti; muusta lahteesta sita ei julkaista.
 
-    22.10.2026 15:41: Understatin TLS-kirjaston lataus kaatui, haku putosi football-data.co.uk:hon, jonka nimet
-    ("Man City", "Nott'm Forest") eivat kohdanneet FPL-nimikarttaa, ja neljasta vakiintuneesta seurasta tuli
-    "nousijoita" goaliq.app/fpl-sivulle (60 ottelun CS%, Villa v City 16 % -> 36 %). Varalahde on oikea valinta
-    ennusteille, mutta julkiselle xG-mallille se on eri malli eri nimin. Jokaisen rivin lahde on oltava
-    Understat, muuten SystemExit: rakentaja ei kirjoita, ja edellinen artefakti jaa voimaan.
+# Julkisen PL-mallin hyvaksytyt xG-lahteet. Koko fit-ikkuna tulee YHDESTA.
+PL_FIT_XG_LAHTEET = ("Understat", "FPL-Opta")
+
+
+def vaadi_yksi_xg_lahde(df: pd.DataFrame, kuvaus: str) -> pd.DataFrame:
+    """Jokainen rivi samasta hyvaksytysta xG-lahteesta, muuten SystemExit.
+
+    football-data.co.uk:n rivit (22.10:n nousijavika) ja kahden lahteen
+    sekoitus kieltaytyvat. Sekoitus olisi eri malli kuin kumpikaan:
+    Understatin ja Optan xG-tasot eroavat, ja painotus riippuisi siita
+    kuinka monta ottelua kumpikin sattui kattamaan.
     """
     lahde = df["lahde"] if "lahde" in df.columns else pd.Series([None] * len(df), dtype=object)
-    if df.empty or (lahde != "Understat").any():
-        muut = sorted({str(x) for x in lahde if x != "Understat"}) if len(df) else ["ei dataa"]
-        raise SystemExit(f"VIRHE: {kuvaus}: otteludata ei ole kokonaan Understatia (muut lahteet: {muut}). "
+    lahteet = {str(x) for x in lahde}
+    if df.empty or len(lahteet) != 1 or not lahteet <= set(PL_FIT_XG_LAHTEET):
+        raise SystemExit(f"VIRHE: {kuvaus}: otteludata ei ole yhdesta hyvaksytysta xG-lahteesta "
+                         f"{list(PL_FIT_XG_LAHTEET)} (lahteet: {sorted(lahteet) or ['ei dataa']}). "
                          "Ei kirjoiteta; edellinen artefakti jaa voimaan.")
+    if df["home_xg"].isna().any() or df["away_xg"].isna().any():
+        raise SystemExit(f"VIRHE: {kuvaus}: {int(df['home_xg'].isna().sum())} ottelulta puuttuu xG. "
+                         "Ei kirjoiteta; edellinen artefakti jaa voimaan.")
+    df.attrs["xg_lahde"] = lahteet.pop()
     return df
+
+
+def lataa_pl_fit_data(kaudet: Iterable[str], kuvaus: str) -> pd.DataFrame:
+    """YKSI LUKIJA julkisen PL-mallin otteludatalle (11.11.2026).
+
+    Understat ensin. Jos se ei kata koko ikkunaa (katko 1.11-: huoltosivu
+    kaikkiin osoitteisiin, loader putoaa football-data.co.uk:hon), KOKO
+    ikkuna luetaan FPL:n omasta datasta (Opta-xG, src/data/fpl_match_xg).
+    Kumpaakaan ei sekoiteta toiseen, ja football-datan riveja ei julkaista
+    xG-mallina. Paluuarvon `attrs["xg_lahde"]` kertoo lahteen metatekstiin.
+    """
+    kaudet = list(kaudet)
+    df = lataa_otteludata(["ENG-Premier League"], kaudet)
+    if not df.empty and "lahde" in df.columns and (df["lahde"] == "Understat").all():
+        return vaadi_yksi_xg_lahde(df, kuvaus)
+    from src.data.fpl_match_xg import season_match_frame
+    palat, virheet = [], []
+    for k in kaudet:
+        p = season_match_frame(k)
+        if p.empty:
+            virheet.append(p.attrs.get("virhe") or f"kausi {k}: ei otteluita")
+        palat.append(p)
+    if virheet:
+        raise SystemExit(f"VIRHE: {kuvaus}: Understat ei kata ikkunaa {kaudet}, eika FPL:n data "
+                         f"riita: {'; '.join(virheet)}. Ei kirjoiteta; edellinen artefakti jaa voimaan.")
+    out = pd.concat(palat, ignore_index=True).sort_values("date").reset_index(drop=True)
+    print(f"      {kuvaus}: Understat ei vastaa -> FPL (Opta) xG, "
+          + ", ".join(f"{k} {len(p)} ottelua" for k, p in zip(kaudet, palat)))
+    return vaadi_yksi_xg_lahde(out, kuvaus)
+
+
+def xg_lahde_label(xg_lahde: str | None) -> str:
+    """Metatekstin lahdenimi (team_strength_source / caveat)."""
+    if xg_lahde == "FPL-Opta":
+        return "FPL (Opta) xG, Understat offline"
+    return "Understat"
 
 
 def viimeisin_diagnoosi(

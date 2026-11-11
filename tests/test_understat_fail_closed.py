@@ -1,4 +1,4 @@
-"""Julkinen PL-malli ei saa syntya varalahteen datasta (22.10.2026).
+"""Julkinen PL-malli ei saa syntya varalahteen datasta (22.10.2026), eika sekoituksesta (11.11.2026).
 
 MITATTU 22.10 15:41 (fpl-data-refresh 39807234706): tls_requestsin kirjastolataus kaatui GitHubin API-rajaan,
 Understat-haku putosi football-data.co.uk:hon, jonka nimet ("Man City", "Man United", "Newcastle",
@@ -7,12 +7,18 @@ niille nousijan voiman, sanity-portti meni lapi (nousijalista oli siella "vain l
 naytti 60 ottelun vaaran CS%:n (Villa v City 16 % -> 36 %). Datacommitit ovat [skip ci], joten
 tests/test_cs_source_parity.py ei ajanut ennen kuin seuraava PR toi sen esiin.
 
+MITATTU 11.11: understat.com on palauttanut huoltosivun 1.11 ~22 UTC alkaen (ei paluupaivaa). Pelkka Understat-
+vaatimus jatti xP:n ja Phase 0:n 1.11:n versioon ja GW11:n projektio jai syntymatta. Nyt koko fit-ikkuna
+luetaan YHDESTA hyvaksytysta xG-lahteesta: Understat tai FPL:n oma Opta-xG (src/data/fpl_match_xg).
+
 Portit (saanto 6a):
 1. YKSI LUKIJA: phase0.fit_model (jota myos xP ja cs_fdr kayttavat) ja edellisen kauden joukkueiden lataus
-   kulkevat vaadi_understatin lapi. Kutsupaikat mitataan kutsumalla niita, ei lahdetekstista.
-2. POIKKEUKSETON KURI: jokainen scripts/build_fpl_*.py, joka lataa PL-otteludataa, vaatii Understatin.
-3. NIMIRISTIRIITA: add_promoted_baseline kieltaytyy, jos "nousija" on fitissa toisella nimella.
-4. JUURISYY: fpl-data-refresh hakee TLS-kirjaston tunnistautuneena ennen rakentajia.
+   kulkevat lataa_pl_fit_data:n lapi. Kutsupaikat mitataan kutsumalla niita, ei lahdetekstista.
+2. POIKKEUKSETON KURI: yksikaan scripts/build_fpl_*.py ei lataa PL-otteludataa ohi lukijan.
+3. YKSI LAHDE: football-datan rivit ja kahden lahteen sekoitus kieltaytyvat (vaadi_yksi_xg_lahde).
+4. NIMIRISTIRIITA: add_promoted_baseline kieltaytyy, jos "nousija" on fitissa toisella nimella.
+5. JUURISYY: fpl-data-refresh hakee TLS-kirjaston tunnistautuneena ennen rakentajia.
+6. METATEKSTI kertoo kumpi lahde fitissa oli (team_strength_source, caveat).
 """
 from __future__ import annotations
 
@@ -25,25 +31,31 @@ from types import SimpleNamespace
 import pandas as pd
 import pytest
 
-from src.data import loader
-from src.data.loader import vaadi_understat
+from src.data import fpl_match_xg, loader
+from src.data.loader import lataa_pl_fit_data, vaadi_yksi_xg_lahde, xg_lahde_label
 from src.models.promoted_baseline import add_promoted_baseline
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _df(lahteet):
-    return pd.DataFrame({"home_team": ["Arsenal"] * len(lahteet), "away_team": ["Everton"] * len(lahteet),
-                         "home_score": [1] * len(lahteet), "away_score": [0] * len(lahteet), "lahde": lahteet})
+def _df(lahteet, xg=1.0):
+    n = len(lahteet)
+    return pd.DataFrame({"home_team": ["Arsenal"] * n, "away_team": ["Everton"] * n,
+                         "home_score": [1] * n, "away_score": [0] * n,
+                         "home_xg": [xg] * n, "away_xg": [0.5] * n, "lahde": lahteet})
 
 
-def test_vaadi_understat_paastaa_vain_kokonaan_understatin():
-    assert len(vaadi_understat(_df(["Understat", "Understat"]), "testi")) == 2
-    for huono in (_df(["Understat", None]), _df([None, None]), _df(["FBref"]), _df([])):
-        with pytest.raises(SystemExit, match="ei ole kokonaan Understatia"):
-            vaadi_understat(huono, "testi")
+def test_vaadi_yksi_xg_lahde_paastaa_vain_yhden_hyvaksytyn_lahteen():
+    assert vaadi_yksi_xg_lahde(_df(["Understat", "Understat"]), "testi").attrs["xg_lahde"] == "Understat"
+    assert vaadi_yksi_xg_lahde(_df(["FPL-Opta"] * 3), "testi").attrs["xg_lahde"] == "FPL-Opta"
+    for huono in (_df(["Understat", "FPL-Opta"]), _df(["Understat", None]), _df([None, None]),
+                  _df(["FBref"]), _df(["football-data.co.uk"]), _df([])):
+        with pytest.raises(SystemExit, match="yhdesta hyvaksytysta xG-lahteesta"):
+            vaadi_yksi_xg_lahde(huono, "testi")
     with pytest.raises(SystemExit):
-        vaadi_understat(_df(["Understat"]).drop(columns="lahde"), "testi")
+        vaadi_yksi_xg_lahde(_df(["Understat"]).drop(columns="lahde"), "testi")
+    with pytest.raises(SystemExit, match="puuttuu xG"):
+        vaadi_yksi_xg_lahde(_df(["FPL-Opta"], xg=None), "testi")
 
 
 def _varalahde(*_a, **_k):
@@ -54,9 +66,56 @@ def _varalahde(*_a, **_k):
                          "season": "2627"})
 
 
-def test_phase0_fit_kieltaytyy_varalahteen_datasta(monkeypatch):
+def _understat(*_a, **_k):
+    d = _df(["Understat", "Understat"])
+    d["date"] = pd.to_datetime(["2026-10-18", "2026-10-19"])
+    return d
+
+
+def _fpl_frame(kausi):
+    return pd.DataFrame({"date": pd.to_datetime(["2026-10-18"]), "home_team": ["Manchester City"],
+                         "away_team": ["Everton"], "home_score": [2], "away_score": [0],
+                         "league": "ENG-Premier League", "season": kausi,
+                         "home_xg": [2.1], "away_xg": [0.4], "lahde": "FPL-Opta"})
+
+
+def _ei_fpl_dataa(kausi):
+    d = pd.DataFrame(columns=["date", "home_team", "away_team", "home_score", "away_score",
+                              "league", "season", "home_xg", "away_xg", "lahde"])
+    d.attrs["virhe"] = f"kausi {kausi}: testi"
+    return d
+
+
+def test_understat_kelpaa_sellaisenaan_eika_fpl_dataa_haeta(monkeypatch):
+    monkeypatch.setattr(loader, "lataa_otteludata", _understat)
+    monkeypatch.setattr(fpl_match_xg, "season_match_frame", lambda k: pytest.fail("FPL-dataa ei saa hakea"))
+    df = lataa_pl_fit_data(["2526", "2627"], "PL-fitti")
+    assert df.attrs["xg_lahde"] == "Understat" and set(df["lahde"]) == {"Understat"}
+
+
+def test_varalahteen_riveja_ei_kayteta_vaan_koko_ikkuna_fpl_datasta(monkeypatch):
+    monkeypatch.setattr(loader, "lataa_otteludata", _varalahde)
+    monkeypatch.setattr(fpl_match_xg, "season_match_frame", _fpl_frame)
+    df = lataa_pl_fit_data(["2526", "2627"], "PL-fitti")
+    assert df.attrs["xg_lahde"] == "FPL-Opta"
+    assert set(df["lahde"]) == {"FPL-Opta"}
+    assert set(df["season"]) == {"2526", "2627"}
+    # football-datan lyhyet nimet eivat paase fittiin
+    assert not ({"Man City", "Nott'm Forest", "Newcastle"} & (set(df.home_team) | set(df.away_team)))
+
+
+def test_ilman_fpl_dataa_kieltaytyy_eika_sekoita(monkeypatch):
+    monkeypatch.setattr(loader, "lataa_otteludata", _varalahde)
+    monkeypatch.setattr(fpl_match_xg, "season_match_frame",
+                        lambda k: _fpl_frame(k) if k == "2627" else _ei_fpl_dataa(k))
+    with pytest.raises(SystemExit, match="PL-fitti.*kausi 2526"):
+        lataa_pl_fit_data(["2526", "2627"], "PL-fitti")
+
+
+def test_phase0_fit_kieltaytyy_kun_kumpikaan_lahde_ei_vastaa(monkeypatch):
     from scripts import build_fpl_phase0 as p0
-    monkeypatch.setattr(p0, "lataa_otteludata", _varalahde)
+    monkeypatch.setattr(loader, "lataa_otteludata", _varalahde)
+    monkeypatch.setattr(fpl_match_xg, "season_match_frame", _ei_fpl_dataa)
     with pytest.raises(SystemExit, match="PL-fitti"):
         p0.fit_model()
 
@@ -66,35 +125,60 @@ def test_cs_fdr_ja_xp_kayttavat_samaa_vartioitua_fittia(monkeypatch):
     from scripts import build_fpl_phase0 as p0
     from scripts import build_fpl_xp as xp
     assert xp.fit_model is p0.fit_model
-    monkeypatch.setattr(p0, "lataa_otteludata", _varalahde)
+    monkeypatch.setattr(loader, "lataa_otteludata", _varalahde)
+    monkeypatch.setattr(fpl_match_xg, "season_match_frame", _ei_fpl_dataa)
     with pytest.raises(SystemExit, match="PL-fitti"):
         cs.fit_model()
 
 
-def test_edellisen_kauden_joukkueet_vaativat_understatin(monkeypatch):
+def test_edellisen_kauden_joukkueet_kulkevat_lukijan_kautta(monkeypatch):
     from scripts import build_fpl_phase0 as p0
     monkeypatch.setattr(loader, "lataa_otteludata", _varalahde)
+    monkeypatch.setattr(fpl_match_xg, "season_match_frame", _ei_fpl_dataa)
     with pytest.raises(SystemExit, match="edellisen PL-kauden"):
         p0.context_cfg(["Arsenal", "Man City"], [])
+    # FPL-datalla edellisen kauden joukkueet ovat mallinimia: vakiintunut seura ei ole nousija
+    monkeypatch.setattr(fpl_match_xg, "season_match_frame", _fpl_frame)
+    _cfg, nousijat = p0.context_cfg(["Man City"], [])
+    assert "Manchester City" not in nousijat
 
 
 _PL_LATAUS = re.compile(r"(?:lataa_otteludata|_lataa)\(\s*\[\s*\"ENG-Premier League\"")
 
 
-def test_jokainen_pl_rakentaja_vaatii_understatin():
-    puuttuu = []
+def test_yksikaan_pl_rakentaja_ei_lataa_ohi_lukijan():
+    ohi = []
     for p in sorted((ROOT / "scripts").glob("build_fpl_*.py")):
-        rivit = p.read_text(encoding="utf-8").splitlines()
-        for i, r in enumerate(rivit):
-            if _PL_LATAUS.search(r) and not any("vaadi_understat(" in x for x in rivit[i:i + 4]):
-                puuttuu.append(f"{p.name}:{i + 1}")
-    assert puuttuu == [], f"PL-otteludata ilman vaadi_understatia: {puuttuu}"
+        for i, r in enumerate(p.read_text(encoding="utf-8").splitlines()):
+            if _PL_LATAUS.search(r):
+                ohi.append(f"{p.name}:{i + 1}")
+    assert ohi == [], f"PL-otteludata ohi src/data/loader.lataa_pl_fit_data:n: {ohi}"
 
 
 def test_tunnistin_loytaa_pl_latauksen():
     assert _PL_LATAUS.search('    m = lataa_otteludata(["ENG-Premier League"], [season])')
     assert _PL_LATAUS.search('    prev = _lataa(["ENG-Premier League"], [prev_key])')
     assert not _PL_LATAUS.search('    ("ENG-Premier League", "Premier League"),')
+
+
+def test_metateksti_kertoo_lahteen_ja_kausi_luetaan_yha():
+    from scripts.build_fpl_cs_fdr import cs_fdr_caveat
+    from scripts.build_fpl_page import _strength_window_label
+    assert xg_lahde_label("Understat") == "Understat"
+    assert xg_lahde_label(None) == "Understat"
+    opta = xg_lahde_label("FPL-Opta")
+    assert "FPL (Opta)" in opta and "Understat offline" in opta
+    assert "FPL (Opta)" in cs_fdr_caveat([], ["2526", "2627"], "FPL-Opta")
+    assert "Understat PL" in cs_fdr_caveat([], ["2526", "2627"])
+    src = f"GoalIQ Dixon-Coles, {opta} PL ['2526', '2627'] (sama fit-config kuin /api/predict)"
+    assert _strength_window_label({"team_strength_source": src}) == "2025/26 and 2026/27"
+
+
+def test_rakentajien_metateksti_lukee_lahteen_fitista():
+    for nimi in ("build_fpl_phase0.py", "build_fpl_xp.py", "build_fpl_cs_fdr.py"):
+        s = (ROOT / "scripts" / nimi).read_text(encoding="utf-8")
+        assert "Dixon-Coles, Understat PL {seasons}" not in s, f"{nimi}: kovakoodattu lahde"
+        assert "xg_lahde_label(getattr(dc, 'xg_lahde', None))" in s, nimi
 
 
 def _dc(*joukkueet):

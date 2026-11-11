@@ -44,7 +44,7 @@ import numpy as np
 import requests
 
 import config
-from src.data.loader import lataa_otteludata, vaadi_understat
+from src.data.loader import lataa_pl_fit_data, xg_lahde_label
 from src.models.dixon_coles import DixonColesModel
 
 # ---------------------------------------------------------------------------
@@ -291,8 +291,9 @@ def fetch_source() -> dict:
 # ---------------------------------------------------------------------------
 def fit_model() -> tuple[DixonColesModel, list[str]]:
     seasons = config.current_season_pair()
-    # 22.10.2026: xP, cs_fdr ja tama sivu kayttavat tata fittia; varalahteen data (tai tyhja) ei paase mihinkaan niista.
-    df = vaadi_understat(lataa_otteludata(["ENG-Premier League"], seasons), "PL-fitti")
+    # 22.10.2026: xP, cs_fdr ja tama sivu kayttavat tata fittia; football-datan rivit (tai tyhja) eivat paase
+    # mihinkaan niista. 11.11.2026: Understat-katkossa koko ikkuna FPL:n Opta-xG:sta (yksi lahde, ei sekoitusta).
+    df = lataa_pl_fit_data(seasons, "PL-fitti")
     dc = DixonColesModel(per_team_home_adv=True).fit(
         df,
         home_team_col="home_team",
@@ -310,6 +311,8 @@ def fit_model() -> tuple[DixonColesModel, list[str]]:
         xg_weight=config.DIXON_COLES_XG_WEIGHT,
     )
     _blendaa_ohuet(dc, df, seasons)
+    # Metateksti lukee lahteen fitista, ei oletuksesta (team_strength_source, cs_fdr caveat).
+    dc.xg_lahde = df.attrs.get("xg_lahde")
     return dc, seasons
 
 
@@ -429,13 +432,12 @@ def context_cfg(source_teams, source_fixtures) -> tuple[dict, set[str]]:
     cs_fdr ei ajanut tata kerrosta lainkaan, joten `fpl_manual_overrides.csv`
     liikutti /fpl-sivun CS%:a mutta ei wildcard-suunnittelijan tai chip-EV:n.
     """
-    from src.data.loader import lataa_otteludata as _lataa
     from src.models.fpl_context import build_context, load_overrides, promoted_teams
 
     y = int(SEASON_LABEL[:4])
     prev_key = f"{(y - 1) % 100:02d}{y % 100:02d}"
     # Varalahteen nimilla edellisen kauden joukkueet eivat kohtaa, ja vakiintunut seura luetaan nousijaksi (22.10).
-    prev_matches = vaadi_understat(_lataa(["ENG-Premier League"], [prev_key]), "edellisen PL-kauden joukkueet")
+    prev_matches = lataa_pl_fit_data([prev_key], "edellisen PL-kauden joukkueet")
     fixture_team_names = {map_name(t) for t in source_teams}
     promoted = promoted_teams(fixture_team_names, set(prev_matches["home_team"]))
     model_fixtures = [{"gameweek": f["gameweek"], "home": map_name(f["home"]),
@@ -657,7 +659,7 @@ def main() -> int:
             "source": src["source"],
             "fixture_source": src["source_label"],
             "team_strength_source": (
-                f"GoalIQ Dixon-Coles, Understat PL {seasons} "
+                f"GoalIQ Dixon-Coles, {xg_lahde_label(getattr(dc, 'xg_lahde', None))} PL {seasons} "
                 f"(sama fit-config kuin /api/predict: decay={FIT_DECAY}, bayes={FIT_BAYES})"
             ),
             "cs_method": "P(vastustaja 0 maalia) DC-score-matriisista (tau-korjattu)",
