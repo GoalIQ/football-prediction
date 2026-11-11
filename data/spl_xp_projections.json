@@ -3,7 +3,7 @@
   "product": "GoalIQ SPL Fantasy - expected points (xP)",
   "available": true,
   "league": "SAU-Saudi Pro League",
-  "generated_at": "2026-11-11T10:05:52",
+  "generated_at": "2026-11-11T13:06:40",
   "season": "2026/27",
   "source": "spl-fantasy-api",
   "scoring": "RSL Fantasy rules (goals FWD/MID +5 DEF/GK +6, CS 5/4/1, saves /2, micro-stats: tackles/def actions/shots/passes/big chances)",
@@ -167,7 +167,7 @@
     "pos": "FWD",
     "price": 5.4,
     "xp_per_gw": 4.36,
-    "xp_horizon_total": 26.17,
+    "xp_horizon_total": 26.16,
     "in_xi": true
    },
    {
@@ -2260,7 +2260,7 @@
    },
    "xp_per_gw": 4.69,
    "xp_per_90": 4.58,
-   "xp_horizon_total": 28.13,
+   "xp_horizon_total": 28.14,
    "gameweeks": [
     {
      "gw": 13,
@@ -2278,9 +2278,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 3.86
+     "xp": 8.11
     },
     {
      "gw": 15,
@@ -2296,15 +2300,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 8.46
+     "xp": 4.22
     },
     {
      "gw": 17,
@@ -2648,7 +2648,7 @@
    "last_season": null,
    "xp_per_gw": 4.36,
    "xp_per_90": 6.52,
-   "xp_horizon_total": 26.17,
+   "xp_horizon_total": 26.16,
    "gameweeks": [
     {
      "gw": 13,
@@ -2666,9 +2666,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 3.69
+     "xp": 7.78
     },
     {
      "gw": 15,
@@ -2684,15 +2688,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 7.1
+     "xp": 3.0
     },
     {
      "gw": 17,
@@ -2842,7 +2842,7 @@
    },
    "xp_per_gw": 4.33,
    "xp_per_90": 4.3,
-   "xp_horizon_total": 25.96,
+   "xp_horizon_total": 25.97,
    "gameweeks": [
     {
      "gw": 13,
@@ -2860,9 +2860,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 3.74
+     "xp": 7.53
     },
     {
      "gw": 15,
@@ -2878,15 +2882,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 7.16
+     "xp": 3.38
     },
     {
      "gw": 17,
@@ -3214,7 +3214,7 @@
    "last_season": null,
    "xp_per_gw": 4.21,
    "xp_per_90": 6.52,
-   "xp_horizon_total": 25.28,
+   "xp_horizon_total": 25.29,
    "gameweeks": [
     {
      "gw": 13,
@@ -3232,9 +3232,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 3.32
+     "xp": 7.05
     },
     {
      "gw": 15,
@@ -3250,15 +3254,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 7.76
+     "xp": 4.04
     },
     {
      "gw": 17,
@@ -6445,7 +6445,7 @@
    "last_season": null,
    "xp_per_gw": 3.07,
    "xp_per_90": 5.09,
-   "xp_horizon_total": 18.41,
+   "xp_horizon_total": 18.42,
    "gameweeks": [
     {
      "gw": 13,
@@ -6463,9 +6463,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 2.86
+     "xp": 5.58
     },
     {
      "gw": 15,
@@ -6481,15 +6485,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 4.37
+     "xp": 1.66
     },
     {
      "gw": 17,
@@ -7461,9 +7461,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 2.32
+     "xp": 4.94
     },
     {
      "gw": 15,
@@ -7479,15 +7483,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 5.3
+     "xp": 2.68
     },
     {
      "gw": 17,
@@ -7552,9 +7552,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 2.32
+     "xp": 4.94
     },
     {
      "gw": 15,
@@ -7570,15 +7574,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 5.3
+     "xp": 2.68
     },
     {
      "gw": 17,
@@ -7845,9 +7845,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 2.48
+     "xp": 5.75
     },
     {
      "gw": 15,
@@ -7863,15 +7867,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 5.98
+     "xp": 2.71
     },
     {
      "gw": 17,
@@ -7948,9 +7948,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 2.31
+     "xp": 4.93
     },
     {
      "gw": 15,
@@ -7966,15 +7970,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 5.23
+     "xp": 2.61
     },
     {
      "gw": 17,
@@ -8300,6 +8300,109 @@
    ]
   },
   {
+   "id": 13,
+   "web_name": "M. Al Dawsari",
+   "full_name": "Mohammed Salem Al Dawsari",
+   "team": "Abha",
+   "team_short": "ABH",
+   "pos": "DEF",
+   "price": 3.9,
+   "owned_pct": 6.8,
+   "status": "a",
+   "news": "",
+   "chance_next": 100,
+   "yellows": 6,
+   "xmins": 60.8,
+   "predicted_starts": 70.6,
+   "minutes_confidence": "med",
+   "p_start": 0.7065,
+   "p_cameo": 0.0,
+   "p_bench": 0.2935,
+   "data_basis": "spl_history",
+   "last_season": {
+    "season": "2024/25",
+    "league": "Saudi Pro League",
+    "minutes": 1878,
+    "goals": 0,
+    "assists": 1,
+    "cs": 2,
+    "points": 49,
+    "per90": {
+     "goals": 0.01,
+     "assists": 0.05
+    }
+   },
+   "xp_per_gw": 2.81,
+   "xp_per_90": 3.82,
+   "xp_horizon_total": 16.85,
+   "gameweeks": [
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "SHB",
+       "venue": "H"
+      }
+     ],
+     "xp": 2.48
+    },
+    {
+     "gw": 14,
+     "opponents": [
+      {
+       "opp": "TWN",
+       "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
+      }
+     ],
+     "xp": 5.06
+    },
+    {
+     "gw": 15,
+     "opponents": [
+      {
+       "opp": "RIY",
+       "venue": "H"
+      }
+     ],
+     "xp": 2.71
+    },
+    {
+     "gw": 16,
+     "opponents": [
+      {
+       "opp": "HIL",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.49
+    },
+    {
+     "gw": 17,
+     "opponents": [
+      {
+       "opp": "FAT",
+       "venue": "H"
+      }
+     ],
+     "xp": 2.7
+    },
+    {
+     "gw": 18,
+     "opponents": [
+      {
+       "opp": "HAZ",
+       "venue": "A"
+      }
+     ],
+     "xp": 2.41
+    }
+   ]
+  },
+  {
    "id": 8,
    "web_name": "M. Al Hamsal",
    "full_name": "Mohammed Al Hamsal",
@@ -8340,9 +8443,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 2.41
+     "xp": 4.97
     },
     {
      "gw": 15,
@@ -8358,15 +8465,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 4.55
+     "xp": 1.99
     },
     {
      "gw": 17,
@@ -8443,9 +8546,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 2.41
+     "xp": 4.97
     },
     {
      "gw": 15,
@@ -8461,15 +8568,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 4.55
+     "xp": 1.99
     },
     {
      "gw": 17,
@@ -8546,9 +8649,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 2.41
+     "xp": 4.97
     },
     {
      "gw": 15,
@@ -8564,15 +8671,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 4.55
+     "xp": 1.99
     },
     {
      "gw": 17,
@@ -8593,109 +8696,6 @@
       }
      ],
      "xp": 2.52
-    }
-   ]
-  },
-  {
-   "id": 13,
-   "web_name": "M. Al Dawsari",
-   "full_name": "Mohammed Salem Al Dawsari",
-   "team": "Abha",
-   "team_short": "ABH",
-   "pos": "DEF",
-   "price": 3.9,
-   "owned_pct": 6.8,
-   "status": "a",
-   "news": "",
-   "chance_next": 100,
-   "yellows": 6,
-   "xmins": 60.8,
-   "predicted_starts": 70.6,
-   "minutes_confidence": "med",
-   "p_start": 0.7065,
-   "p_cameo": 0.0,
-   "p_bench": 0.2935,
-   "data_basis": "spl_history",
-   "last_season": {
-    "season": "2024/25",
-    "league": "Saudi Pro League",
-    "minutes": 1878,
-    "goals": 0,
-    "assists": 1,
-    "cs": 2,
-    "points": 49,
-    "per90": {
-     "goals": 0.01,
-     "assists": 0.05
-    }
-   },
-   "xp_per_gw": 2.81,
-   "xp_per_90": 3.82,
-   "xp_horizon_total": 16.84,
-   "gameweeks": [
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "SHB",
-       "venue": "H"
-      }
-     ],
-     "xp": 2.48
-    },
-    {
-     "gw": 14,
-     "opponents": [
-      {
-       "opp": "TWN",
-       "venue": "A"
-      }
-     ],
-     "xp": 2.61
-    },
-    {
-     "gw": 15,
-     "opponents": [
-      {
-       "opp": "RIY",
-       "venue": "H"
-      }
-     ],
-     "xp": 2.71
-    },
-    {
-     "gw": 16,
-     "opponents": [
-      {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
-       "opp": "HIL",
-       "venue": "A"
-      }
-     ],
-     "xp": 3.93
-    },
-    {
-     "gw": 17,
-     "opponents": [
-      {
-       "opp": "FAT",
-       "venue": "H"
-      }
-     ],
-     "xp": 2.7
-    },
-    {
-     "gw": 18,
-     "opponents": [
-      {
-       "opp": "HAZ",
-       "venue": "A"
-      }
-     ],
-     "xp": 2.41
     }
    ]
   },
@@ -9039,7 +9039,7 @@
    },
    "xp_per_gw": 2.73,
    "xp_per_90": 4.4,
-   "xp_horizon_total": 16.36,
+   "xp_horizon_total": 16.37,
    "gameweeks": [
     {
      "gw": 13,
@@ -9057,9 +9057,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 2.25
+     "xp": 4.74
     },
     {
      "gw": 15,
@@ -9075,15 +9079,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 4.92
+     "xp": 2.44
     },
     {
      "gw": 17,
@@ -9338,9 +9338,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 2.47
+     "xp": 4.84
     },
     {
      "gw": 15,
@@ -9356,15 +9360,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 3.92
+     "xp": 1.55
     },
     {
      "gw": 17,
@@ -9429,9 +9429,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 2.47
+     "xp": 4.84
     },
     {
      "gw": 15,
@@ -9447,15 +9451,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 3.92
+     "xp": 1.55
     },
     {
      "gw": 17,
@@ -9532,9 +9532,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 2.47
+     "xp": 4.84
     },
     {
      "gw": 15,
@@ -9550,15 +9554,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 3.92
+     "xp": 1.55
     },
     {
      "gw": 17,
@@ -12459,7 +12459,7 @@
    },
    "xp_per_gw": 2.53,
    "xp_per_90": 5.45,
-   "xp_horizon_total": 15.21,
+   "xp_horizon_total": 15.2,
    "gameweeks": [
     {
      "gw": 13,
@@ -12477,9 +12477,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 2.16
+     "xp": 4.55
     },
     {
      "gw": 15,
@@ -12495,15 +12499,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 4.03
+     "xp": 1.63
     },
     {
      "gw": 17,
@@ -13795,9 +13795,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 2.03
+     "xp": 4.92
     },
     {
      "gw": 15,
@@ -13813,15 +13817,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 5.13
+     "xp": 2.24
     },
     {
      "gw": 17,
@@ -15677,7 +15677,7 @@
    "last_season": null,
    "xp_per_gw": 2.32,
    "xp_per_90": 4.41,
-   "xp_horizon_total": 13.92,
+   "xp_horizon_total": 13.93,
    "gameweeks": [
     {
      "gw": 13,
@@ -15695,9 +15695,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 1.89
+     "xp": 4.52
     },
     {
      "gw": 15,
@@ -15713,15 +15717,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 4.75
+     "xp": 2.13
     },
     {
      "gw": 17,
@@ -16752,9 +16752,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 1.85
+     "xp": 3.91
     },
     {
      "gw": 15,
@@ -16770,15 +16774,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 3.56
+     "xp": 1.5
     },
     {
      "gw": 17,
@@ -20849,6 +20849,109 @@
    ]
   },
   {
+   "id": 516,
+   "web_name": "Pinas",
+   "full_name": "Shaquille Pinas",
+   "team": "Al Kholood",
+   "team_short": "KLD",
+   "pos": "DEF",
+   "price": 5.0,
+   "owned_pct": 1.7,
+   "status": "d",
+   "news": "Doubtful - مشكوك في مشاركته",
+   "chance_next": 50,
+   "yellows": 2,
+   "xmins": 41.9,
+   "predicted_starts": 48.8,
+   "minutes_confidence": "med",
+   "p_start": 0.4876,
+   "p_cameo": 0.0,
+   "p_bench": 0.5124,
+   "data_basis": "spl_history",
+   "last_season": {
+    "season": "2025/26",
+    "league": "Saudi Pro League",
+    "minutes": 2592,
+    "goals": 1,
+    "assists": 2,
+    "cs": 6,
+    "points": 128,
+    "per90": {
+     "goals": 0.04,
+     "assists": 0.07
+    }
+   },
+   "xp_per_gw": 1.82,
+   "xp_per_90": 4.64,
+   "xp_horizon_total": 10.95,
+   "gameweeks": [
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "KLJ",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.69
+    },
+    {
+     "gw": 14,
+     "opponents": [
+      {
+       "opp": "NEO",
+       "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
+      }
+     ],
+     "xp": 3.62
+    },
+    {
+     "gw": 15,
+     "opponents": [
+      {
+       "opp": "HIL",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.88
+    },
+    {
+     "gw": 16,
+     "opponents": [
+      {
+       "opp": "FAT",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.68
+    },
+    {
+     "gw": 17,
+     "opponents": [
+      {
+       "opp": "HAZ",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.8
+    },
+    {
+     "gw": 18,
+     "opponents": [
+      {
+       "opp": "ITT",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.28
+    }
+   ]
+  },
+  {
    "id": 535,
    "web_name": "Y. Al Shanqeeti",
    "full_name": "Younes Abdulkarim Al Shanqeeti",
@@ -21241,109 +21344,6 @@
       }
      ],
      "xp": 1.81
-    }
-   ]
-  },
-  {
-   "id": 516,
-   "web_name": "Pinas",
-   "full_name": "Shaquille Pinas",
-   "team": "Al Kholood",
-   "team_short": "KLD",
-   "pos": "DEF",
-   "price": 5.0,
-   "owned_pct": 1.7,
-   "status": "d",
-   "news": "Doubtful - مشكوك في مشاركته",
-   "chance_next": 50,
-   "yellows": 2,
-   "xmins": 41.9,
-   "predicted_starts": 48.8,
-   "minutes_confidence": "med",
-   "p_start": 0.4876,
-   "p_cameo": 0.0,
-   "p_bench": 0.5124,
-   "data_basis": "spl_history",
-   "last_season": {
-    "season": "2025/26",
-    "league": "Saudi Pro League",
-    "minutes": 2592,
-    "goals": 1,
-    "assists": 2,
-    "cs": 6,
-    "points": 128,
-    "per90": {
-     "goals": 0.04,
-     "assists": 0.07
-    }
-   },
-   "xp_per_gw": 1.82,
-   "xp_per_90": 4.64,
-   "xp_horizon_total": 10.94,
-   "gameweeks": [
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "KLJ",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.69
-    },
-    {
-     "gw": 14,
-     "opponents": [
-      {
-       "opp": "NEO",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.48
-    },
-    {
-     "gw": 15,
-     "opponents": [
-      {
-       "opp": "HIL",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.88
-    },
-    {
-     "gw": 16,
-     "opponents": [
-      {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
-       "opp": "FAT",
-       "venue": "A"
-      }
-     ],
-     "xp": 3.81
-    },
-    {
-     "gw": 17,
-     "opponents": [
-      {
-       "opp": "HAZ",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.8
-    },
-    {
-     "gw": 18,
-     "opponents": [
-      {
-       "opp": "ITT",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.28
     }
    ]
   },
@@ -22160,9 +22160,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 1.43
+     "xp": 3.06
     },
     {
      "gw": 15,
@@ -22178,15 +22182,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 3.23
+     "xp": 1.6
     },
     {
      "gw": 17,
@@ -23965,9 +23965,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 1.49
+     "xp": 2.87
     },
     {
      "gw": 15,
@@ -23983,15 +23987,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 2.2
+     "xp": 0.82
     },
     {
      "gw": 17,
@@ -24167,9 +24167,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 1.46
+     "xp": 2.85
     },
     {
      "gw": 15,
@@ -24185,15 +24189,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 2.27
+     "xp": 0.88
     },
     {
      "gw": 17,
@@ -24270,9 +24270,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 1.46
+     "xp": 2.85
     },
     {
      "gw": 15,
@@ -24288,15 +24292,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 2.27
+     "xp": 0.88
     },
     {
      "gw": 17,
@@ -24361,9 +24361,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 1.33
+     "xp": 2.75
     },
     {
      "gw": 15,
@@ -24379,15 +24383,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 2.52
+     "xp": 1.1
     },
     {
      "gw": 17,
@@ -24650,9 +24650,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 1.2
+     "xp": 2.55
     },
     {
      "gw": 15,
@@ -24668,15 +24672,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 2.82
+     "xp": 1.47
     },
     {
      "gw": 17,
@@ -25677,7 +25677,7 @@
    },
    "xp_per_gw": 1.46,
    "xp_per_90": 5.13,
-   "xp_horizon_total": 8.75,
+   "xp_horizon_total": 8.76,
    "gameweeks": [
     {
      "gw": 13,
@@ -25695,9 +25695,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 1.17
+     "xp": 2.5
     },
     {
      "gw": 15,
@@ -25713,15 +25717,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 2.68
+     "xp": 1.36
     },
     {
      "gw": 17,
@@ -25768,7 +25768,7 @@
    "last_season": null,
    "xp_per_gw": 1.46,
    "xp_per_90": 5.13,
-   "xp_horizon_total": 8.75,
+   "xp_horizon_total": 8.76,
    "gameweeks": [
     {
      "gw": 13,
@@ -25786,9 +25786,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 1.17
+     "xp": 2.5
     },
     {
      "gw": 15,
@@ -25804,15 +25808,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 2.68
+     "xp": 1.36
     },
     {
      "gw": 17,
@@ -26057,7 +26057,7 @@
    "last_season": null,
    "xp_per_gw": 1.43,
    "xp_per_90": 5.23,
-   "xp_horizon_total": 8.59,
+   "xp_horizon_total": 8.58,
    "gameweeks": [
     {
      "gw": 13,
@@ -26075,9 +26075,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 1.23
+     "xp": 2.53
     },
     {
      "gw": 15,
@@ -26093,15 +26097,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 2.33
+     "xp": 1.02
     },
     {
      "gw": 17,
@@ -26148,7 +26148,7 @@
    "last_season": null,
    "xp_per_gw": 1.43,
    "xp_per_90": 5.23,
-   "xp_horizon_total": 8.59,
+   "xp_horizon_total": 8.58,
    "gameweeks": [
     {
      "gw": 13,
@@ -26166,9 +26166,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 1.23
+     "xp": 2.53
     },
     {
      "gw": 15,
@@ -26184,15 +26188,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 2.33
+     "xp": 1.02
     },
     {
      "gw": 17,
@@ -27484,6 +27484,109 @@
    ]
   },
   {
+   "id": 12,
+   "web_name": "S. Al Johani",
+   "full_name": "Safwan Al Johani",
+   "team": "Abha",
+   "team_short": "ABH",
+   "pos": "DEF",
+   "price": 3.9,
+   "owned_pct": 1.0,
+   "status": "a",
+   "news": "",
+   "chance_next": 100,
+   "yellows": 3,
+   "xmins": 32.3,
+   "predicted_starts": 37.5,
+   "minutes_confidence": "med",
+   "p_start": 0.3751,
+   "p_cameo": 0.0,
+   "p_bench": 0.6249,
+   "data_basis": "spl_history",
+   "last_season": {
+    "season": "2023/24",
+    "league": "Saudi Pro League",
+    "minutes": 997,
+    "goals": 0,
+    "assists": 1,
+    "cs": 3,
+    "points": 39,
+    "per90": {
+     "goals": 0.01,
+     "assists": 0.08
+    }
+   },
+   "xp_per_gw": 1.33,
+   "xp_per_90": 3.99,
+   "xp_horizon_total": 8.01,
+   "gameweeks": [
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "SHB",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.18
+    },
+    {
+     "gw": 14,
+     "opponents": [
+      {
+       "opp": "TWN",
+       "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
+      }
+     ],
+     "xp": 2.43
+    },
+    {
+     "gw": 15,
+     "opponents": [
+      {
+       "opp": "RIY",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.31
+    },
+    {
+     "gw": 16,
+     "opponents": [
+      {
+       "opp": "HIL",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.64
+    },
+    {
+     "gw": 17,
+     "opponents": [
+      {
+       "opp": "FAT",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.3
+    },
+    {
+     "gw": 18,
+     "opponents": [
+      {
+       "opp": "HAZ",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.15
+    }
+   ]
+  },
+  {
    "id": 499,
    "web_name": "R. Solan",
    "full_name": "Ramzi Solan",
@@ -27536,9 +27639,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 1.08
+     "xp": 2.76
     },
     {
      "gw": 15,
@@ -27554,15 +27661,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 2.9
+     "xp": 1.22
     },
     {
      "gw": 17,
@@ -27583,109 +27686,6 @@
       }
      ],
      "xp": 0.89
-    }
-   ]
-  },
-  {
-   "id": 12,
-   "web_name": "S. Al Johani",
-   "full_name": "Safwan Al Johani",
-   "team": "Abha",
-   "team_short": "ABH",
-   "pos": "DEF",
-   "price": 3.9,
-   "owned_pct": 1.0,
-   "status": "a",
-   "news": "",
-   "chance_next": 100,
-   "yellows": 3,
-   "xmins": 32.3,
-   "predicted_starts": 37.5,
-   "minutes_confidence": "med",
-   "p_start": 0.3751,
-   "p_cameo": 0.0,
-   "p_bench": 0.6249,
-   "data_basis": "spl_history",
-   "last_season": {
-    "season": "2023/24",
-    "league": "Saudi Pro League",
-    "minutes": 997,
-    "goals": 0,
-    "assists": 1,
-    "cs": 3,
-    "points": 39,
-    "per90": {
-     "goals": 0.01,
-     "assists": 0.08
-    }
-   },
-   "xp_per_gw": 1.33,
-   "xp_per_90": 3.99,
-   "xp_horizon_total": 8.0,
-   "gameweeks": [
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "SHB",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.18
-    },
-    {
-     "gw": 14,
-     "opponents": [
-      {
-       "opp": "TWN",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.25
-    },
-    {
-     "gw": 15,
-     "opponents": [
-      {
-       "opp": "RIY",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.31
-    },
-    {
-     "gw": 16,
-     "opponents": [
-      {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
-       "opp": "HIL",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.81
-    },
-    {
-     "gw": 17,
-     "opponents": [
-      {
-       "opp": "FAT",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.3
-    },
-    {
-     "gw": 18,
-     "opponents": [
-      {
-       "opp": "HAZ",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.15
     }
    ]
   },
@@ -28035,9 +28035,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 1.22
+     "xp": 2.39
     },
     {
      "gw": 15,
@@ -28053,15 +28057,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 1.9
+     "xp": 0.73
     },
     {
      "gw": 17,
@@ -29751,7 +29751,7 @@
    },
    "xp_per_gw": 1.22,
    "xp_per_90": 3.89,
-   "xp_horizon_total": 7.34,
+   "xp_horizon_total": 7.33,
    "gameweeks": [
     {
      "gw": 13,
@@ -29769,9 +29769,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 1.06
+     "xp": 2.15
     },
     {
      "gw": 15,
@@ -29787,15 +29791,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 1.98
+     "xp": 0.88
     },
     {
      "gw": 17,
@@ -33043,6 +33043,109 @@
    ]
   },
   {
+   "id": 3,
+   "web_name": "Dawran",
+   "full_name": "Majed Dawran",
+   "team": "Abha",
+   "team_short": "ABH",
+   "pos": "MID",
+   "price": 4.9,
+   "owned_pct": 0.1,
+   "status": "a",
+   "news": "",
+   "chance_next": 100,
+   "yellows": 0,
+   "xmins": 19.3,
+   "predicted_starts": 22.5,
+   "minutes_confidence": "low",
+   "p_start": 0.225,
+   "p_cameo": 0.0,
+   "p_bench": 0.775,
+   "data_basis": "spl_history",
+   "last_season": {
+    "season": "2025/26",
+    "league": "Saudi Pro League",
+    "minutes": 651,
+    "goals": 0,
+    "assists": 1,
+    "cs": 1,
+    "points": 33,
+    "per90": {
+     "goals": 0.08,
+     "assists": 0.16
+    }
+   },
+   "xp_per_gw": 0.88,
+   "xp_per_90": 4.2,
+   "xp_horizon_total": 5.3,
+   "gameweeks": [
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "SHB",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.75
+    },
+    {
+     "gw": 14,
+     "opponents": [
+      {
+       "opp": "TWN",
+       "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.56
+    },
+    {
+     "gw": 15,
+     "opponents": [
+      {
+       "opp": "RIY",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.79
+    },
+    {
+     "gw": 16,
+     "opponents": [
+      {
+       "opp": "HIL",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.64
+    },
+    {
+     "gw": 17,
+     "opponents": [
+      {
+       "opp": "FAT",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.78
+    },
+    {
+     "gw": 18,
+     "opponents": [
+      {
+       "opp": "HAZ",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.78
+    }
+   ]
+  },
+  {
    "id": 195,
    "web_name": "M. Al Hawsawi",
    "full_name": "Murad Al Hawsawi",
@@ -33142,109 +33245,6 @@
       }
      ],
      "xp": 0.81
-    }
-   ]
-  },
-  {
-   "id": 3,
-   "web_name": "Dawran",
-   "full_name": "Majed Dawran",
-   "team": "Abha",
-   "team_short": "ABH",
-   "pos": "MID",
-   "price": 4.9,
-   "owned_pct": 0.1,
-   "status": "a",
-   "news": "",
-   "chance_next": 100,
-   "yellows": 0,
-   "xmins": 19.3,
-   "predicted_starts": 22.5,
-   "minutes_confidence": "low",
-   "p_start": 0.225,
-   "p_cameo": 0.0,
-   "p_bench": 0.775,
-   "data_basis": "spl_history",
-   "last_season": {
-    "season": "2025/26",
-    "league": "Saudi Pro League",
-    "minutes": 651,
-    "goals": 0,
-    "assists": 1,
-    "cs": 1,
-    "points": 33,
-    "per90": {
-     "goals": 0.08,
-     "assists": 0.16
-    }
-   },
-   "xp_per_gw": 0.88,
-   "xp_per_90": 4.2,
-   "xp_horizon_total": 5.29,
-   "gameweeks": [
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "SHB",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.75
-    },
-    {
-     "gw": 14,
-     "opponents": [
-      {
-       "opp": "TWN",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.76
-    },
-    {
-     "gw": 15,
-     "opponents": [
-      {
-       "opp": "RIY",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.79
-    },
-    {
-     "gw": 16,
-     "opponents": [
-      {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
-       "opp": "HIL",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.43
-    },
-    {
-     "gw": 17,
-     "opponents": [
-      {
-       "opp": "FAT",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.78
-    },
-    {
-     "gw": 18,
-     "opponents": [
-      {
-       "opp": "HAZ",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.78
     }
    ]
   },
@@ -34162,7 +34162,7 @@
    },
    "xp_per_gw": 0.83,
    "xp_per_90": 4.8,
-   "xp_horizon_total": 4.95,
+   "xp_horizon_total": 4.96,
    "gameweeks": [
     {
      "gw": 13,
@@ -34180,9 +34180,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 0.66
+     "xp": 1.69
     },
     {
      "gw": 15,
@@ -34198,15 +34202,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 1.79
+     "xp": 0.77
     },
     {
      "gw": 17,
@@ -38506,7 +38506,7 @@
    "last_season": null,
    "xp_per_gw": 0.61,
    "xp_per_90": 6.52,
-   "xp_horizon_total": 3.69,
+   "xp_horizon_total": 3.7,
    "gameweeks": [
     {
      "gw": 13,
@@ -38524,9 +38524,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 0.52
+     "xp": 1.09
     },
     {
      "gw": 15,
@@ -38542,15 +38546,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 1.01
+     "xp": 0.45
     },
     {
      "gw": 17,
@@ -39504,7 +39504,7 @@
    },
    "xp_per_gw": 0.6,
    "xp_per_90": 6.52,
-   "xp_horizon_total": 3.59,
+   "xp_horizon_total": 3.6,
    "gameweeks": [
     {
      "gw": 13,
@@ -39522,9 +39522,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 0.48
+     "xp": 1.01
     },
     {
      "gw": 15,
@@ -39540,15 +39544,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 1.08
+     "xp": 0.56
     },
     {
      "gw": 17,
@@ -39607,7 +39607,7 @@
    },
    "xp_per_gw": 0.6,
    "xp_per_90": 6.52,
-   "xp_horizon_total": 3.59,
+   "xp_horizon_total": 3.6,
    "gameweeks": [
     {
      "gw": 13,
@@ -39625,9 +39625,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 0.48
+     "xp": 1.01
     },
     {
      "gw": 15,
@@ -39643,15 +39647,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 1.08
+     "xp": 0.56
     },
     {
      "gw": 17,
@@ -40870,7 +40870,7 @@
    },
    "xp_per_gw": 0.56,
    "xp_per_90": 4.26,
-   "xp_horizon_total": 3.35,
+   "xp_horizon_total": 3.36,
    "gameweeks": [
     {
      "gw": 13,
@@ -40888,9 +40888,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 0.45
+     "xp": 1.18
     },
     {
      "gw": 15,
@@ -40906,15 +40910,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 1.24
+     "xp": 0.52
     },
     {
      "gw": 17,
@@ -41803,9 +41803,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 0.47
+     "xp": 0.96
     },
     {
      "gw": 15,
@@ -41821,15 +41825,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 0.88
+     "xp": 0.39
     },
     {
      "gw": 17,
@@ -44436,9 +44436,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 0.44
+     "xp": 0.85
     },
     {
      "gw": 15,
@@ -44454,15 +44458,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 0.63
+     "xp": 0.22
     },
     {
      "gw": 17,
@@ -45236,9 +45236,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 0.36
+     "xp": 0.75
     },
     {
      "gw": 15,
@@ -45254,15 +45258,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 0.79
+     "xp": 0.4
     },
     {
      "gw": 17,
@@ -45339,9 +45339,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 0.36
+     "xp": 0.75
     },
     {
      "gw": 15,
@@ -45357,15 +45361,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 0.79
+     "xp": 0.4
     },
     {
      "gw": 17,
@@ -50696,9 +50696,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 0.29
+     "xp": 0.58
     },
     {
      "gw": 15,
@@ -50714,15 +50718,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 0.53
+     "xp": 0.24
     },
     {
      "gw": 17,
@@ -50787,9 +50787,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 0.29
+     "xp": 0.58
     },
     {
      "gw": 15,
@@ -50805,15 +50809,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 0.53
+     "xp": 0.24
     },
     {
      "gw": 17,
@@ -51401,9 +51401,13 @@
       {
        "opp": "TWN",
        "venue": "A"
+      },
+      {
+       "opp": "KLD",
+       "venue": "H"
       }
      ],
-     "xp": 0.28
+     "xp": 0.58
     },
     {
      "gw": 15,
@@ -51419,15 +51423,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "KLD",
-       "venue": "H"
-      },
-      {
        "opp": "HIL",
        "venue": "A"
       }
      ],
-     "xp": 0.53
+     "xp": 0.23
     },
     {
      "gw": 17,
@@ -52098,9 +52098,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 0.26
+     "xp": 0.56
     },
     {
      "gw": 15,
@@ -52116,15 +52120,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 0.58
+     "xp": 0.28
     },
     {
      "gw": 17,
@@ -52876,7 +52876,7 @@
    },
    "xp_per_gw": 0.29,
    "xp_per_90": 4.3,
-   "xp_horizon_total": 1.71,
+   "xp_horizon_total": 1.7,
    "gameweeks": [
     {
      "gw": 13,
@@ -52894,9 +52894,13 @@
       {
        "opp": "NEO",
        "venue": "A"
+      },
+      {
+       "opp": "ABH",
+       "venue": "A"
       }
      ],
-     "xp": 0.25
+     "xp": 0.59
     },
     {
      "gw": 15,
@@ -52912,15 +52916,11 @@
      "gw": 16,
      "opponents": [
       {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
        "opp": "FAT",
        "venue": "A"
       }
      ],
-     "xp": 0.62
+     "xp": 0.27
     },
     {
      "gw": 17,

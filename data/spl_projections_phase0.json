@@ -4,7 +4,7 @@
     "available": true,
     "phase": 0,
     "league": "SAU-Saudi Pro League",
-    "generated_at": "2026-11-11T09:54:47",
+    "generated_at": "2026-11-11T12:55:34",
     "season": "2026/27",
     "source": "spl-fantasy-api",
     "fixture_source": "RSL Fantasy official API (fantasy.spl.com.sa)",
@@ -2187,6 +2187,18 @@
           "cs_pct": 33.5
         },
         {
+          "gw": 14,
+          "opponent": "Al Kholood",
+          "opponent_short": "KLD",
+          "venue": "H",
+          "kickoff_ms": 1796650800000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 4,
+          "tier": "near",
+          "cs_pct": 28.0
+        },
+        {
           "gw": 15,
           "opponent": "Al Riyadh",
           "opponent_short": "RIY",
@@ -2197,18 +2209,6 @@
           "att_fdr": 5,
           "tier": "near",
           "cs_pct": 35.7
-        },
-        {
-          "gw": 16,
-          "opponent": "Al Kholood",
-          "opponent_short": "KLD",
-          "venue": "H",
-          "kickoff_ms": 1796650800000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "near",
-          "cs_pct": 28.0
         },
         {
           "gw": 16,
@@ -4793,6 +4793,18 @@
           "cs_pct": 16.1
         },
         {
+          "gw": 14,
+          "opponent": "Abha",
+          "opponent_short": "ABH",
+          "venue": "A",
+          "kickoff_ms": 1796650800000,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 3,
+          "tier": "near",
+          "cs_pct": 39.4
+        },
+        {
           "gw": 15,
           "opponent": "Al Hilal",
           "opponent_short": "HIL",
@@ -4803,18 +4815,6 @@
           "att_fdr": 5,
           "tier": "near",
           "cs_pct": 3.7
-        },
-        {
-          "gw": 16,
-          "opponent": "Abha",
-          "opponent_short": "ABH",
-          "venue": "A",
-          "kickoff_ms": 1796650800000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 3,
-          "tier": "near",
-          "cs_pct": 39.4
         },
         {
           "gw": 16,
@@ -5473,7 +5473,7 @@
       "att_fdr_away": 3
     },
     {
-      "gameweek": 16,
+      "gameweek": 14,
       "kickoff": "Mon 07 Dec 2026, 13:40 UTC",
       "kickoff_ms": 1796650800000,
       "finished": false,
