@@ -12,6 +12,16 @@ ja PR:n Julkaisu-osio kertoo, mihin työnkulkuun askel lisätään. Työnkulun m
 Havainnot, joista agentti tekee rivejä (enintään yksi ajoa kohden, alle 30 päivää vanhat). Ei henkilöiden
 nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että havainnosta on tehty rivi.
 
+- 2026-11: Kumppanin utm ei kulje hubista tilille. `web/pro-spa/src/lib/partnerAttribution.ts` lukee
+  `utm_medium=partner` + `utm_source` vain pro.goaliq.appin osoiteriviltä, ja `ref-bridge.js` kantaa hubista SPA:han vain
+  `ref`-parametrin. goaliq.app/fpl?utm_medium=partner&utm_source=X -linkistä luotu tili ei saa `user_metadata.partner`-
+  merkintää. Sama koskee Bluesky-botin linkkejä (`scripts/bsky_bot.py` SITE = https://goaliq.app, `utm_link`):
+  kanava-attribuutio näyttää 0 vaikka tilejä tulisi. Korjaus: ref-bridge kantaa myös partner-utm:t, testi molemmille reiteille.
+- 2026-11: `src/data/fpl_match_xg.team_xg_by_fixture` / `match_xg_rows` summaa pelaajan xG:n NYKYISEN bootstrapin joukkueelle
+  ja yhdistää NYKYISEN kauden fixture-id:ihin. Edellisen kauden kaudelle (`summary_2526` levyllä, kuten CI:ssä) loaderin
+  -FD-täydennys antaa siksi väärän xG:n väärille otteluille, ja kesken kauden siirtynyt pelaaja kirjautuu uuden seuransa
+  otteluun. PL-fitti ei enää käytä tätä (`season_match_frame`, `was_home`-kenttä, fp #120). Korjaus: täydennys samalle
+  `aggregate_matches`-lukijalle, testi siirtyneelle pelaajalle ja edelliselle kaudelle.
 - 2026-10: Jakokortin uusi ulkoasu on SPA:ssa ja goaliq.app/fpl-sivuilla, mutta PIL-generaattori
   `scripts/gen_share_card.py` piirtää yhä vanhaa ulkoasua. Sama luku näyttää eri kortilta eri reitillä. → backlog 2026-10-16
 - 2026-10: Ylläpitäjä: tuote benchmarkataan jatkuvasti ja uusia ominaisuuksia haetaan sekä FPL-työkaluihin
