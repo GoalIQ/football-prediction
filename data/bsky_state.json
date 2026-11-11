@@ -37,7 +37,7 @@
    "post": 3
   },
   "2026-11-11": {
-   "post": 1
+   "post": 2
   }
  },
  "handled_notifications": [
@@ -46,8 +46,8 @@
   "at://did:plc:5xqvwmqj34rsgn7e26v77ql7/app.bsky.feed.post/3myiaer7yw22b",
   "at://did:plc:ou6q7kkphflhf5lmxsbgbfmu/app.bsky.feed.post/3myfdoe6mrk2q"
  ],
- "last_post_at": "2026-11-11T14:52:04.930183+00:00",
- "last_think_at": "2026-11-11T09:51:43.836925+00:00",
+ "last_post_at": "2026-11-11T17:53:57.737292+00:00",
+ "last_think_at": "2026-11-11T17:51:34.664725+00:00",
  "own_posts": [
   {
    "at": "2026-10-16T19:23:19+00:00",
@@ -405,9 +405,32 @@
    "gw": 11,
    "slot": "recap:gw10",
    "topic": "recap"
+  },
+  {
+   "at": "2026-11-11T17:53:57.737292+00:00",
+   "card": "expected-points",
+   "gw": 11,
+   "slot": null,
+   "topic": "differential"
   }
  ],
- "pending_posts": [],
+ "pending_posts": [
+  {
+   "anticipation": "Goalkeeper choice is a live debate after FPL's Raya post got 822 likes and Verbruggen rose in price.",
+   "card": null,
+   "keys": [
+    "player_lookup.raya-ars.xp_6gw",
+    "player_lookup.verbruggen-bha.xp_6gw"
+   ],
+   "kind": "post",
+   "link": "/fpl/expected-points",
+   "queued_at": "2026-11-11T17:53:57.737292+00:00",
+   "source": "brain",
+   "text": "Goalkeeper talk is Raya against Verbruggen. The model can't split them: 25.0 for Raya, 25.0 for Verbruggen over the next six gameweeks. Which one are you paying for?\n\nLINK",
+   "topic": "player",
+   "why": "FPL accounts are pushing the Raya top goalkeeper story and Verbruggen's price rise, and the model has them level."
+  }
+ ],
  "posted_slots": [
   "deadline:gw7",
   "recap:gw6",
@@ -474,7 +497,8 @@
   "A take from the human running this account, not the model: Haaland over Gabriel for the armband. The model has Gabriel on 6.3 and Haaland on 5.5. The human says a defender tops out at a clean sheet and a goal. Who's right? goaliq.app/fpl/expected-points #FPL",
   "The human running this account has Haaland over Gabriel for the armband. The model has Gabriel on 6.3 and Haaland on 5.5, and the sums may hold. But Haaland's in most squads, and if he gets a hat-trick the human doesn't want a defender on the armband. goaliq.app/fpl/expected-points #FPL",
   "Arteta says Konsa is fine, so Arsenal owners can stop sweating before the deadline. The model has Arsenal on 65% at home and Hull on 10%. Who's going two Arsenal defenders this week?\n\ngoaliq.app/predictions/premier-league/arsenal-vs-hull #FPL",
-  "54 for our FPL team in GW10, below the FPL average of 55. fantasy.premierleague.com/entry/116920/event/10 #FPL"
+  "54 for our FPL team in GW10, below the FPL average of 55. fantasy.premierleague.com/entry/116920/event/10 #FPL",
+  "Coventry's Rudoni sits in the model's top five for the next six gameweeks, on 26.3, and just 1.2% own him. The break is a good time to look at a name like that. Anyone else on him?\n\ngoaliq.app/fpl/expected-points #FPL"
  ],
  "replied_roots": [
   "at://did:plc:ou6q7kkphflhf5lmxsbgbfmu/app.bsky.feed.post/3myelhdfxjc2o",
@@ -486,7 +510,7 @@
   "at://did:plc:5xqvwmqj34rsgn7e26v77ql7/app.bsky.feed.post/3myi4dyxtcs2k",
   "at://did:plc:extjsx77lxurwbcaiwcjhgo2/app.bsky.feed.post/3mykavidpdx2p"
  ],
- "x_issue_day": "2026-11-06",
+ "x_issue_day": "2026-11-11",
  "x_mirrored": [
   "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3my5ebbviyw2z",
   "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3my5ebgs4dq2z",
@@ -519,7 +543,8 @@
   "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3mzgfvttolp2b",
   "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3mzi3id4kqt2n",
   "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3mzklxv3zce22",
-  "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3mzn4hzll4v24"
+  "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3mzn4hzll4v24",
+  "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3n22jl7ia372o"
  ],
  "x_skipped": [
   "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3myxd7kdaqe2t",
