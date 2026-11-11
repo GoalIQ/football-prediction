@@ -393,6 +393,8 @@ border-bottom:1px solid var(--line);padding-bottom:1px;}
 # generoidun /fpl/-sivun on oltava taalla. Kuratoitu lista ilman porttia
 # vanhenee joka kerta kun sivuja lisataan, ja se on tapahtunut nyt kahdesti.
 _TOOL_LINKS = [
+    # 11.11.2026: kayttajan oma joukkue arvioituna (scripts/rate_my_team_page.py).
+    ("/fpl/rate-my-team", "Rate my team"),
     ("/fpl/best-captain", "Captain picks"),
     ("/fpl/expected-points", "Expected points"),
     ("/fpl/club-best", "Best per club"),
@@ -421,6 +423,7 @@ _TOOL_LINKS = [
 # Ryhma per rivi, otsikko lihavoituna. Nykyinen sivu jaa pois omasta
 # ryhmastaan mutta ryhma sailyy — muuten valikko hyppii sivulta toiselle.
 _NAV_GROUPS: list[tuple[str, tuple[str, ...]]] = [
+    ("Your team", ("/fpl/rate-my-team",)),
     ("Picks", ("/fpl/best-captain", "/fpl/model-xi", "/fpl/differentials",
                "/fpl/expected-points")),
     ("Teams", ("/fpl/club-best", "/fpl/defence", "/fpl/team-news",
@@ -5804,9 +5807,24 @@ def render_points(player_gw: dict, now: datetime, gw: int | None = None,
     return _page(title, desc, url, hero, body, jsonld)
 
 
+def render_rate_my_team() -> str:
+    """/fpl/rate-my-team: Team ID -> arvosana API:sta ajossa (11.11.2026).
+
+    Ei dataa eika kelloa paistossa: sivu on sama joka ajossa, ja kaikki
+    aikasidottu (kierros, deadline, projektion ika) luetaan API:sta selaimessa
+    yhden lukijan `rmtState()` kautta. Ks. scripts/rate_my_team_page.py."""
+    from scripts.rate_my_team_page import PATH, page_parts
+    title, desc, hero, body, jsonld = page_parts(_cta())
+    return _page(title, desc, f"{BASE}{PATH}", hero, body, jsonld)
+
+
 def main() -> int:
     OUT_DIR.mkdir(exist_ok=True)
     built = []
+
+    # 11.11.2026: staattinen tyokalusivu, ei riipu yhdestakaan artefaktista.
+    (OUT_DIR / "rate-my-team.html").write_text(render_rate_my_team(), encoding="utf-8")
+    built.append("rate-my-team")
 
     xp = _load(XP_PATH)
     if xp:
