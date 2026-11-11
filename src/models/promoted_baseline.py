@@ -437,7 +437,7 @@ def add_promoted_baseline(
     ristiriidat = [f"{t} (fitissa {eri_nimella[t]!r})" for t in needed if t in eri_nimella]
     if ristiriidat:
         raise ValueError(f"VIRHE: nousijaksi tulkittu joukkue on fitissa toisella nimella: {ristiriidat}. "
-                         "Baselinea ei anneta; korjaa lahteen nimet (src/data/loader.vaadi_understat).")
+                         "Baselinea ei anneta; korjaa lahteen nimet (src/data/loader.vaadi_yksi_xg_lahde).")
     if not needed:
         return {"trio_used": trio, "applied_to": []}
     if not trio and not allow_frozen:

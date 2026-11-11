@@ -81,6 +81,8 @@ FIT_BAYES = 2.0
 # nousijabaselinen. /fpl-sivu (phase0) ja xP kayttivat liveharviota, ja sama
 # ottelu sai kaksi eri CS%:a (HUL v IPS 16,8 % vs 33,0 %). Yksi kartta kaikille:
 from src.models.fpl_team_names import NAME_MAP, map_name  # noqa: E402,F401
+# Metateksti lukee xG-lahteen fitista (11.11.2026, Understat-katko): main() ja cs_fdr_caveat.
+from src.data.loader import xg_lahde_label  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -352,7 +354,7 @@ def sanity_and_sample(rows: list[dict], teams_agg: dict, promoted: list[str],
     return ok
 
 
-def cs_fdr_caveat(baseline_teams: list[str], seasons) -> str:
+def cs_fdr_caveat(baseline_teams: list[str], seasons, xg_lahde: str | None = None) -> str:
     """Totuudenmukainen caveat: kertoo mita TAMA ajo teki, ei mita kesakuussa.
 
     22.9: kovakoodattu lause "Nousijat Coventry/Hull = empiirinen promoted
@@ -361,7 +363,7 @@ def cs_fdr_caveat(baseline_teams: list[str], seasons) -> str:
     baseline-mainintaa lainkaan.
     """
     kaudet = "+".join(str(s) for s in seasons)
-    base = (f"Joukkuevoimat: Dixon-Coles, Understat PL {kaudet}, sama fitti ja "
+    base = (f"Joukkuevoimat: Dixon-Coles, {xg_lahde_label(xg_lahde)} PL {kaudet}, sama fitti ja "
             "sama CS%-funktio kuin /fpl-sivun fpl_projections_phase0.json.")
     if baseline_teams:
         return (base + " Empiirinen nousijabaseline (ei ylatason dataa): "
@@ -425,7 +427,7 @@ def main() -> int:
             "season": "2026/27",
             "fixture_source": "premierleague.com (pulselive) compSeason 841, julkaistu 2026-06-15",
             "team_strength_source": (
-                f"GoalIQ Dixon-Coles, Understat PL {seasons} "
+                f"GoalIQ Dixon-Coles, {xg_lahde_label(getattr(dc, 'xg_lahde', None))} PL {seasons} "
                 f"(sama fit-config kuin /api/predict: decay={FIT_DECAY}, bayes={FIT_BAYES})"
             ),
             "cs_method": ("P(vastustaja 0 maalia) DC-score-matriisista; sama funktio "
@@ -446,7 +448,7 @@ def main() -> int:
             # lause vaitti Coventryn ja Hullin olevan baselinella myos silloin
             # kun ne ajoivat omalla liveharviollaan (tai, 22.9 asti, vaaran
             # nimikartan takia baselinella vaikka dataa oli).
-            "caveat": cs_fdr_caveat(missing, seasons),
+            "caveat": cs_fdr_caveat(missing, seasons, getattr(dc, "xg_lahde", None)),
             "promoted_baseline_teams": missing,
             "promoted_baseline_values": baseline,
             "sanity_gate": "PASS" if gate_pass else "FAIL",

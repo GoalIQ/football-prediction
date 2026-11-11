@@ -8,7 +8,7 @@
 # goaliq.app/fpl-sivulle. Haetaan sama versio kuin asennettu tls_requests odottaa, GITHUB_TOKENilla, ja annetaan
 # polku TLS_LIBRARY_PATH-muuttujassa (kirjasto lukee sen ennen omaa latausta).
 #
-# Fail-open tarkoituksella: jos haku kaatuu, PL-rakentajat kieltaytyvat itse (src/data/loader.vaadi_understat),
+# Fail-open tarkoituksella: jos haku kaatuu, PL-rakentajat kieltaytyvat itse (src/data/loader.vaadi_yksi_xg_lahde),
 # eli tama askel ei paata julkaisusta.
 set -uo pipefail
 
