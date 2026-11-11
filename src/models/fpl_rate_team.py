@@ -2487,6 +2487,13 @@ def rate_team(entry: int | None = None, gw: int | None = None,
             # FH-kierros viela kaynnissa. Joukkue on silti palautettu ja
             # kentta on seuraavassa kierroksessa (25.9 ilta). None muuten.
             "freehit_in_play": freehit_in_play,
+            # 11.11.2026 (Understat-katko 1.11-, hub /fpl/rate-my-team): kierros
+            # jolle projektio RAKENNETTIIN, kun sen deadline on jo mennyt ja
+            # kello on siirtanyt kierrokset eteenpain (fpl_gameweek.meta_at_clock
+            # `clock_rolled_from`). None = projektio on rakennettu kierrokselle
+            # johon voi viela vaikuttaa. Pinta EI saa esittaa arvosanaa nykyisena
+            # kun tama on asetettu: luvut ovat menneen deadlinen projektiosta.
+            "projection_rolled_from": xp_data["meta"].get("clock_rolled_from"),
             "season": xp_data["meta"].get("season"),
             "generated_at": xp_data["meta"].get("generated_at"),
             "horizon_gw": xp_data["meta"].get("horizon_gw"),
