@@ -81,6 +81,8 @@ FIT_BAYES = 2.0
 # nousijabaselinen. /fpl-sivu (phase0) ja xP kayttivat liveharviota, ja sama
 # ottelu sai kaksi eri CS%:a (HUL v IPS 16,8 % vs 33,0 %). Yksi kartta kaikille:
 from src.models.fpl_team_names import NAME_MAP, map_name  # noqa: E402,F401
+# Metateksti lukee xG-lahteen fitista (11.11.2026, Understat-katko): main() ja cs_fdr_caveat.
+from src.data.loader import xg_lahde_label  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -361,7 +363,6 @@ def cs_fdr_caveat(baseline_teams: list[str], seasons, xg_lahde: str | None = Non
     baseline-mainintaa lainkaan.
     """
     kaudet = "+".join(str(s) for s in seasons)
-    from src.data.loader import xg_lahde_label
     base = (f"Joukkuevoimat: Dixon-Coles, {xg_lahde_label(xg_lahde)} PL {kaudet}, sama fitti ja "
             "sama CS%-funktio kuin /fpl-sivun fpl_projections_phase0.json.")
     if baseline_teams:
