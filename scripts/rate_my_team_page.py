@@ -57,9 +57,7 @@ COPY: dict[str, str] = {
     "desc": ("Enter your FPL team ID and get a rating out of 100: your XI's projected "
              "points against the strongest XI the model found for 100.0m. Free."),
     "h1": "Rate your FPL team out of 100",
-    "lede": ("Your own squad, rated. Enter your FPL team ID and the model compares the "
-             "best XI from your 15 with the strongest XI it found inside the 100.0m budget, "
-             "over the coming gameweeks. Free, no sign-in."),
+    "lede": "Your own squad, rated. Enter your FPL team ID and get a rating out of 100. Free, no sign-in.",
     "label": "Your FPL team ID",
     "help": ("It is the number in the address of your Points page, for example "
              "fantasy.premierleague.com/entry/123456/event/10. You can paste the whole link."),
@@ -69,18 +67,18 @@ COPY: dict[str, str] = {
     "share": "Your XI projects {pct}% of the points of the strongest XI the model found for 100.0m over the next {n} gameweeks.",
     "share_n1": "Your XI projects {pct}% of the points of the strongest XI the model found for 100.0m in the next gameweek.",
     "share_any": "Your XI projects {pct}% of the points of the strongest XI the model found for 100.0m over the coming gameweeks.",
-    "beats": "Your XI projects more points than the strongest XI the model found for 100.0m over the next {n} gameweeks. The search is not proven optimal, so a squad can beat it.",
-    "beats_any": "Your XI projects more points than the strongest XI the model found for 100.0m over the coming gameweeks. The search is not proven optimal, so a squad can beat it.",
-    "captain": "Captain from your XI for gameweek {gw}: {name} ({team}), {xp} expected points.",
+    "beats": "Your XI projects more points than the strongest XI the model found for 100.0m over the next {n} gameweeks. That happens when a squad is worth more than 100.0m or the search missed a stronger 15.",
+    "beats_any": "Your XI projects more points than the strongest XI the model found for 100.0m over the coming gameweeks. That happens when a squad is worth more than 100.0m or the search missed a stronger 15.",
+    "captain": "Suggested captain from your XI for gameweek {gw}: {name} ({team}), {xp} expected points.",
     "basis": "Rated on the squad you picked for gameweek {gw}.",
     "outdated": "FPL shows other sites your picks and transfers only after a deadline, so moves you have made for gameweek {next} are not in this rating yet.",
     "deadline": "Next deadline: gameweek {gw}, {time}.",
     "updated": "Projections built {date}.",
-    "cta_lead": "Premium shows which line is costing you points, the transfer call with the move itself, and your chips.",
+    "cta_lead": "Premium shows the weak spot in your XI and whether to hold or which move to make.",
     "cta": "See the full analysis",
     "stale": "Ratings are paused. The projections were last built for gameweek {built}, and that deadline has passed. The rating comes back once the projections for gameweek {gw} are rebuilt.",
     "stale_unknown": "Ratings are paused because the projections are being rebuilt. Try again later.",
-    "locked": "The gameweek {gw} deadline has passed. Reload the page to rate your squad for the next one.",
+    "locked": "The gameweek {gw} deadline has passed. Ratings for the next gameweek start once its projections are built.",
     "closed": "There is no FPL deadline ahead, so there is nothing to rate until the next season starts.",
     "err_input": "Enter your FPL team ID: the number from the address of your Points page.",
     "err_400": "That does not look like an FPL team ID. It is a number, usually six to eight digits.",
@@ -90,14 +88,13 @@ COPY: dict[str, str] = {
     "err_other": "Something went wrong while rating the team. Try again in a minute.",
     "meaning_h2": "What the number means",
     "meaning": ("100 means the best XI from your 15 projects as many points over the coming "
-                "gameweeks as the strongest XI our search found inside the 100.0m budget. The "
+                "gameweeks as the strongest XI the model found inside the 100.0m budget. The "
                 "captain is not counted on either side. The projections are GoalIQ's own model, "
                 "not FPL's official expected points, and they are updated daily."),
-    "own_h2": "Your team, not ours",
-    "own": ("This page does not pick a team for you. It reads the squad you already have from "
-            "FPL's public data and tells you how it projects. What you do with that is your call."),
-    "privacy": ("The team ID is public FPL data. Nothing is stored and no account is needed for "
-                "the rating."),
+    "own_h2": "Your squad as it stands",
+    "own": ("The rating reads the 15 you already have from FPL's public data and says how they "
+            "project. What you do with that is your call."),
+    "privacy": "The team ID is public FPL data.",
 }
 
 # Sivun oma tyyli: lomake ja tulos. Muu tulee longtail-rungosta (_page).
@@ -138,9 +135,11 @@ function rmtState(p, now) {
   var m = p.meta || {};
   var gw = (typeof m.deadline_gameweek === 'number') ? m.deadline_gameweek : null;
   if (typeof m.projection_rolled_from === 'number') {
+    // Season over: no next gameweek, so the stale text would print without a number.
+    if (gw === null) return {kind: 'closed'};
     return {kind: 'stale', built: m.projection_rolled_from, gw: gw};
   }
-  // Vanha API ei tunne kenttaa (hub voi deployata ennen Renderia): puuttuva tieto ei ole terve tila.
+  // Old API without the field (the hub can deploy before Render): missing data is not a healthy state.
   if (!('projection_rolled_from' in m)) return {kind: 'stale', built: null, gw: gw};
   if (gw === null) return {kind: 'closed'};
   var dl = m.deadline_time ? Date.parse(m.deadline_time) : NaN;
@@ -182,7 +181,7 @@ UI_JS = r"""(function () {
     out.innerHTML = '';
     var sc = el('div', 'rmt-score'); sc.appendChild(el('b', null, String(r.rating))); sc.appendChild(el('span', null, C.out_of));
     out.appendChild(sc);
-    var pct = (typeof r.percentile === 'number') ? r.percentile : r.rating;
+    var pct = r.rating;
     var known = (typeof n === 'number' && n > 0);
     out.appendChild(el('p', null, r.beats_benchmark ? fill(known ? C.beats : C.beats_any, {n: n})
       : fill(!known ? C.share_any : (n === 1 ? C.share_n1 : C.share), {pct: pct, n: n})));

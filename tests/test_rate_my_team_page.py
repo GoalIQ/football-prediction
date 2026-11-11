@@ -105,6 +105,8 @@ def test_uudelleenrakennuksen_jalkeen_arvosana_palaa():
 
 @pytest.mark.parametrize("meta,odotettu", [
     ({"deadline_gameweek": None, "deadline_time": None}, "closed"),     # kausi ohi
+    # Kausi ohi ja projektio vanha (GW38:n deadline mennyt): stale-teksti olisi "gameweek  are rebuilt".
+    ({"deadline_gameweek": None, "deadline_time": None, "projection_rolled_from": 38}, "closed"),
     ({"deadline_time": None}, "stale"),                                 # deadline tuntematon: fail-closed
     ({"deadline_time": "ei-aika"}, "stale"),
 ])
@@ -183,7 +185,9 @@ def test_esimaku_sisaltaa_sivun_lukemat_kentat(monkeypatch):
     pick = (prev.get("captain") or {}).get("pick") or {}
     assert {"web_name", "team_short", "gw_xp"} <= set(pick)
     ui = P.UI_JS
-    for k in ("percentile", "beats_benchmark", "horizon_total_gw", "picks_gw", "picks_outdated",
+    # Sivu nayttaa saman kokonaisluvun kuin iso luku (r.rating), ei percentilea toisella pyoristyksella.
+    assert "r.percentile" not in ui
+    for k in ("r.rating", "beats_benchmark", "horizon_total_gw", "picks_gw", "picks_outdated",
               "captain_gw", "generated_at", "gw_xp", "team_short", "web_name"):
         assert k in ui, k
 
