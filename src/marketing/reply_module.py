@@ -146,7 +146,7 @@ def surface_lookup(pages: dict, sid: str, key: list, field: str, gw: int,
         return None
     if sid == "eo" and page_gw != ctx.get("template_picks_gw"):
         return None
-    if sid == "track_record":
+    if sid in ("track_record", "track_record_fpl"):
         return url, (rows or {}).get(key[0])
     if sid == "xp_accuracy":
         row = rows.get(int(key[0]))
@@ -217,11 +217,12 @@ def resolve_routes(sections: dict, pages: dict, gw: int, verified_at: str,
 
 # Pinnat jotka generaattori hakee aina (points_gw vain kun sita tarvitaan).
 ALL_SURFACES = ("gw_xp", "top100", "clean_sheets", "gw_calls", "xp_accuracy",
-                "track_record", "eo", "differentials", "clubs", "match_pages")
+                "track_record", "track_record_fpl", "eo", "differentials", "clubs", "match_pages")
 _PAGE_OF = {"gw_xp": "https://goaliq.app/fpl/expected-points",
             "top100": "https://goaliq.app/fpl/expected-points",
             "clean_sheets": "https://goaliq.app/fpl", "gw_calls": "https://goaliq.app/fpl",
-            "xp_accuracy": "https://goaliq.app/fpl", "track_record": "https://goaliq.app/fpl",
+            "xp_accuracy": "https://goaliq.app/fpl",
+            "track_record": "https://goaliq.app/predictions", "track_record_fpl": "https://goaliq.app/fpl",
             "eo": "https://goaliq.app/fpl",
             "differentials": "https://goaliq.app/fpl/differentials"}
 REQUIRED_PAGES = {"https://goaliq.app/fpl/expected-points", "https://goaliq.app/fpl",
@@ -276,7 +277,8 @@ def fetch_surfaces(needed, gw: int, fetch=None) -> tuple[dict, dict, list[str]]:
         else:
             g = None
             rows = {"gw_calls": ps.gw_calls_table, "xp_accuracy": ps.xp_accuracy_table,
-                    "track_record": lambda x: ps.track_record_sentence(x) or {},
+                    "track_record": lambda x: ps.record_table(x) or {},
+                    "track_record_fpl": lambda x: ps.track_record_sentence(x) or {},
                     "differentials": ps.differentials_table}[sid](h)
         pages[sid] = {"url": rs.URL.get(sid, url), "gw": g, "rows": rows}
     slugs = set()

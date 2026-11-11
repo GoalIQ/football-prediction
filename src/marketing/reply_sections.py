@@ -42,7 +42,8 @@ URL = {
     "clean_sheets": "https://goaliq.app/fpl#clean-sheets",
     "gw_calls": "https://goaliq.app/fpl#gw-calls",
     "xp_accuracy": "https://goaliq.app/fpl#xp-accuracy",
-    "track_record": "https://goaliq.app/fpl#track-record",
+    "track_record": "https://goaliq.app/predictions#record",
+    "track_record_fpl": "https://goaliq.app/fpl#track-record",
     "eo": "https://goaliq.app/fpl#eo-by-tier",
 }
 
@@ -417,28 +418,47 @@ def track_record(acc: dict | None, xp_acc: dict | None) -> dict:
     7.11.2026: ennen tama luki `all_time`a (sis. MM-kisojen maajoukkuemallin),
     eli 53.7 % / 1067, kun jokainen sivu nayttaa seuramallin 53.2 % / 1011.
     Luvulla ei ollut julkista reittia, joten botti ei voinut kayttaa sita.
-    Vain seuramallin rajaus: /fpl#track-record nimeaa luvut "club matches".
+    Vain seuramallin rajaus: sivut nimeavat luvut "club matches".
+
+    7.11.2026 (fp #116 jatko): ensisijainen reitti on record-sivu
+    goaliq.app/predictions#record, jonne botin ohje linkittaa track record
+    -postauksen; bsky_gate vaatii luvun nakyvan juuri linkin sivulla. /fpl:n
+    lause jaa varareitiksi. Record-sivulta tulevat lisaksi kotivoittosaanto
+    (452 / 44.7 %, +86) ja tasapelit.
     """
     from src.models.accuracy import public_headline
     from src.models.fmt import fmt_pct
     out = {"available": False, "values": {}}
+
+    def tr(value, text, unit, key, fpl=True):
+        routes = [("track_record", (key,))] + ([("track_record_fpl", (key,))] if fpl else [])
+        return val(value, text, unit, "accuracy", routes)
+
     head = public_headline(acc or {})
     if head and head["scope"] == "club":
         n = head["n"]
-        out["values"]["matches_graded"] = val(n, str(n), "matches", "accuracy",
-                                              [("track_record", ("n",))])
-        out["values"]["pct_1x2"] = val(round(head["pct"], 1), head["pct_text"], "%", "accuracy",
-                                       [("track_record", ("pct_1x2",))])
+        v = out["values"]
+        v["matches_graded"] = tr(n, str(n), "matches", "n")
+        v["pct_1x2"] = tr(round(head["pct"], 1), head["pct_text"], "%", "pct_1x2")
+        v["correct"] = tr(head["correct"], str(head["correct"]), "matches", "correct", fpl=False)
         club = ((acc or {}).get("by_model") or {}).get("club") or {}
         dn, dc = club.get("decisive_n"), club.get("decisive_correct")
         if dn and dc is not None and club.get("pct_decisive") is not None:
             pd = float(club["pct_decisive"]) * 100
-            out["values"]["decisive_n"] = val(int(dn), str(int(dn)), "matches", "accuracy",
-                                              [("track_record", ("decisive_n",))])
-            out["values"]["decisive_correct"] = val(int(dc), str(int(dc)), "matches", "accuracy",
-                                                    [("track_record", ("decisive_correct",))])
-            out["values"]["pct_decisive"] = val(round(pd, 1), fmt_pct(pd), "%", "accuracy",
-                                                [("track_record", ("pct_decisive",))])
+            v["decisive_n"] = tr(int(dn), str(int(dn)), "matches", "decisive_n")
+            v["decisive_correct"] = tr(int(dc), str(int(dc)), "matches", "decisive_correct")
+            v["pct_decisive"] = tr(round(pd, 1), fmt_pct(pd), "%", "pct_decisive")
+            dr = int(club["draw_n"]) if club.get("draw_n") is not None else n - int(dn)
+            v["draws"] = tr(dr, str(dr), "matches", "draws", fpl=False)
+        base = club.get("baseline_home") or {}
+        if base.get("n") == n and base.get("correct") is not None:
+            bc = int(base["correct"])
+            v["baseline_home_correct"] = tr(bc, str(bc), "matches", "baseline_home_correct", fpl=False)
+            v["baseline_home_pct"] = tr(round(100 * bc / n, 1), fmt_pct(100 * bc / n), "%",
+                                        "baseline_home_pct", fpl=False)
+            if head["correct"] > bc:
+                d = head["correct"] - bc
+                v["more_than_home"] = tr(d, str(d), "matches", "more_than_home", fpl=False)
         out["available"] = True
     gws = [g for g in (xp_acc or {}).get("gameweeks") or [] if g.get("mae") is not None]
     if gws:
