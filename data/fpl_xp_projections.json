@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-11-13T18:16:30+00:00",
+    "generated_at": "2026-11-13T21:12:53+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -385,7 +385,7 @@
       "predicted_starts": 90.6,
       "minutes_confidence": "high",
       "data_basis": "pl_history",
-      "owned_pct": 26.1,
+      "owned_pct": 26.2,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -857,7 +857,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 47.8,
+      "owned_pct": 47.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -3940,7 +3940,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 10.7,
+      "owned_pct": 10.8,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -75344,7 +75344,7 @@
       "team_short": "CHE",
       "pos": "FWD",
       "price": 7.6,
-      "owned_pct": 31.7,
+      "owned_pct": 31.6,
       "status": "i",
       "news": "Thigh injury - Unknown return date",
       "chance_next": 0,
@@ -75525,53 +75525,6 @@
       "last_season_reason": "no_projection"
     },
     {
-      "id": 423,
-      "web_name": "Shaw",
-      "full_name": "Luke Shaw",
-      "team": "Manchester United",
-      "team_short": "MUN",
-      "pos": "DEF",
-      "price": 4.2,
-      "owned_pct": 3.3,
-      "status": "i",
-      "news": "Unspecified injury - Unknown return date",
-      "chance_next": 0,
-      "yellows": 2,
-      "set_pieces": {
-        "pens": null,
-        "corners": 4,
-        "fk": null
-      },
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 1,
-        "team_name": "Man Utd",
-        "minutes": 3220,
-        "starts": 38,
-        "goals": 1,
-        "assists": 1,
-        "xg": 0.72,
-        "xa": 1.98,
-        "cs": 10,
-        "points": 113,
-        "per90": {
-          "goals": 0.03,
-          "assists": 0.03,
-          "xgi": 0.08
-        }
-      },
-      "form": {
-        "value": 0.0,
-        "gws": 4,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable",
-      "last_season_show": true,
-      "last_season_reason": "no_projection"
-    },
-    {
       "id": 142,
       "web_name": "James",
       "full_name": "Reece James",
@@ -75606,6 +75559,53 @@
           "goals": 0.09,
           "assists": 0.28,
           "xgi": 0.19
+        }
+      },
+      "form": {
+        "value": 0.0,
+        "gws": 4,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "in_projection": false,
+      "excluded_reason": "unavailable",
+      "last_season_show": true,
+      "last_season_reason": "no_projection"
+    },
+    {
+      "id": 423,
+      "web_name": "Shaw",
+      "full_name": "Luke Shaw",
+      "team": "Manchester United",
+      "team_short": "MUN",
+      "pos": "DEF",
+      "price": 4.2,
+      "owned_pct": 3.2,
+      "status": "i",
+      "news": "Unspecified injury - Unknown return date",
+      "chance_next": 0,
+      "yellows": 2,
+      "set_pieces": {
+        "pens": null,
+        "corners": 4,
+        "fk": null
+      },
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 1,
+        "team_name": "Man Utd",
+        "minutes": 3220,
+        "starts": 38,
+        "goals": 1,
+        "assists": 1,
+        "xg": 0.72,
+        "xa": 1.98,
+        "cs": 10,
+        "points": 113,
+        "per90": {
+          "goals": 0.03,
+          "assists": 0.03,
+          "xgi": 0.08
         }
       },
       "form": {
