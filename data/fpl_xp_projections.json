@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-11-14T09:56:50+00:00",
+    "generated_at": "2026-11-14T12:48:28+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -1647,7 +1647,7 @@
       "predicted_starts": 90.6,
       "minutes_confidence": "high",
       "data_basis": "pl_history",
-      "owned_pct": 14.7,
+      "owned_pct": 14.8,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -5028,7 +5028,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 24.6,
+      "owned_pct": 24.7,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -8779,7 +8779,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 8.6,
+      "owned_pct": 8.5,
       "status": "d",
       "news": "Calf injury - 75% chance of playing",
       "chance_next": 75,
@@ -28544,7 +28544,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 22.6,
+      "owned_pct": 22.5,
       "status": "d",
       "news": "Unspecified injury - 75% chance of playing",
       "chance_next": 75,
@@ -31947,7 +31947,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 9.6,
+      "owned_pct": 9.5,
       "status": "d",
       "news": "Hamstring injury - 75% chance of playing",
       "chance_next": 75,
@@ -34697,7 +34697,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 5.1,
+      "owned_pct": 5.0,
       "status": "d",
       "news": "Back injury - 75% chance of playing",
       "chance_next": 75,
@@ -47416,7 +47416,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 3.1,
+      "owned_pct": 3.0,
       "status": "d",
       "news": "Head injury - 75% chance of playing",
       "chance_next": 75,
@@ -50156,166 +50156,6 @@
         "defensive_contribution": 0.09,
         "yellows": -0.07,
         "bonus": 0.08
-      },
-      "components_gw": 11,
-      "minutes_basis_flag": "short_season",
-      "last_season_show": true,
-      "last_season_reason": "short_season"
-    },
-    {
-      "id": 415,
-      "web_name": "Dorgu",
-      "full_name": "Patrick Dorgu",
-      "team": "Manchester United",
-      "team_short": "MUN",
-      "pos": "MID",
-      "xmins": 19.7,
-      "predicted_starts": 25.4,
-      "minutes_confidence": "med",
-      "minutes_source": "price_blend",
-      "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
-      "data_basis": "pl_history",
-      "owned_pct": 0.3,
-      "status": "a",
-      "news": "",
-      "chance_next": 100,
-      "yellows": 1,
-      "price": 5.7,
-      "team_code": 1,
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 1,
-        "team_name": "Man Utd",
-        "minutes": 1440,
-        "starts": 15,
-        "goals": 4,
-        "assists": 4,
-        "xg": 2.39,
-        "xa": 1.84,
-        "cs": 4,
-        "points": 95,
-        "per90": {
-          "goals": 0.25,
-          "assists": 0.25,
-          "xgi": 0.26
-        }
-      },
-      "this_season": {
-        "season": "2026/27",
-        "minutes": 195,
-        "xgi": 1.38,
-        "per90": {
-          "xgi": 0.64
-        }
-      },
-      "form": {
-        "value": 2.8,
-        "gws": 4,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "xp_dist": {
-        "gw": 11,
-        "n": 2000,
-        "mean": 0.96,
-        "p_haul": 0.004,
-        "p_blank": 0.902,
-        "p10": 0,
-        "median": 0,
-        "p90": 2,
-        "haul_pts": 10,
-        "blank_pts": 2
-      },
-      "p_start": 0.254,
-      "p_cameo": 0.2487,
-      "p_bench": 0.4973,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.12,
-      "xp_per_gw": 1.03,
-      "xp_per_90": 4.12,
-      "xp_horizon_total": 6.17,
-      "gameweeks": [
-        {
-          "gw": 11,
-          "opponents": [
-            {
-              "opp": "LIV",
-              "venue": "A"
-            }
-          ],
-          "xp": 0.92,
-          "xmins": 19.7
-        },
-        {
-          "gw": 12,
-          "opponents": [
-            {
-              "opp": "BRE",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.15,
-          "xmins": 19.7
-        },
-        {
-          "gw": 13,
-          "opponents": [
-            {
-              "opp": "NEW",
-              "venue": "A"
-            }
-          ],
-          "xp": 0.98,
-          "xmins": 19.7
-        },
-        {
-          "gw": 14,
-          "opponents": [
-            {
-              "opp": "COV",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.28,
-          "xmins": 19.7
-        },
-        {
-          "gw": 15,
-          "opponents": [
-            {
-              "opp": "CRY",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.03,
-          "xmins": 19.7
-        },
-        {
-          "gw": 16,
-          "opponents": [
-            {
-              "opp": "ARS",
-              "venue": "A"
-            }
-          ],
-          "xp": 0.81,
-          "xmins": 19.7
-        }
-      ],
-      "components": {
-        "appearance": 0.6,
-        "goals": 0.16,
-        "assists": 0.05,
-        "clean_sheet": 0.03,
-        "conceded": 0.0,
-        "saves": 0.0,
-        "defensive_contribution": 0.05,
-        "yellows": -0.06,
-        "bonus": 0.09
       },
       "components_gw": 11,
       "minutes_basis_flag": "short_season",
@@ -56735,6 +56575,166 @@
       "components_gw": 11,
       "team_flag": "high_turnover",
       "last_season_show": false
+    },
+    {
+      "id": 415,
+      "web_name": "Dorgu",
+      "full_name": "Patrick Dorgu",
+      "team": "Manchester United",
+      "team_short": "MUN",
+      "pos": "MID",
+      "xmins": 15.0,
+      "predicted_starts": 19.0,
+      "minutes_confidence": "med",
+      "minutes_source": "price_blend",
+      "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
+      "data_basis": "pl_history",
+      "owned_pct": 0.3,
+      "status": "d",
+      "news": "Hamstring injury - 75% chance of playing",
+      "chance_next": 75,
+      "yellows": 1,
+      "price": 5.7,
+      "team_code": 1,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 1,
+        "team_name": "Man Utd",
+        "minutes": 1440,
+        "starts": 15,
+        "goals": 4,
+        "assists": 4,
+        "xg": 2.39,
+        "xa": 1.84,
+        "cs": 4,
+        "points": 95,
+        "per90": {
+          "goals": 0.25,
+          "assists": 0.25,
+          "xgi": 0.26
+        }
+      },
+      "this_season": {
+        "season": "2026/27",
+        "minutes": 195,
+        "xgi": 1.38,
+        "per90": {
+          "xgi": 0.64
+        }
+      },
+      "form": {
+        "value": 2.8,
+        "gws": 4,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "xp_dist": {
+        "gw": 11,
+        "n": 2000,
+        "mean": 0.73,
+        "p_haul": 0.004,
+        "p_blank": 0.928,
+        "p10": 0,
+        "median": 0,
+        "p90": 2,
+        "haul_pts": 10,
+        "blank_pts": 2
+      },
+      "p_start": 0.1903,
+      "p_cameo": 0.2024,
+      "p_bench": 0.6073,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.09,
+      "xp_per_gw": 0.9,
+      "xp_per_90": 4.12,
+      "xp_horizon_total": 5.41,
+      "gameweeks": [
+        {
+          "gw": 11,
+          "opponents": [
+            {
+              "opp": "LIV",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.71,
+          "xmins": 15.0
+        },
+        {
+          "gw": 12,
+          "opponents": [
+            {
+              "opp": "BRE",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.91,
+          "xmins": 15.6
+        },
+        {
+          "gw": 13,
+          "opponents": [
+            {
+              "opp": "NEW",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.84,
+          "xmins": 16.9
+        },
+        {
+          "gw": 14,
+          "opponents": [
+            {
+              "opp": "COV",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.21,
+          "xmins": 18.6
+        },
+        {
+          "gw": 15,
+          "opponents": [
+            {
+              "opp": "CRY",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.97,
+          "xmins": 18.6
+        },
+        {
+          "gw": 16,
+          "opponents": [
+            {
+              "opp": "ARS",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.77,
+          "xmins": 18.6
+        }
+      ],
+      "components": {
+        "appearance": 0.46,
+        "goals": 0.12,
+        "assists": 0.04,
+        "clean_sheet": 0.02,
+        "conceded": 0.0,
+        "saves": 0.0,
+        "defensive_contribution": 0.04,
+        "yellows": -0.04,
+        "bonus": 0.07
+      },
+      "components_gw": 11,
+      "minutes_basis_flag": "short_season",
+      "last_season_show": true,
+      "last_season_reason": "short_season"
     },
     {
       "id": 616,
