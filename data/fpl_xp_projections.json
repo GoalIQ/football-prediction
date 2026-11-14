@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-11-14T06:56:49+00:00",
+    "generated_at": "2026-11-14T09:56:50+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -1018,7 +1018,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 19.1,
+      "owned_pct": 19.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -36687,7 +36687,7 @@
       "predicted_starts": 0.0,
       "minutes_confidence": "high",
       "data_basis": "pl_history",
-      "owned_pct": 8.1,
+      "owned_pct": 8.0,
       "status": "s",
       "news": "Suspended until 5 Dec",
       "chance_next": 0,
@@ -75384,53 +75384,6 @@
       "last_season_reason": "no_projection"
     },
     {
-      "id": 397,
-      "web_name": "Semenyo",
-      "full_name": "Antoine Semenyo",
-      "team": "Manchester City",
-      "team_short": "MCI",
-      "pos": "MID",
-      "price": 8.2,
-      "owned_pct": 5.6,
-      "status": "i",
-      "news": "Knee injury - Unknown return date",
-      "chance_next": 0,
-      "yellows": 0,
-      "set_pieces": {
-        "pens": 2,
-        "corners": null,
-        "fk": null
-      },
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 43,
-        "team_name": "Man City",
-        "minutes": 3200,
-        "starts": 37,
-        "goals": 17,
-        "assists": 6,
-        "xg": 11.1,
-        "xa": 3.12,
-        "cs": 12,
-        "points": 202,
-        "per90": {
-          "goals": 0.48,
-          "assists": 0.17,
-          "xgi": 0.4
-        }
-      },
-      "form": {
-        "value": 0.2,
-        "gws": 4,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable",
-      "last_season_show": true,
-      "last_season_reason": "no_projection"
-    },
-    {
       "id": 12,
       "web_name": "Saka",
       "full_name": "Bukayo Saka",
@@ -75469,6 +75422,53 @@
       },
       "form": {
         "value": 0.8,
+        "gws": 4,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "in_projection": false,
+      "excluded_reason": "unavailable",
+      "last_season_show": true,
+      "last_season_reason": "no_projection"
+    },
+    {
+      "id": 397,
+      "web_name": "Semenyo",
+      "full_name": "Antoine Semenyo",
+      "team": "Manchester City",
+      "team_short": "MCI",
+      "pos": "MID",
+      "price": 8.2,
+      "owned_pct": 5.5,
+      "status": "i",
+      "news": "Knee injury - Unknown return date",
+      "chance_next": 0,
+      "yellows": 0,
+      "set_pieces": {
+        "pens": 2,
+        "corners": null,
+        "fk": null
+      },
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 43,
+        "team_name": "Man City",
+        "minutes": 3200,
+        "starts": 37,
+        "goals": 17,
+        "assists": 6,
+        "xg": 11.1,
+        "xa": 3.12,
+        "cs": 12,
+        "points": 202,
+        "per90": {
+          "goals": 0.48,
+          "assists": 0.17,
+          "xgi": 0.4
+        }
+      },
+      "form": {
+        "value": 0.2,
         "gws": 4,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
